@@ -278,7 +278,7 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
   // 無需顯式排除；__other__ 由下方差值補差邏輯單獨追加。
   const platforms = new Set<string>([...byPlat.keys(), ...byQuota.keys()])
 
-  const PLATFORM_ORDER = ['anthropic', 'openai', 'gemini', 'antigravity']
+  const PLATFORM_ORDER = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok']
   const cards: FusedPlatformCard[] = []
 
   for (const p of platforms) {

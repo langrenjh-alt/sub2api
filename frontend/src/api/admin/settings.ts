@@ -17,7 +17,7 @@ export interface DefaultSubscriptionSetting {
 }
 
 // ── 平台限額型別 ──────────────────────────────────────────────────
-export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity"
+export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok"
 export type QuotaWindowType = "daily" | "weekly" | "monthly"
 
 /** 單平台三檔限額；null = 不限制，undefined = 未填（等價 null） */
@@ -30,7 +30,7 @@ export interface PlatformQuotaLimits {
 /** 全平台預設限額 map（key = PlatformType） */
 export type DefaultPlatformQuotasMap = Partial<Record<PlatformType, PlatformQuotaLimits>>
 
-const PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity"]
+const PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok"]
 
 /** 歸一化為全 4 平台 × 3 視窗（缺失填 null），供模板非空繫結 */
 export function normalizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | null): DefaultPlatformQuotasMap {

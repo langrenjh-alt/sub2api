@@ -3380,6 +3380,7 @@ export default {
         anthropic: 'Anthropic',
         gemini: 'Gemini',
         antigravity: 'Antigravity',
+        grok: 'Grok',
       },
       types: {
         oauth: 'OAuth',
@@ -3388,6 +3389,7 @@ export default {
         googleOauth: 'Google OAuth',
         codeAssist: 'Code Assist',
         antigravityOauth: 'Antigravity OAuth',
+        grokOauth: 'Grok OAuth',
         antigravityApikey: '通過 Base URL + API Key 連線',
         upstream: '對接上游',
         upstreamDesc: '通過 Base URL + API Key 連線上游',
@@ -3471,6 +3473,10 @@ export default {
         gemini3Flash: 'G3F',
         gemini3Image: 'G31FI',
         claude: 'Claude',
+        grokRequests: '請求',
+        grokTokens: 'Token',
+        grokUnknown: 'Grok 配額需等首次上游響應返回 xAI rate-limit 標頭後顯示。',
+        grokRetryAfter: '{time} 後重試',
         passiveSampled: '被動取樣',
         activeQuery: '查詢'
       },
@@ -3713,6 +3719,10 @@ export default {
         testModeDefault: '常規請求',
         testModeCompact: 'Compact 探測',
         modelRestrictionDisabledByPassthrough: '已開啟自動透傳：模型白名單/對映不會生效。',
+      },
+      grok: {
+        baseUrlHint: 'Grok OAuth 帳號會轉發到官方 xAI API Base URL。',
+        apiKeyHint: 'Grok 訂閱支援使用 OAuth refresh token；API Key 帳號不在本次支援範圍內。'
       },
       anthropic: {
         apiKeyPassthrough: '自動透傳（僅替換認證）',
@@ -4114,6 +4124,31 @@ export default {
           validateAndCreate: '驗證並建立帳號',
           pleaseEnterRefreshToken: '請輸入 Refresh Token',
           failedToValidateRT: '驗證 Refresh Token 失敗'
+        },
+        grok: {
+          title: 'Grok 帳戶授權',
+          followSteps: '請按照以下步驟授權您的 xAI/Grok 帳號：',
+          step1GenerateUrl: '生成 xAI 授權連結',
+          generateAuthUrl: '生成授權連結',
+          step2OpenUrl: '在瀏覽器中開啟連結並完成授權',
+          openUrlDesc: '在新標籤頁中開啟授權連結，登入 xAI 並授權 API 訪問。',
+          importantNotice: '當瀏覽器跳轉到本地 callback URL 後，請複製完整 URL 或 code 參數回填到這裡。',
+          step3EnterCode: '輸入授權連結或 Code',
+          authCodeDesc: '授權完成後，貼上 callback URL、查詢字串或授權碼：',
+          authCode: '授權連結或 Code',
+          authCodePlaceholder: '貼上完整 callback URL、?code=... 查詢字串或 code 值',
+          authCodeHint: '支援完整 callback URL、查詢字串或純 code。',
+          refreshTokenAuth: '手動輸入 RT',
+          refreshTokenDesc: '輸入已有的 xAI refresh token，支援批次輸入（每行一個）。',
+          refreshTokenPlaceholder: '貼上您的 xAI refresh token...\n支援多個，每行一個',
+          validating: '驗證中...',
+          validateAndCreate: '驗證並建立帳號',
+          pleaseEnterRefreshToken: '請輸入 Refresh Token',
+          failedToGenerateUrl: '生成 Grok 授權連結失敗',
+          missingExchangeParams: '缺少授權碼、state 或 OAuth 會話',
+          failedToExchangeCode: 'Grok 授權碼兌換失敗',
+          failedToValidateRT: '驗證 Grok refresh token 失敗',
+          oauthOnlyHint: '首版 Grok 支援僅包含 OAuth 訂閱支援的文本/推理轉發。'
         }
       },
       // Gemini specific (platform-wide)
@@ -4257,6 +4292,7 @@ export default {
       openaiAccount: 'OpenAI 帳號',
       geminiAccount: 'Gemini 帳號',
       antigravityAccount: 'Antigravity 帳號',
+      grokAccount: 'Grok 帳號',
       inputMethod: '輸入方式',
       reAuthorizedSuccess: '帳號重新授權成功',
       // Test Modal

@@ -34,7 +34,7 @@ import type { PlatformQuotaItem, PlatformQuotaPlatform } from '@/api/admin/users
 const props = defineProps<{ quotas?: PlatformQuotaItem[] }>()
 const { t } = useI18n()
 
-const PLATFORM_ORDER: PlatformQuotaPlatform[] = ['anthropic', 'openai', 'gemini', 'antigravity']
+const PLATFORM_ORDER: PlatformQuotaPlatform[] = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok']
 
 // 僅展示「至少一檔限額非空」的平台（配額列，非用量列）
 const configured = computed(() => {
