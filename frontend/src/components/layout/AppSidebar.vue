@@ -9,7 +9,7 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
       <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
+      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-black text-white shadow-none dark:bg-white dark:text-black">
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
       </div>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
@@ -140,7 +140,7 @@
     </nav>
 
     <!-- Bottom Section -->
-    <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
+  <div class="mt-auto border-t border-black/10 p-3 dark:border-white/10">
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
@@ -173,7 +173,7 @@
   <transition name="fade">
     <div
       v-if="mobileOpen"
-      class="fixed inset-0 z-30 bg-black/50 lg:hidden"
+      class="fixed inset-0 z-30 bg-black/35 backdrop-blur-sm lg:hidden"
       @click="closeMobile"
     ></div>
   </transition>

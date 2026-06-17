@@ -1,63 +1,59 @@
 <template>
-  <div class="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
-    <!-- Background -->
-    <div
-      class="absolute inset-0 bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
-    ></div>
-
-    <!-- Decorative Elements -->
-    <div class="pointer-events-none absolute inset-0 overflow-hidden">
-      <!-- Gradient Orbs -->
-      <div
-        class="absolute -right-40 -top-40 h-80 w-80 rounded-full bg-primary-400/20 blur-3xl"
-      ></div>
-      <div
-        class="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-primary-500/15 blur-3xl"
-      ></div>
-      <div
-        class="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-300/10 blur-3xl"
-      ></div>
-
-      <!-- Grid Pattern -->
-      <div
-        class="absolute inset-0 bg-[linear-gradient(rgba(20,184,166,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(20,184,166,0.03)_1px,transparent_1px)] bg-[size:64px_64px]"
-      ></div>
-    </div>
-
-    <!-- Content Container -->
-    <div class="relative z-10 w-full max-w-md">
-      <!-- Logo/Brand -->
-      <div class="mb-8 text-center">
-        <!-- Custom Logo or Default Logo -->
-        <template v-if="settingsLoaded">
-          <div
-            class="mb-4 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl shadow-lg shadow-primary-500/30"
-          >
-            <img :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
+  <div class="auth-shell min-h-screen bg-[#f7f7f4] text-[#101010] dark:bg-[#101010] dark:text-white">
+    <div class="auth-grid pointer-events-none fixed inset-0"></div>
+    <div class="relative mx-auto flex min-h-screen w-full max-w-[1440px] flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      <section class="hidden border-r border-black/10 px-8 py-8 dark:border-white/10 lg:flex lg:flex-col lg:justify-between">
+        <div class="flex items-center gap-3">
+          <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-black text-white dark:bg-white dark:text-black">
+            <img :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+          </span>
+          <div>
+            <p class="text-sm font-semibold">{{ siteName }}</p>
+            <p class="text-xs text-black/45 dark:text-white/45">{{ siteSubtitle }}</p>
           </div>
-          <h1 class="text-gradient mb-2 text-3xl font-bold">
-            {{ siteName }}
-          </h1>
-          <p class="text-sm text-gray-500 dark:text-dark-400">
-            {{ siteSubtitle }}
+        </div>
+
+        <div class="max-w-xl">
+          <p class="mb-4 text-sm font-medium text-black/45 dark:text-white/45">Secure access</p>
+          <h1 class="text-5xl font-semibold leading-none md:text-6xl">登录后进入统一控制台。</h1>
+          <p class="mt-6 max-w-lg text-base leading-7 text-black/60 dark:text-white/60">
+            账号、密钥、订阅和充值都在同一个界面里完成。界面保持简洁，只让最常用的动作靠近你。
           </p>
-        </template>
-      </div>
+        </div>
 
-      <!-- Card Container -->
-      <div class="card-glass rounded-2xl p-8 shadow-glass">
-        <slot />
-      </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+          <div v-for="item in highlights" :key="item.title" class="rounded-lg border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/[0.04]">
+            <p class="text-xs text-black/45 dark:text-white/45">{{ item.title }}</p>
+            <p class="mt-2 text-sm font-medium">{{ item.value }}</p>
+          </div>
+        </div>
+      </section>
 
-      <!-- Footer Links -->
-      <div class="mt-6 text-center text-sm">
-        <slot name="footer" />
-      </div>
+      <section class="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
+        <div class="w-full max-w-[460px]">
+          <div class="mb-8 flex items-center justify-between lg:hidden">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-black text-white dark:bg-white dark:text-black">
+                <img :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+              </span>
+              <div>
+                <p class="text-sm font-semibold">{{ siteName }}</p>
+                <p class="text-xs text-black/45 dark:text-white/45">{{ siteSubtitle }}</p>
+              </div>
+            </div>
+          </div>
 
-      <!-- Copyright -->
-      <div class="mt-8 text-center text-xs text-gray-400 dark:text-dark-500">
-        &copy; {{ currentYear }} {{ siteName }}. All rights reserved.
-      </div>
+          <div class="rounded-lg border border-black/10 bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,0.08)] dark:border-white/10 dark:bg-[#161616] sm:p-8">
+            <slot />
+          </div>
+
+          <div class="mt-6 px-1 text-sm">
+            <slot name="footer" />
+          </div>
+
+          <p class="mt-8 text-xs text-black/35 dark:text-white/35">&copy; {{ currentYear }} {{ siteName }}</p>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -71,10 +67,16 @@ const appStore = useAppStore()
 
 const siteName = computed(() => appStore.siteName || 'Sub2API')
 const siteLogo = computed(() => sanitizeUrl(appStore.siteLogo || '', { allowRelative: true, allowDataUrl: true }))
-const siteSubtitle = computed(() => appStore.cachedPublicSettings?.site_subtitle || 'Subscription to API Conversion Platform')
-const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
-
+const siteSubtitle = computed(
+  () => appStore.cachedPublicSettings?.site_subtitle || 'Subscription to API Conversion Platform'
+)
 const currentYear = computed(() => new Date().getFullYear())
+
+const highlights = [
+  { title: 'Unified API', value: 'OpenAI compatible' },
+  { title: 'Routing', value: 'Auto failover' },
+  { title: 'Billing', value: 'Token-aware' }
+]
 
 onMounted(() => {
   appStore.fetchPublicSettings()
@@ -82,7 +84,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.text-gradient {
-  @apply bg-gradient-to-r from-primary-600 to-primary-500 bg-clip-text text-transparent;
+.auth-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
+}
+
+.dark .auth-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
 }
 </style>
