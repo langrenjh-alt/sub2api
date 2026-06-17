@@ -3477,6 +3477,11 @@ export default {
         grokTokens: 'Token',
         grokUnknown: 'Grok 配額需等首次上游響應返回 xAI rate-limit 標頭後顯示。',
         grokRetryAfter: '{time} 後重試',
+        grokProbe: '探測',
+        grokProbeTooltip: '發送最小 xAI Responses 探測請求並讀取配額響應標頭',
+        grokResetUnsupported: '不支援重置',
+        grokResetUnsupportedTooltip: 'xAI 未向 Grok OAuth 帳號開放重置額度接口',
+        grokNoHeaders: '未觀測到配額響應標頭',
         passiveSampled: '被動取樣',
         activeQuery: '查詢'
       },
