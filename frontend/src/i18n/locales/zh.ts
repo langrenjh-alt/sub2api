@@ -4153,7 +4153,7 @@ export default {
           missingExchangeParams: '缺少授權碼、state 或 OAuth 會話',
           failedToExchangeCode: 'Grok 授權碼兌換失敗',
           failedToValidateRT: '驗證 Grok refresh token 失敗',
-          oauthOnlyHint: '首版 Grok 支援僅包含 OAuth 訂閱支援的文本/推理轉發。'
+          oauthOnlyHint: '首版 Grok 支援僅包含 OAuth 訂閱支援的 Responses API 文本/推理轉發。'
         }
       },
       // Gemini specific (platform-wide)
