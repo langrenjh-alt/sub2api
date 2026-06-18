@@ -3482,6 +3482,9 @@ export default {
         grokResetUnsupported: '不支援重置',
         grokResetUnsupportedTooltip: 'xAI 未向 Grok OAuth 帳號開放重置額度接口',
         grokNoHeaders: '未觀測到配額響應標頭',
+        grokLastStatus: '狀態 {status}',
+        grokLastProbe: '探測 {time}',
+        grokLastHeadersSeen: '響應標頭 {time}',
         passiveSampled: '被動取樣',
         activeQuery: '查詢'
       },
