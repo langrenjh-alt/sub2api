@@ -3479,7 +3479,9 @@ export default {
         resetTooltipNeedQuery: '先點選「次數」載入剩餘重置次數',
         resetTooltipNoCredits: '沒有可用的重置次數',
         noCreditsAvailable: '沒有可用的重置次數',
-        resetSuccess: '已重置 {windows} 個視窗'
+        resetSuccess: '已重置 {windows} 個視窗',
+        confirmTitle: '確認重置週限',
+        confirmMessage: '將消耗 1 次重置次數立即恢復目前視窗，剩餘 {count} 次。此操作不可復原，確定繼續嗎？'
       },
       tier: {
         free: 'Free',
