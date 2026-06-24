@@ -1,0 +1,1102 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Z30 AI 用户使用文档</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f1f5f9;
+      --text: #102033;
+      --muted: #64748b;
+      --line: #dbe4ef;
+      --brand: #136f63;
+      --brand-strong: #0f5b51;
+      --brand-soft: #e1f4ef;
+      --accent: #a55d17;
+      --accent-soft: #fff3df;
+      --danger: #b42318;
+      --danger-soft: #fff1f0;
+      --code-bg: #111827;
+      --code-text: #e5e7eb;
+      --shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+      --radius: 8px;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.68;
+    }
+
+    a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code,
+    pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 288px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 24px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: grid;
+      gap: 6px;
+      padding: 4px 8px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toc {
+      display: grid;
+      gap: 2px;
+      margin-top: 18px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 7px 8px;
+      border-radius: 6px;
+      color: #334155;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .toc a:hover {
+      background: var(--panel-soft);
+      text-decoration: none;
+    }
+
+    .toc .toc-sub {
+      padding-left: 20px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .content {
+      min-width: 0;
+      padding: 32px 32px 80px;
+    }
+
+    .doc {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #ffffff 0%, #edf7f4 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-strong);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 48px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 44px 0 16px;
+      padding-top: 8px;
+      font-size: 26px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 28px 0 12px;
+      font-size: 19px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    h4 {
+      margin: 18px 0 8px;
+      font-size: 15px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    ul,
+    ol {
+      margin: 0 0 14px 22px;
+      padding: 0;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      color: #334155;
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .section {
+      margin-top: 24px;
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 8px 26px rgba(15, 23, 42, 0.04);
+    }
+
+    .lead {
+      max-width: 820px;
+      margin-top: 16px;
+      color: #334155;
+      font-size: 16px;
+    }
+
+    .notice {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--brand);
+      border-radius: 6px;
+      background: #f8fafc;
+    }
+
+    .notice.warning {
+      border-left-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .notice.danger {
+      border-left-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .card-title {
+      margin: 0 0 8px;
+      font-weight: 800;
+    }
+
+    .card p:last-child,
+    .notice p:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-list {
+      counter-reset: step;
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .step {
+      position: relative;
+      padding: 14px 16px 14px 54px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid #cbd5e1;
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      background: #ffffff;
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .code-card {
+      margin: 14px 0;
+      overflow: hidden;
+      border-radius: var(--radius);
+      background: var(--code-bg);
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .copy-btn {
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 6px;
+      padding: 5px 9px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #f8fafc;
+      font-size: 12px;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      color: var(--code-text);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre;
+    }
+
+    .inline-code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #e2e8f0;
+      color: #0f172a;
+      font-size: 0.92em;
+    }
+
+    table {
+      width: 100%;
+      margin: 16px 0;
+      border-collapse: collapse;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: 800;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #ffffff;
+    }
+
+    details + details {
+      margin-top: 10px;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 13px 16px;
+      font-weight: 800;
+    }
+
+    details[open] summary {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .answer {
+      padding: 14px 16px 16px;
+      color: #334155;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .status.ok {
+      background: var(--brand-soft);
+      color: var(--brand-strong);
+    }
+
+    .status.warn {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status.bad {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .foot {
+      margin-top: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+        max-height: none;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .toc {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toc .toc-sub {
+        padding-left: 8px;
+      }
+
+      .content {
+        padding: 22px 16px 56px;
+      }
+
+      .hero,
+      .section {
+        padding: 20px;
+      }
+
+      .grid,
+      .grid.two {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .toc {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      h2 {
+        font-size: 22px;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-title">Z30 AI 用户指南</div>
+        <div class="brand-subtitle">面向注册、充值、创建 Key、接入客户端与排障</div>
+      </div>
+      <nav class="toc" aria-label="文档目录">
+        <a href="#start">从零开始使用 Z30 AI</a>
+        <a class="toc-sub" href="#register">注册用户</a>
+        <a class="toc-sub" href="#login">登录成功后</a>
+        <a class="toc-sub" href="#create-key">创建密钥</a>
+        <a href="#recharge">如何充值</a>
+        <a href="#codex">Codex/GPT 系列模型使用指南</a>
+        <a class="toc-sub" href="#codex-cli">接入 Codex 插件/App/CLI</a>
+        <a class="toc-sub" href="#claude-use-gpt">让 Claude 客户端使用 GPT</a>
+        <a href="#anthropic">Anthropic/Claude 系列模型使用指南</a>
+        <a class="toc-sub" href="#claude-key">生成 API Key</a>
+        <a class="toc-sub" href="#claude-import">导入 API Key</a>
+        <a class="toc-sub" href="#claude-use">使用</a>
+        <a href="#upstream">作为自有转发站上游</a>
+        <a href="#tools">Windows 常用工具</a>
+        <a href="#faq-user">问题合集：充值用户</a>
+        <a href="#network">无法访问网站/API 端点</a>
+        <a href="#status-codes">Codex 状态码与解决方案</a>
+        <a href="#codex-errors">常见 Codex 报错信息</a>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <article class="doc">
+        <header class="hero">
+          <p class="eyebrow">Z30 AI 文档 · 用户版</p>
+          <h1>Z30 AI 使用文档</h1>
+          <p class="lead">
+            本文用于指导普通用户从注册开始，完成充值、创建 API Key、接入 Codex/Claude/Gemini 类客户端，并在遇到余额、分组、网络、状态码等问题时快速定位原因。
+          </p>
+          <div class="meta-row">
+            <span class="pill">推荐站点：<a href="https://z30.top" target="_blank" rel="noreferrer">z30.top</a></span>
+            <span class="pill">更新日期：2026-06-21</span>
+            <span class="pill">适用对象：Z30 AI API 使用者</span>
+          </div>
+        </header>
+
+        <section class="section" id="compliance-tip">
+          <h2>Tips</h2>
+          <div class="notice warning">
+            <p>为遵守各地法律法规及合规监管要求，平台即日起停止为中国大陆及其他受限地区 IP 提供 AI 中转服务。受限地区 IP 访问时会展示提示页面，合规许可地区用户可正常使用服务。对于此次调整带来的不便，我们深表歉意，感谢您的理解与包容。</p>
+            <p>To comply with local laws, regulations and compliance rules, our platform will cease providing AI relay services to IP addresses in mainland China and other restricted regions with immediate effect. Visitors from affected IPs will be directed to a prompt page, while users in compliant regions can access services normally. We sincerely apologize for any inconvenience caused and appreciate your understanding.</p>
+          </div>
+        </section>
+
+        <section class="section" id="overview">
+          <h2>使用前先了解</h2>
+          <div class="notice warning">
+            <p><strong>请注意：</strong>不同站点会按运营配置隐藏或开放部分功能，例如支付方式、订阅套餐、邀请返利、可用渠道等。本文按 Z30 AI 当前用户端常见界面编写，实际以你的站点页面显示为准。</p>
+          </div>
+          <div class="grid">
+            <div class="card">
+              <p class="card-title">余额与倍率</p>
+              <p>请求会按模型价格和分组倍率扣除余额。选择 Key 分组时，页面会展示对应平台、倍率和可用模型，请以页面显示为准。</p>
+            </div>
+            <div class="card">
+              <p class="card-title">可用分组</p>
+              <p>API Key 必须绑定一个可用分组。Codex/GPT、Claude、Gemini 等客户端应选择对应平台的分组，否则可能出现模型不可用或接口不匹配。</p>
+            </div>
+            <div class="card">
+              <p class="card-title">用量记录</p>
+              <p>每次 API 请求都会生成用量记录。排查问题时优先查看请求时间、Key、分组、模型、扣费和错误信息。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="start">
+          <h2>从零开始使用 Z30 AI</h2>
+          <p>新用户只需要完成三件事：注册账号、充值或购买套餐、创建 API Key。Key 创建后可直接在 Codex、Claude Code、Gemini CLI、OpenCode 或其他兼容客户端中使用。</p>
+
+          <h3 id="register">1. 注册用户</h3>
+          <div class="step-list">
+            <div class="step">
+              打开站点首页，进入 <span class="inline-code">注册</span> 页面。常见入口为 <span class="inline-code">/register</span>。
+            </div>
+            <div class="step">
+              按页面提示填写邮箱、用户名、密码和验证码。如果站点开启邀请码，注册时需要填写管理员或邀请人提供的邀请码。
+            </div>
+            <div class="step">
+              如果使用第三方登录，例如 GitHub、Google、LinuxDo、微信、钉钉或 OIDC，请按授权页提示完成绑定。部分 OAuth 注册仍可能要求补充邮箱或邀请码。
+            </div>
+          </div>
+
+          <h3 id="login">2. 登录成功后</h3>
+          <p>登录后默认进入用户仪表盘。这里会展示账户余额、今日用量、近期请求、模型用量趋势、订阅状态和快捷入口。</p>
+          <table>
+            <thead>
+              <tr>
+                <th>页面</th>
+                <th>用途</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>仪表盘</td>
+                <td>查看余额、总体用量、近期请求和图表。</td>
+              </tr>
+              <tr>
+                <td>API Keys</td>
+                <td>创建、复制、启停、删除 Key，设置分组、额度、过期时间、IP 黑白名单。</td>
+              </tr>
+              <tr>
+                <td>用量记录</td>
+                <td>查看每次请求的模型、Token、费用、状态和错误。</td>
+              </tr>
+              <tr>
+                <td>可用渠道/渠道状态</td>
+                <td>查看站点当前可用分组、模型和资源状态。</td>
+              </tr>
+              <tr>
+                <td>充值/我的订单</td>
+                <td>充值余额、购买订阅、查看支付订单状态。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3 id="create-key">3. 创建密钥</h3>
+          <div class="step-list">
+            <div class="step">
+              进入 <span class="inline-code">API Keys</span>，点击 <span class="inline-code">创建 Key</span>。
+            </div>
+            <div class="step">
+              填写 Key 名称，例如 <span class="inline-code">codex-plus-pool</span> 或 <span class="inline-code">claude-private</span>，方便以后区分用途。
+            </div>
+            <div class="step">
+              选择分组。使用 Codex/GPT 时选择 OpenAI/Codex 相关分组；使用 Claude Code 时选择 Anthropic/Claude 或 Antigravity Claude 相关分组。
+            </div>
+            <div class="step">
+              可选设置：自定义 Key、IP 白名单/黑名单、Key 总额度、5 小时/1 天/7 天速率额度、过期时间。
+            </div>
+            <div class="step">
+              创建后复制 Key。需要配置客户端时点击表格里的 <span class="inline-code">使用 Key</span>，页面会自动生成适配当前分组的配置。
+            </div>
+          </div>
+          <div class="notice">
+            <p>API Key 只展示一次完整值。复制后请妥善保存，不要发到公开群、GitHub 仓库、截图或日志中。如果怀疑泄露，请立即禁用或删除旧 Key 并重新创建。</p>
+          </div>
+        </section>
+
+        <section class="section" id="recharge">
+          <h2>如何充值</h2>
+          <p>充值入口通常在左侧菜单的 <span class="inline-code">购买订阅</span> 或 <span class="inline-code">充值</span> 页面。站点可能同时提供余额充值和套餐订阅两种方式。</p>
+          <div class="grid two">
+            <div class="card">
+              <p class="card-title">余额充值</p>
+              <p>适合按量付费。输入金额，选择支付方式，创建订单后扫码或跳转支付。支付完成后系统会自动到账。</p>
+            </div>
+            <div class="card">
+              <p class="card-title">订阅套餐</p>
+              <p>适合固定周期、固定分组或有日/月额度的使用方式。选择套餐后支付，套餐会显示在 <span class="inline-code">我的订阅</span> 中。</p>
+            </div>
+          </div>
+          <h3>充值步骤</h3>
+          <div class="step-list">
+            <div class="step">进入 <span class="inline-code">购买订阅</span> 页面，选择 <span class="inline-code">充值</span> 或 <span class="inline-code">订阅</span> 标签。</div>
+            <div class="step">余额充值时输入金额；订阅时选择套餐。页面会显示实际支付金额、手续费和到账额度。</div>
+            <div class="step">选择支付方式。常见方式包括支付宝、微信、Stripe、Airwallex 或站点接入的聚合支付。</div>
+            <div class="step">完成支付后等待页面轮询订单状态。不要反复创建相同金额订单；如果页面未自动跳转，可到 <span class="inline-code">我的订单</span> 查看。</div>
+          </div>
+          <div class="notice warning">
+            <p>首次使用建议先以站点允许的最低金额或小额套餐测试：确认 Key 能创建、客户端能调用、分组速度符合预期后再追加充值。</p>
+          </div>
+        </section>
+
+        <section class="section" id="codex">
+          <h2>Codex/GPT 系列模型使用指南</h2>
+          <p>Codex/GPT 类客户端通常使用 OpenAI 兼容方式接入。推荐从站点 <span class="inline-code">API Keys</span> 页面点击 <span class="inline-code">使用 Key</span>，直接复制自动生成的配置。</p>
+
+          <h3 id="codex-cli">网站注册后怎么接入 API 使用 Codex 插件 / Codex App / CLI</h3>
+          <div class="step-list">
+            <div class="step">创建一个绑定 OpenAI/Codex 分组的 API Key。</div>
+            <div class="step">确认 API Base URL。站点通常会在 <span class="inline-code">API Keys</span> 页面上方显示，也可能是 <span class="inline-code">https://z30.top</span> 或 <span class="inline-code">https://z30.top/v1</span>。</div>
+            <div class="step">把页面生成的 <span class="inline-code">config.toml</span> 和 <span class="inline-code">auth.json</span> 写入本机 Codex 配置目录。</div>
+          </div>
+
+          <h4>macOS / Linux：<span class="inline-code">~/.codex/config.toml</span></h4>
+          <div class="code-card">
+            <div class="code-head">
+              <span>config.toml</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>model_provider = "OpenAI"
+model = "gpt-5.5"
+review_model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+disable_response_storage = true
+network_access = "enabled"
+windows_wsl_setup_acknowledged = true
+
+[model_providers.OpenAI]
+name = "OpenAI"
+base_url = "https://z30.top"
+wire_api = "responses"
+requires_openai_auth = true
+
+[features]
+goals = true</code></pre>
+          </div>
+
+          <h4>macOS / Linux：<span class="inline-code">~/.codex/auth.json</span></h4>
+          <div class="code-card">
+            <div class="code-head">
+              <span>auth.json</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>{
+  "OPENAI_API_KEY": "替换为你的 Z30 AI Key"
+}</code></pre>
+          </div>
+
+          <h4>Windows 路径</h4>
+          <p>Windows 下通常放到 <span class="inline-code">%USERPROFILE%\.codex\config.toml</span> 和 <span class="inline-code">%USERPROFILE%\.codex\auth.json</span>。如果 Codex 运行在 WSL 内，则使用 WSL 用户目录下的 <span class="inline-code">~/.codex</span>。</p>
+
+          <div class="notice warning">
+            <p>不要手工猜测 URL 是否需要 <span class="inline-code">/v1</span>。以站点 <span class="inline-code">使用 Key</span> 弹窗生成的配置为准，避免出现 <span class="inline-code">404 Not Found</span> 或路径重复。</p>
+          </div>
+
+          <h3 id="claude-use-gpt">网站注册后怎么接入 API 让 Claude 插件 / Claude CLI 使用 GPT 模型</h3>
+          <p>部分站点会为 OpenAI/Codex 分组开启 Claude 兼容或消息分发能力。开启后，Claude Code 可以用 Anthropic 环境变量形式调用 GPT 分组。</p>
+          <div class="code-card">
+            <div class="code-head">
+              <span>macOS / Linux Terminal</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>export ANTHROPIC_BASE_URL="https://z30.top"
+export ANTHROPIC_AUTH_TOKEN="替换为你的 Z30 AI Key"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code></pre>
+          </div>
+          <div class="code-card">
+            <div class="code-head">
+              <span>PowerShell</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>$env:ANTHROPIC_BASE_URL="https://z30.top"
+$env:ANTHROPIC_AUTH_TOKEN="替换为你的 Z30 AI Key"
+$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code></pre>
+          </div>
+          <h4>VS Code Claude Code 配置</h4>
+          <div class="code-card">
+            <div class="code-head">
+              <span>~/.claude/settings.json</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://z30.top",
+    "ANTHROPIC_AUTH_TOKEN": "替换为你的 Z30 AI Key",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  }
+}</code></pre>
+          </div>
+          <div class="notice">
+            <p>如果 Claude 客户端仍显示 Claude/Opus/Sonnet 名称，不一定代表实际走的是 Claude 模型。请以站点 <span class="inline-code">用量记录</span> 里的请求模型、上游模型和分组为准。</p>
+          </div>
+
+        </section>
+
+        <section class="section" id="anthropic">
+          <h2>Anthropic/Claude 系列模型使用指南</h2>
+          <p>Claude 系列通常使用 Anthropic 兼容接口。创建 Key 时请选择 Anthropic/Claude 或 Antigravity Claude 相关分组。</p>
+
+          <h3 id="claude-key">生成 API Key</h3>
+          <div class="step-list">
+            <div class="step">进入 <span class="inline-code">API Keys</span>，点击 <span class="inline-code">创建 Key</span>。</div>
+            <div class="step">分组选择 Claude/Anthropic 或 Antigravity Claude 分组。</div>
+            <div class="step">创建后点击 <span class="inline-code">使用 Key</span>，选择 Claude Code 标签。</div>
+          </div>
+
+          <h3 id="claude-import">导入 API Key</h3>
+          <p>如果站点显示 <span class="inline-code">导入到 CC-Switch</span> 按钮，可以直接点击导入。也可以手动配置环境变量：</p>
+          <div class="code-card">
+            <div class="code-head">
+              <span>Claude Code 环境变量</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>export ANTHROPIC_BASE_URL="https://z30.top"
+export ANTHROPIC_AUTH_TOKEN="替换为你的 Z30 AI Key"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code></pre>
+          </div>
+          <p>如果使用 Antigravity Claude 专用分组，Base URL 通常需要带 <span class="inline-code">/antigravity</span>：</p>
+          <div class="code-card">
+            <div class="code-head">
+              <span>Antigravity Claude</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>export ANTHROPIC_BASE_URL="https://z30.top/antigravity"
+export ANTHROPIC_AUTH_TOKEN="替换为你的 Z30 AI Key"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code></pre>
+          </div>
+
+          <h3 id="claude-use">使用</h3>
+          <p>配置完成后重新打开终端或重启客户端，再发起一次简单请求测试。建议先用短问题确认连通性，再进行大项目、大上下文任务。</p>
+          <div class="notice warning">
+            <p>Claude 原生账号和 Antigravity Claude 不建议混在同一个对话上下文里使用。长任务开始前先选好分组和模型，避免中途切换导致上下文异常。</p>
+          </div>
+
+          <h3>Gemini 分组补充</h3>
+          <p>如果站点开放 Gemini 分组，可使用 Gemini CLI 兼容环境变量：</p>
+          <div class="code-card">
+            <div class="code-head">
+              <span>Gemini CLI</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>export GOOGLE_GEMINI_BASE_URL="https://z30.top"
+export GEMINI_API_KEY="替换为你的 Z30 AI Key"
+export GEMINI_MODEL="gemini-2.0-flash"</code></pre>
+          </div>
+        </section>
+
+        <section class="section" id="upstream">
+          <h2>将 Z30 AI 作为自有转发站的上游（尚未完工）</h2>
+          <p>该部分适用于自己已有 Sub2API、New-API 或其他转发站，希望把 Z30 AI 当作上游渠道的人。当前能力以站点实际开放为准，正式接入前请先小流量测试。</p>
+          <h3>事先准备</h3>
+          <ul>
+            <li>一个可用的 Z30 AI Key。</li>
+            <li>明确要接入的分组平台：OpenAI/Codex、Anthropic/Claude、Gemini 或 Antigravity。</li>
+            <li>确认 Base URL。优先使用 Z30 AI 页面生成的端点，不要自行拼接重复路径。</li>
+            <li>准备限额策略，避免自有转发站用户把 Z30 AI Key 的余额一次性打空。</li>
+          </ul>
+          <h3>Sub2API</h3>
+          <p>在自有 Sub2API 管理端添加上游账号或渠道时，选择与 Z30 AI 分组一致的平台类型，填入 Z30 AI Base URL 与 API Key。保存后用短请求测试，再逐步开放给用户。</p>
+          <h3>New-API</h3>
+          <p>在 New-API 管理后台新增渠道，选择 OpenAI 兼容或 Claude 兼容类型，填入 Base URL 和 Key。模型列表建议先只开放你确认可用的模型，避免用户请求不存在的模型造成 400/404。</p>
+          <div class="notice warning">
+            <p>该功能仍按“尚未完工”处理。生产使用前请确认站点规则允许二次转发，并设置好用量限制、错误重试和余额预警。</p>
+          </div>
+        </section>
+
+        <section class="section" id="tools">
+          <h2>下载 Windows 环境下的常用工具</h2>
+          <p>工具下载入口可能随项目更新变化。优先使用站点公告、群文件或工具官方 Release 页面提供的安装包，避免下载来源不明的压缩包。</p>
+          <table>
+            <thead>
+              <tr>
+                <th>工具</th>
+                <th>用途</th>
+                <th>建议</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Codex CLI</td>
+                <td>OpenAI Codex 命令行客户端。</td>
+                <td>按官方安装方式安装，安装后写入 <span class="inline-code">%USERPROFILE%\.codex</span> 配置。</td>
+              </tr>
+              <tr>
+                <td>ClaudeCode CLI</td>
+                <td>Claude Code 命令行客户端。</td>
+                <td>配置 <span class="inline-code">ANTHROPIC_BASE_URL</span> 和 <span class="inline-code">ANTHROPIC_AUTH_TOKEN</span> 后使用。</td>
+              </tr>
+              <tr>
+                <td>CC-Switch</td>
+                <td>管理多个 Claude/Codex/Gemini 供应商配置。</td>
+                <td>如果站点显示导入按钮，可优先使用一键导入；失败时手动填写 Base URL 和 Key。</td>
+              </tr>
+              <tr>
+                <td>Codex-PlusPlus</td>
+                <td>Codex 相关增强工具。</td>
+                <td>以项目说明和站点公告为准，使用前先确认与当前 Codex 版本兼容。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section" id="faq-user">
+          <h2>问题合集：充值用户</h2>
+          <details>
+            <summary>为什么从账号切换成 API 后之前的聊天记录看不见了？怎么才能看到之前的记录？</summary>
+            <div class="answer">网页端账号聊天记录和 API 调用记录是两套系统。API 客户端不会自动读取你在 ChatGPT、Claude 或 Gemini 网页里的历史对话。需要继续使用旧记录时，请回到原网页账号查看，或手动复制上下文到 API 客户端新会话。</div>
+          </details>
+          <details>
+            <summary>使用过程中出现问题怎么处理？</summary>
+            <div class="answer">按顺序检查：余额是否充足、Key 是否启用、Key 绑定分组是否正确、Base URL 是否正确、客户端是否把 Key 写到了正确配置文件、用量记录里是否有错误、渠道状态是否可用。仍无法解决时，把错误码、请求时间、Key 名称、分组名和客户端截图发给客服。</div>
+          </details>
+          <details>
+            <summary>为什么有时候推送速度这么慢？</summary>
+            <div class="answer">常见原因包括模型繁忙、账号池资源紧张、请求上下文过长、输出太长、网络抖动或客户端正在重连。可以尝试新开会话、缩短上下文、换分组、稍后重试，或在渠道状态中观察可用资源。</div>
+          </details>
+          <details>
+            <summary>分组倍率是什么意思？</summary>
+            <div class="answer">倍率是站点计算请求费用时使用的系数。创建或编辑 Key 时，分组标签会显示平台和倍率；实际扣费以用量记录为准。</div>
+          </details>
+          <details>
+            <summary>缓存命中率是什么？</summary>
+            <div class="answer">部分上游模型会对重复上下文或前缀做缓存，命中后可能降低成本或加快响应。是否命中取决于模型、客户端请求形态和上游能力，不保证每次都有。</div>
+          </details>
+          <details>
+            <summary>第一次使用 API，应该充值多少合适？</summary>
+            <div class="answer">先用站点允许的最低充值金额或小额套餐测试。确认 Key 创建、客户端配置、分组速度和扣费都符合预期后，再根据自己的日常用量追加余额。</div>
+          </details>
+          <details>
+            <summary>不充值上游官网账号，用量怎么办？</summary>
+            <div class="answer">Z30 AI 用户端按平台余额或订阅额度扣费。你只需要保证 Z30 AI 账户余额或套餐额度充足，不需要在 OpenAI、Claude、Gemini 官网账号里单独充值。</div>
+          </details>
+          <details>
+            <summary>充值时显示“商户余额不足，请联系商户进行充值”怎么办？</summary>
+            <div class="answer">这是支付通道或商户侧状态问题，不是 API Key 问题。请换一个支付方式，或联系站点客服处理。不要连续创建大量待支付订单。</div>
+          </details>
+          <details>
+            <summary>为什么经常说我的 Claude，模型识别后使用 gpt-5.5，问 Claude 它是什么模型时却回答 Opus 4.6？</summary>
+            <div class="answer">模型自报身份不可靠，客户端系统提示词也可能让模型沿用 Claude/Codex 的表述。判断实际调用模型应看站点用量记录中的请求模型、上游模型、分组和计费记录。</div>
+          </details>
+          <details>
+            <summary>我正在使用 Codex，应该选择哪个分组？</summary>
+            <div class="answer">选择平台标识为 OpenAI/Codex/GPT 的可用分组。创建 Key 后可以先用小任务测试速度、稳定性和扣费；如果请求失败，再切换到另一个同平台分组。</div>
+          </details>
+          <details>
+            <summary>渠道状态怎么看？如何观察账号池的状态？</summary>
+            <div class="answer">进入 <span class="inline-code">渠道状态</span> 或 <span class="inline-code">可用渠道</span> 页面。重点看分组是否可用、支持模型、可用资源数、最近检测结果和延迟。普通用户只能看到站点开放给用户侧的状态信息。</div>
+          </details>
+          <details>
+            <summary>为什么 PRO 号池和 TEAM 号池一直显示可用服务数/资源数状态？</summary>
+            <div class="answer">部分账号池的真实额度、服务数或资源状态无法完整暴露给用户端，只能显示检测结果或估算状态。只要请求成功、用量记录正常，就说明该分组可用；如果持续失败，请切换其他分组并反馈。</div>
+          </details>
+          <details>
+            <summary>我已经可以使用 Codex 的账号，但我想申请 GPT 系列模型怎么办？</summary>
+            <div class="answer">创建 Key 时选择 OpenAI/Codex/GPT 相关分组，并按 Codex 配置方式接入。如果你的账号只被授权 Claude 或 Gemini 分组，需要联系管理员开通对应 GPT 分组权限。</div>
+          </details>
+          <details>
+            <summary>我的 CC-Switch 检测站点可用性失败，是不是站点 API 有问题？</summary>
+            <div class="answer">不一定。常见原因是 Base URL 填错、路径重复、检测接口不兼容、Key 未加 Bearer、Key 分组和客户端类型不匹配。建议先用站点 <span class="inline-code">使用 Key</span> 弹窗生成的配置导入，再用短请求验证。</div>
+          </details>
+          <details>
+            <summary>本站可以翻译或生成图像吗？</summary>
+            <div class="answer">翻译属于普通文本请求，只要模型可用即可。图像生成取决于站点是否开放图像模型、当前分组是否支持图像输出以及是否配置了图像计费。请在 <span class="inline-code">可用渠道</span> 中查看支持模型。</div>
+          </details>
+        </section>
+
+        <section class="section" id="network">
+          <h2>无法访问网站 / 无法访问 API 端点</h2>
+          <p>先判断是网页打不开，还是网页能打开但 API 请求失败。两者排查方向不同。</p>
+          <div class="code-card">
+            <div class="code-head">
+              <span>测试 API 连通性</span>
+              <button class="copy-btn" data-copy>复制</button>
+            </div>
+            <pre><code>curl -i "https://z30.top/v1/models" \
+  -H "Authorization: Bearer 替换为你的 Z30 AI Key"</code></pre>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>现象</th>
+                <th>可能原因</th>
+                <th>处理方式</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>网页打不开</td>
+                <td>本地 DNS、网络限制、站点维护、证书异常。</td>
+                <td>换网络、清 DNS、检查公告，必要时联系站点客服。</td>
+              </tr>
+              <tr>
+                <td>网页能打开，API 失败</td>
+                <td>Base URL、Key、分组、余额、客户端配置问题。</td>
+                <td>用上面的 curl 测试，核对 <span class="inline-code">API Keys</span> 页面生成的配置。</td>
+              </tr>
+              <tr>
+                <td>客户端一直重连</td>
+                <td>流式连接中断、代理干扰、模型响应过长。</td>
+                <td>关闭不稳定代理，缩短上下文，换分组或稍后重试。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section" id="status-codes">
+          <h2>Codex 客户端状态码 / 错误以及解决方案</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>状态码或提示</th>
+                <th>含义</th>
+                <th>解决方案</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Reconnecting... (1/5)</td>
+                <td>客户端流式连接断开并重试。</td>
+                <td>等待自动重连；如反复出现，缩短上下文、换网络或换分组。</td>
+              </tr>
+              <tr>
+                <td>400</td>
+                <td>请求参数错误、模型名不支持、客户端发送了上游不支持字段。</td>
+                <td>检查模型名，更新客户端，使用站点生成配置。</td>
+              </tr>
+              <tr>
+                <td>401 Unauthorized</td>
+                <td>API Key 错误、未带鉴权、Key 已删除或禁用。</td>
+                <td>重新复制 Key，确认请求头为 <span class="inline-code">Authorization: Bearer sk-...</span>。</td>
+              </tr>
+              <tr>
+                <td>403 Forbidden: insufficient_balance</td>
+                <td>余额不足或订阅额度不足。</td>
+                <td>充值、续费，或切换到仍有额度的 Key/分组。</td>
+              </tr>
+              <tr>
+                <td>404 Not Found</td>
+                <td>接口路径错误、Base URL 填错、重复拼接 <span class="inline-code">/v1</span>。</td>
+                <td>直接使用 <span class="inline-code">使用 Key</span> 弹窗生成的 URL。</td>
+              </tr>
+              <tr>
+                <td>413 Request Entity Too Large</td>
+                <td>请求体太大，文件或上下文超限。</td>
+                <td>减少文件、缩短对话、分批处理任务。</td>
+              </tr>
+              <tr>
+                <td>418 I'm a Teapot</td>
+                <td>站点或上游的特殊拒绝状态，常见于策略拦截或分组不可用。</td>
+                <td>查看返回消息和用量记录，切换分组后重试，必要时联系管理员。</td>
+              </tr>
+              <tr>
+                <td>429 Too Many Request</td>
+                <td>请求过快、并发过高或 Key/分组限流。</td>
+                <td>降低并发，等待窗口重置，或升级额度。</td>
+              </tr>
+              <tr>
+                <td>502 Bad Gateway</td>
+                <td>上游账号或网关临时异常。</td>
+                <td>稍后重试，或切换其他分组。</td>
+              </tr>
+              <tr>
+                <td>503 Service Unavailable</td>
+                <td>当前分组暂无可用账号或服务维护。</td>
+                <td>查看渠道状态，切换到 PLUS 共享池或兜底池。</td>
+              </tr>
+              <tr>
+                <td>网络请求超时</td>
+                <td>本地网络、代理、站点网关或上游响应超时。</td>
+                <td>缩短请求、换网络、稍后重试，持续出现时反馈请求时间和分组。</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="section" id="codex-errors">
+          <h2>常见 Codex 报错信息</h2>
+          <details>
+            <summary>stream disconnected before completion: Incomplete response returned, reason: max_output_tokens</summary>
+            <div class="answer">模型输出达到最大输出长度，流被截断。请让 Codex 分步骤处理、减少一次性输出、要求先给概要再继续，或新开一轮让它从上次位置续写。</div>
+          </details>
+          <details>
+            <summary>Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying.</summary>
+            <div class="answer">上下文窗口满了。请新开会话、清理无关历史、减少粘贴的大文件内容，或把任务拆成多个较小问题。</div>
+          </details>
+          <details>
+            <summary>Selected model is at capacity. Please try a different model.</summary>
+            <div class="answer">所选模型当前容量不足。等待几分钟重试，或切换其他模型、其他分组、兜底池。</div>
+          </details>
+        </section>
+
+      </article>
+    </main>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-copy]").forEach(function (button) {
+      button.addEventListener("click", async function () {
+        var card = button.closest(".code-card");
+        var code = card ? card.querySelector("code") : null;
+        if (!code) return;
+        var text = code.innerText;
+        try {
+          await navigator.clipboard.writeText(text);
+          var old = button.textContent;
+          button.textContent = "已复制";
+          setTimeout(function () {
+            button.textContent = old;
+          }, 1200);
+        } catch (error) {
+          var range = document.createRange();
+          range.selectNodeContents(code);
+          var selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = "请手动复制";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
