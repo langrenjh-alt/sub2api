@@ -101,12 +101,12 @@ export interface User {
 }
 
 export interface AdminUser extends User {
-  // 管理员备注（普通用户接口不返回）
+  // 管理員備註（普通使用者介面不返回）
   notes: string
   last_used_at?: string | null
-  // 用户专属分组倍率配置 (group_id -> rate_multiplier)
+  // 使用者專屬分組倍率配置 (group_id -> rate_multiplier)
   group_rates?: Record<number, number>
-  // 当前并发数（仅管理员列表接口返回）
+  // 當前並行數（僅管理員列表介面返回）
   current_concurrency?: number
 }
 
@@ -142,7 +142,7 @@ export interface UserAffiliateDetail {
   aff_quota: number
   aff_frozen_quota: number
   aff_history_quota: number
-  /** 当前用户作为邀请人时实际生效的返利比例（专属覆盖全局）。0-100。 */
+  /** 當前使用者作為邀請人時實際生效的返利比例（專屬覆蓋全域性）。0-100。 */
   effective_rebate_rate_percent: number
   invitees: AffiliateInvitee[]
 }
@@ -511,18 +511,18 @@ export interface Group {
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
-  // 图片生成计费配置
+  // 圖片生成計費配置
   allow_image_generation: boolean
   image_rate_independent: boolean
   image_rate_multiplier: number
   image_price_1k: number | null
   image_price_2k: number | null
   image_price_4k: number | null
-  // Claude Code 客户端限制
+  // Claude Code 客戶端限制
   claude_code_only: boolean
   fallback_group_id: number | null
   fallback_group_id_on_invalid_request: number | null
-  // OpenAI Messages 调度开关（用户侧需要此字段判断是否展示 Claude Code 教程）
+  // OpenAI Messages 排程開關（使用者側需要此欄位判斷是否展示 Claude Code 教程）
   allow_messages_dispatch?: boolean
   default_mapped_model?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
@@ -533,27 +533,27 @@ export interface Group {
 }
 
 export interface AdminGroup extends Group {
-  // 模型路由配置（仅管理员可见，内部信息）
+  // 模型路由配置（僅管理員可見，內部資訊）
   model_routing: Record<string, number[]> | null
   model_routing_enabled: boolean
 
-  // MCP XML 协议注入（仅 antigravity 平台使用）
+  // MCP XML 協議注入（僅 antigravity 平台使用）
   mcp_xml_inject: boolean
 
-  // 支持的模型系列（仅 antigravity 平台使用）
+  // 支援的模型系列（僅 antigravity 平台使用）
   supported_model_scopes?: string[]
 
-  // 分组下账号数量（仅管理员可见）
+  // 分組下帳號數量（僅管理員可見）
   account_count?: number
   active_account_count?: number
   rate_limited_account_count?: number
 
-  // OpenAI Messages 调度配置（仅 openai 平台使用）
+  // OpenAI Messages 排程配置（僅 openai 平台使用）
   default_mapped_model?: string
   messages_dispatch_model_config?: OpenAIMessagesDispatchModelConfig
   models_list_config?: ModelsListConfig
 
-  // 分组排序
+  // 分組排序
   sort_order: number
 }
 
@@ -650,7 +650,7 @@ export interface CreateGroupRequest {
   rpm_limit?: number
   require_oauth_only?: boolean
   require_privacy_set?: boolean
-  // 从指定分组复制账号
+  // 從指定分組複製帳號
   copy_accounts_from_group_ids?: number[]
 }
 
@@ -823,10 +823,10 @@ export interface Account {
   notes?: string | null
   platform: AccountPlatform
   type: AccountType
-  // 后端响应里 credentials 已脱敏：access_token / refresh_token / id_token /
+  // 後端響應裡 credentials 已脫敏：access_token / refresh_token / id_token /
   // api_key / session_key / cookie / aws_secret_access_key / aws_session_token /
-  // service_account_json / service_account / private_key 不会出现，
-  // 改为通过 credentials_status.has_<key> 暴露存在性。
+  // service_account_json / service_account / private_key 不會出現，
+  // 改為通過 credentials_status.has_<key> 暴露存在性。
   credentials?: Record<string, unknown>
   credentials_status?: Record<string, boolean>
   // Extra fields including Codex usage, OpenAI compact capability, and model-level rate limits.
@@ -866,37 +866,37 @@ export interface Account {
   session_window_end: string | null
   session_window_status: 'allowed' | 'allowed_warning' | 'rejected' | null
 
-  // 5h窗口费用控制（仅 Anthropic OAuth/SetupToken 账号有效）
+  // 5h視窗費用控制（僅 Anthropic OAuth/SetupToken 帳號有效）
   window_cost_limit?: number | null
   window_cost_sticky_reserve?: number | null
 
-  // 会话数量控制（仅 Anthropic OAuth/SetupToken 账号有效）
+  // 會話數量控制（僅 Anthropic OAuth/SetupToken 帳號有效）
   max_sessions?: number | null
   session_idle_timeout_minutes?: number | null
 
-  // RPM 限制（仅 Anthropic OAuth/SetupToken 账号有效）
+  // RPM 限制（僅 Anthropic OAuth/SetupToken 帳號有效）
   base_rpm?: number | null
   rpm_strategy?: string | null
   rpm_sticky_buffer?: number | null
   user_msg_queue_mode?: string | null  // "serialize" | "throttle" | null
 
-  // TLS指纹伪装（仅 Anthropic OAuth/SetupToken 账号有效）
+  // TLS指紋偽裝（僅 Anthropic OAuth/SetupToken 帳號有效）
   enable_tls_fingerprint?: boolean | null
   tls_fingerprint_profile_id?: number | null
 
-  // 会话ID伪装（仅 Anthropic OAuth/SetupToken 账号有效）
-  // 启用后将在15分钟内固定 metadata.user_id 中的 session ID
+  // 會話ID偽裝（僅 Anthropic OAuth/SetupToken 帳號有效）
+  // 啟用後將在15分鐘內固定 metadata.user_id 中的 session ID
   session_id_masking_enabled?: boolean | null
 
-  // 缓存 TTL 强制替换（仅 Anthropic OAuth/SetupToken 账号有效）
+  // 快取 TTL 強制替換（僅 Anthropic OAuth/SetupToken 帳號有效）
   cache_ttl_override_enabled?: boolean | null
   cache_ttl_override_target?: string | null
 
-  // 自定义 Base URL 中继转发（仅 Anthropic OAuth/SetupToken 账号有效）
+  // 自定義 Base URL 中繼轉發（僅 Anthropic OAuth/SetupToken 帳號有效）
   custom_base_url_enabled?: boolean | null
   custom_base_url?: string | null
 
-  // API Key 账号配额限制
+  // API Key 帳號配額限制
   quota_limit?: number | null
   quota_used?: number | null
   quota_daily_limit?: number | null
@@ -904,7 +904,7 @@ export interface Account {
   quota_weekly_limit?: number | null
   quota_weekly_used?: number | null
 
-  // 配额固定时间重置配置
+  // 配額固定時間重置配置
   quota_daily_reset_mode?: 'rolling' | 'fixed' | null
   quota_daily_reset_hour?: number | null
   quota_weekly_reset_mode?: 'rolling' | 'fixed' | null
@@ -914,10 +914,10 @@ export interface Account {
   quota_daily_reset_at?: string | null
   quota_weekly_reset_at?: string | null
 
-  // 运行时状态（仅当启用对应限制时返回）
-  current_window_cost?: number | null // 当前窗口费用
-  active_sessions?: number | null // 当前活跃会话数
-  current_rpm?: number | null // 当前分钟 RPM 计数
+  // 執行時狀態（僅當啟用對應限制時返回）
+  current_window_cost?: number | null // 當前視窗費用
+  active_sessions?: number | null // 當前活躍會話數
+  current_rpm?: number | null // 當前分鐘 RPM 計數
 }
 
 // Account Usage types
@@ -933,15 +933,15 @@ export interface UsageProgress {
   utilization: number // Percentage (0-100+, 100 = 100%)
   resets_at: string | null
   remaining_seconds: number
-  window_stats?: WindowStats | null // 窗口期统计（从窗口开始到当前的使用量）
+  window_stats?: WindowStats | null // 視窗期統計（從視窗開始到當前的使用量）
   used_requests?: number
   limit_requests?: number
 }
 
-// Antigravity 单个模型的配额信息
+// Antigravity 單個模型的配額資訊
 export interface AntigravityModelQuota {
   utilization: number // 使用率 0-100
-  reset_time: string  // 重置时间 ISO8601
+  reset_time: string  // 重置時間 ISO8601
 }
 
 export interface AccountUsageInfo {
@@ -962,21 +962,21 @@ export interface AccountUsageInfo {
     amount?: number
     minimum_balance?: number
   }> | null
-  // Antigravity 403 forbidden 状态
+  // Antigravity 403 forbidden 狀態
   is_forbidden?: boolean
   forbidden_reason?: string
   forbidden_type?: string   // "validation" | "violation" | "forbidden"
-  validation_url?: string   // 验证/申诉链接
+  validation_url?: string   // 驗證/申訴連結
 
-  // 状态标记（后端自动推导）
-  needs_verify?: boolean    // 需要人工验证（forbidden_type=validation）
-  is_banned?: boolean       // 账号被封（forbidden_type=violation）
-  needs_reauth?: boolean    // token 失效需重新授权（401）
+  // 狀態標記（後端自動推導）
+  needs_verify?: boolean    // 需要人工驗證（forbidden_type=validation）
+  is_banned?: boolean       // 帳號被封（forbidden_type=violation）
+  needs_reauth?: boolean    // token 失效需重新授權（401）
 
-  // 机器可读错误码：forbidden / unauthenticated / rate_limited / network_error
+  // 機器可讀錯誤碼：forbidden / unauthenticated / rate_limited / network_error
   error_code?: string
 
-  error?: string            // usage 获取失败时的错误信息
+  error?: string            // usage 獲取失敗時的錯誤資訊
 }
 
 // OpenAI Codex usage snapshot (from response headers)
@@ -1085,7 +1085,7 @@ export interface CreateProxyRequest {
   port: number
   username?: string | null
   password?: string | null
-  expires_at?: number | null   // unix 秒；null/0 = 永不过期
+  expires_at?: number | null   // unix 秒；null/0 = 永不過期
   fallback_mode?: 'none' | 'proxy' | 'direct'
   backup_proxy_id?: number | null
   expiry_warn_days?: number
@@ -1099,7 +1099,7 @@ export interface UpdateProxyRequest {
   username?: string | null
   password?: string | null
   status?: 'active' | 'inactive'
-  expires_at?: number | null   // unix 秒；null/0 = 永不过期
+  expires_at?: number | null   // unix 秒；null/0 = 永不過期
   fallback_mode?: 'none' | 'proxy' | 'direct'
   backup_proxy_id?: number | null
   expiry_warn_days?: number
@@ -1244,7 +1244,7 @@ export interface UsageLog {
   duration_ms: number | null
   first_token_ms: number | null
 
-  // 图片生成字段
+  // 圖片生成欄位
   image_count: number
   image_size: string | null
   image_input_size: string | null
@@ -1260,7 +1260,7 @@ export interface UsageLog {
   // Cache TTL Override
   cache_ttl_overridden: boolean
 
-  // 计费模式
+  // 計費模式
   billing_mode?: string | null
 
   created_at: string
@@ -1280,19 +1280,19 @@ export interface AdminUsageLog extends UsageLog {
   upstream_model?: string | null
   model_mapping_chain?: string | null
 
-  // 账号计费倍率（仅管理员可见）
+  // 帳號計費倍率（僅管理員可見）
   account_rate_multiplier?: number | null
-  // 自定义定价规则计算的账号统计费用（nil 时使用 total_cost * multiplier）
+  // 自定義定價規則計算的帳號統計費用（nil 時使用 total_cost * multiplier）
   account_stats_cost?: number | null
 
-  // 渠道 ID 和计费等级（仅管理员可见）
+  // 渠道 ID 和計費等級（僅管理員可見）
   channel_id?: number | null
   billing_tier?: string | null
 
-  // 用户请求 IP（仅管理员可见）
+  // 使用者請求 IP（僅管理員可見）
   ip_address?: string | null
 
-  // 最小账号信息（仅管理员接口返回）
+  // 最小帳號資訊（僅管理員介面返回）
   account?: UsageLogAccountSummary
 }
 
@@ -1336,18 +1336,18 @@ export interface RedeemCode {
   expires_at?: string | null
   updated_at?: string
   notes?: string
-  group_id?: number | null // 订阅类型专用
-  validity_days?: number // 订阅类型专用
+  group_id?: number | null // 訂閱型別專用
+  validity_days?: number // 訂閱型別專用
   user?: User
-  group?: Group // 关联的分组
+  group?: Group // 關聯的分組
 }
 
 export interface GenerateRedeemCodesRequest {
   count: number
   type: RedeemCodeType
   value: number
-  group_id?: number | null // 订阅类型专用
-  validity_days?: number // 订阅类型专用
+  group_id?: number | null // 訂閱型別專用
+  validity_days?: number // 訂閱型別專用
   expires_at?: string | null
   expires_in_days?: number
 }
@@ -1371,54 +1371,54 @@ export interface RedeemCodeRequest {
 // ==================== Dashboard & Statistics ====================
 
 export interface DashboardStats {
-  // 用户统计
+  // 使用者統計
   total_users: number
-  today_new_users: number // 今日新增用户数
-  active_users: number // 今日有请求的用户数
-  hourly_active_users: number // 当前小时活跃用户数（UTC）
-  stats_updated_at: string // 统计更新时间（UTC RFC3339）
-  stats_stale: boolean // 统计是否过期
+  today_new_users: number // 今日新增使用者數
+  active_users: number // 今日有請求的使用者數
+  hourly_active_users: number // 當前小時活躍使用者數（UTC）
+  stats_updated_at: string // 統計更新時間（UTC RFC3339）
+  stats_stale: boolean // 統計是否過期
 
-  // API Key 统计
+  // API Key 統計
   total_api_keys: number
-  active_api_keys: number // 状态为 active 的 API Key 数
+  active_api_keys: number // 狀態為 active 的 API Key 數
 
-  // 账户统计
+  // 帳戶統計
   total_accounts: number
-  normal_accounts: number // 正常账户数
-  error_accounts: number // 异常账户数
-  ratelimit_accounts: number // 限流账户数
-  overload_accounts: number // 过载账户数
+  normal_accounts: number // 正常帳戶數
+  error_accounts: number // 異常帳戶數
+  ratelimit_accounts: number // 限流帳戶數
+  overload_accounts: number // 過載帳戶數
 
-  // 累计 Token 使用统计
+  // 累計 Token 使用統計
   total_requests: number
   total_input_tokens: number
   total_output_tokens: number
   total_cache_creation_tokens: number
   total_cache_read_tokens: number
   total_tokens: number
-  total_cost: number // 累计标准计费
-  total_actual_cost: number // 累计实际扣除
-  total_account_cost: number // 累计账号成本
+  total_cost: number // 累計標準計費
+  total_actual_cost: number // 累計實際扣除
+  total_account_cost: number // 累計帳號成本
 
-  // 今日 Token 使用统计
+  // 今日 Token 使用統計
   today_requests: number
   today_input_tokens: number
   today_output_tokens: number
   today_cache_creation_tokens: number
   today_cache_read_tokens: number
   today_tokens: number
-  today_cost: number // 今日标准计费
-  today_actual_cost: number // 今日实际扣除
-  today_account_cost: number // 今日账号成本
+  today_cost: number // 今日標準計費
+  today_actual_cost: number // 今日實際扣除
+  today_account_cost: number // 今日帳號成本
 
-  // 系统运行统计
-  average_duration_ms: number // 平均响应时间
-  uptime: number // 系统运行时间(秒)
+  // 系統執行統計
+  average_duration_ms: number // 平均響應時間
+  uptime: number // 系統執行時間(秒)
 
-  // 性能指标
-  rpm: number // 近5分钟平均每分钟请求数
-  tpm: number // 近5分钟平均每分钟Token数
+  // 效能指標
+  rpm: number // 近5分鐘平均每分鐘請求數
+  tpm: number // 近5分鐘平均每分鐘Token數
 }
 
 export interface UsageStatsResponse {
@@ -1430,8 +1430,8 @@ export interface UsageStatsResponse {
   total_cache_read_tokens: number
   total_cache_creation_tokens: number
   total_tokens: number
-  total_cost: number // 标准计费
-  total_actual_cost: number // 实际扣除
+  total_cost: number // 標準計費
+  total_actual_cost: number // 實際扣除
   average_duration_ms: number
   models?: Record<string, number>
 }
@@ -1446,8 +1446,8 @@ export interface TrendDataPoint {
   cache_creation_tokens: number
   cache_read_tokens: number
   total_tokens: number
-  cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  cost: number // 標準計費
+  actual_cost: number // 實際扣除
 }
 
 export interface ModelStat {
@@ -1458,9 +1458,9 @@ export interface ModelStat {
   cache_creation_tokens: number
   cache_read_tokens: number
   total_tokens: number
-  cost: number // 标准计费
-  actual_cost: number // 实际扣除
-  account_cost: number // 账号成本
+  cost: number // 標準計費
+  actual_cost: number // 實際扣除
+  account_cost: number // 帳號成本
 }
 
 export interface EndpointStat {
@@ -1476,9 +1476,9 @@ export interface GroupStat {
   group_name: string
   requests: number
   total_tokens: number
-  cost: number // 标准计费
-  actual_cost: number // 实际扣除
-  account_cost: number // 账号成本
+  cost: number // 標準計費
+  actual_cost: number // 實際扣除
+  account_cost: number // 帳號成本
 }
 
 export interface UserBreakdownItem {
@@ -1498,8 +1498,8 @@ export interface UserUsageTrendPoint {
   username: string
   requests: number
   tokens: number
-  cost: number // 标准计费
-  actual_cost: number // 实际扣除
+  cost: number // 標準計費
+  actual_cost: number // 實際扣除
 }
 
 export interface UserSpendingRankingItem {
@@ -1539,8 +1539,8 @@ export interface UpdateUserRequest {
   concurrency?: number
   status?: 'active' | 'disabled'
   allowed_groups?: number[] | null
-  // 用户专属分组倍率配置 (group_id -> rate_multiplier | null)
-  // null 表示删除该分组的专属倍率
+  // 使用者專屬分組倍率配置 (group_id -> rate_multiplier | null)
+  // null 表示刪除該分組的專屬倍率
   group_rates?: Record<number, number | null>
 }
 

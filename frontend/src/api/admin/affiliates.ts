@@ -1,6 +1,6 @@
 /**
  * Admin Affiliate API endpoints
- * Manage per-user affiliate (邀请返利) configurations:
+ * Manage per-user affiliate (邀請返利) configurations:
  * exclusive invite codes (overrides aff_code) and exclusive rebate rates.
  */
 

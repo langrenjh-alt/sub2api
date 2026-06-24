@@ -9,7 +9,7 @@
     <!-- Logo/Brand -->
     <div class="sidebar-header" :class="{ 'sidebar-header-collapsed': sidebarCollapsed }">
       <!-- Custom Logo or Default Logo -->
-      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-black text-white shadow-none dark:bg-white dark:text-black">
+      <div class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-glow">
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
       </div>
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
@@ -140,7 +140,7 @@
     </nav>
 
     <!-- Bottom Section -->
-  <div class="mt-auto border-t border-black/10 p-3 dark:border-white/10">
+    <div class="mt-auto border-t border-gray-100 p-3 dark:border-dark-800">
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
@@ -173,7 +173,7 @@
   <transition name="fade">
     <div
       v-if="mobileOpen"
-      class="fixed inset-0 z-30 bg-black/35 backdrop-blur-sm lg:hidden"
+      class="fixed inset-0 z-30 bg-black/50 lg:hidden"
       @click="closeMobile"
     ></div>
   </transition>
@@ -201,16 +201,16 @@ interface NavItem {
    */
   expandOnly?: boolean
   /**
-   * 可选的功能开关 getter。返回 false 时菜单项被隐藏；返回 undefined/true 时显示。
-   * 宽容策略（undefined → 显示）避免 public settings 未加载完成时菜单闪烁消失。
-   * Getter 里访问的 reactive 来源（store / composable）会被 computed 自动追踪，
-   * 开关切换时菜单自动更新。
+   * 可選的功能開關 getter。返回 false 時選單項被隱藏；返回 undefined/true 時顯示。
+   * 寬容策略（undefined → 顯示）避免 public settings 未載入完成時選單閃爍消失。
+   * Getter 裡訪問的 reactive 來源（store / composable）會被 computed 自動追蹤，
+   * 開關切換時選單自動更新。
    */
   featureFlag?: () => boolean | undefined
 }
 
-// applyFeatureFlags 递归过滤掉 featureFlag() === false 的节点（含子节点）。
-// 使用 `!== false` 宽容语义：undefined（设置未加载）或 true 都视为显示。
+// applyFeatureFlags 遞迴過濾掉 featureFlag() === false 的節點（含子節點）。
+// 使用 `!== false` 寬容語義：undefined（設定未載入）或 true 都視為顯示。
 function applyFeatureFlags(items: NavItem[]): NavItem[] {
   const out: NavItem[] = []
   for (const item of items) {
@@ -654,11 +654,11 @@ const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 
-// buildSelfNavItems 构造用户自己的导航项（用户端主菜单和管理员的"我的账户"子菜单共享这组声明）。
-// withDashboard=true 时包含仪表盘（用户端），false 时不含（管理员的个人区已经有独立仪表盘入口）。
+// buildSelfNavItems 構造使用者自己的導航項（使用者端主選單和管理員的"我的帳戶"子選單共享這組宣告）。
+// withDashboard=true 時包含儀表盤（使用者端），false 時不含（管理員的個人區已經有獨立儀表盤入口）。
 //
-// 条目顺序：密钥 → 用量 → 可用渠道 → 渠道状态 → 订阅/支付 → 兑换/资料。
-// 可用渠道紧挨渠道状态之上，让用户"先看自己能用什么、再看对应状态"。
+// 條目順序：金鑰 → 用量 → 可用渠道 → 渠道狀態 → 訂閱/支付 → 兌換/資料。
+// 可用渠道緊挨渠道狀態之上，讓使用者"先看自己能用什麼、再看對應狀態"。
 function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   const items: NavItem[] = []
   if (withDashboard) {
@@ -685,7 +685,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
   return items
 }
 
-// finalizeNav 合并三重过滤：featureFlag 过滤 + simple 模式过滤。
+// finalizeNav 合併三重過濾：featureFlag 過濾 + simple 模式過濾。
 function finalizeNav(items: NavItem[]): NavItem[] {
   const visible = applyFeatureFlags(items)
   return authStore.isSimpleMode ? visible.filter(item => !item.hideInSimpleMode) : visible
@@ -769,7 +769,7 @@ const adminNavItems = computed((): NavItem[] => {
 
   const visible = applyFeatureFlags(baseItems)
 
-  // 简单模式下，在系统设置前插入 API密钥
+  // 簡單模式下，在系統設定前插入 API金鑰
   if (authStore.isSimpleMode) {
     const filtered = visible.filter(item => !item.hideInSimpleMode)
     filtered.push({ path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon })

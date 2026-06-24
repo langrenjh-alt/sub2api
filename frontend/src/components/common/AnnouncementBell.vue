@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- 铃铛按钮 -->
+    <!-- 鈴鐺按鈕 -->
     <button
       @click="openModal"
       class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 hover:scale-105 dark:text-gray-400 dark:hover:bg-dark-800"
@@ -8,7 +8,7 @@
       :aria-label="t('announcements.title')"
     >
       <Icon name="bell" size="md" />
-      <!-- 未读红点 -->
+      <!-- 未讀紅點 -->
       <span
         v-if="unreadCount > 0"
         class="absolute right-1 top-1 flex h-2 w-2"
@@ -178,7 +178,7 @@
       </Transition>
     </Teleport>
 
-    <!-- 公告详情 Modal -->
+    <!-- 公告詳情 Modal -->
     <Teleport to="body">
       <Transition name="modal-fade">
         <div

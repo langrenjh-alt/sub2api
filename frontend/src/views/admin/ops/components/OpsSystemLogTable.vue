@@ -148,7 +148,7 @@ const formatSystemLogDetail = (row: OpsSystemLog) => {
   const err = getExtraString(extra, 'err') || getExtraString(extra, 'error')
   if (err) parts.push(`error=${err}`)
 
-  // 用空格拼接，交给 CSS 自动换行，尽量“填满再换行”。
+  // 用空格拼接，交給 CSS 自動換行，儘量“填滿再換行”。
   return parts.join('  ')
 }
 
@@ -197,7 +197,7 @@ const fetchLogs = async () => {
     total.value = res.total || 0
   } catch (err: any) {
     console.error('[OpsSystemLogTable] Failed to fetch logs', err)
-    appStore.showError(err?.response?.data?.detail || '系统日志加载失败')
+    appStore.showError(err?.response?.data?.detail || '系統日誌載入失敗')
   } finally {
     loading.value = false
   }
@@ -207,7 +207,7 @@ const fetchHealth = async () => {
   try {
     health.value = await opsAPI.getSystemLogSinkHealth()
   } catch {
-    // 忽略健康数据读取失败，不影响主流程。
+    // 忽略健康資料讀取失敗，不影響主流程。
   }
 }
 
@@ -240,17 +240,17 @@ const saveRuntimeConfig = async () => {
     runtimeConfig.caller = saved.caller
     runtimeConfig.stacktrace_level = saved.stacktrace_level
     runtimeConfig.retention_days = saved.retention_days
-    appStore.showSuccess('日志运行时配置已生效')
+    appStore.showSuccess('日誌執行時配置已生效')
   } catch (err: any) {
     console.error('[OpsSystemLogTable] Failed to save runtime log config', err)
-    appStore.showError(err?.response?.data?.detail || '保存日志配置失败')
+    appStore.showError(err?.response?.data?.detail || '儲存日誌配置失敗')
   } finally {
     runtimeSaving.value = false
   }
 }
 
 const resetRuntimeConfig = async () => {
-  const ok = window.confirm('确认回滚为启动配置（env/yaml）并立即生效？')
+  const ok = window.confirm('確認回滾為啟動配置（env/yaml）並立即生效？')
   if (!ok) return
 
   runtimeSaving.value = true
@@ -263,18 +263,18 @@ const resetRuntimeConfig = async () => {
     runtimeConfig.caller = saved.caller
     runtimeConfig.stacktrace_level = saved.stacktrace_level
     runtimeConfig.retention_days = saved.retention_days
-    appStore.showSuccess('已回滚到启动日志配置')
+    appStore.showSuccess('已回滾到啟動日誌配置')
     await fetchHealth()
   } catch (err: any) {
     console.error('[OpsSystemLogTable] Failed to reset runtime log config', err)
-    appStore.showError(err?.response?.data?.detail || '回滚日志配置失败')
+    appStore.showError(err?.response?.data?.detail || '回滾日誌配置失敗')
   } finally {
     runtimeSaving.value = false
   }
 }
 
 const cleanupCurrentFilter = async () => {
-  const ok = window.confirm('确认按当前筛选条件清理系统日志？该操作不可撤销。')
+  const ok = window.confirm('確認按當前篩選條件清理系統日誌？該操作不可撤銷。')
   if (!ok) return
   try {
     const payload = {
@@ -291,12 +291,12 @@ const cleanupCurrentFilter = async () => {
       q: filters.q.trim() || undefined
     }
     const res = await opsAPI.cleanupSystemLogs(payload)
-    appStore.showSuccess(`清理完成，删除 ${res.deleted || 0} 条日志`)
+    appStore.showSuccess(`清理完成，刪除 ${res.deleted || 0} 條日誌`)
     page.value = 1
     await Promise.all([fetchLogs(), fetchHealth()])
   } catch (err: any) {
     console.error('[OpsSystemLogTable] Failed to cleanup logs', err)
-    appStore.showError(err?.response?.data?.detail || '清理系统日志失败')
+    appStore.showError(err?.response?.data?.detail || '清理系統日誌失敗')
   }
 }
 
@@ -360,41 +360,41 @@ onMounted(async () => {
   <section class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-900/60">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <h3 class="text-sm font-bold text-gray-900 dark:text-white">系统日志</h3>
-        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">默认按最新时间倒序，支持筛选搜索与按条件清理。</p>
+        <h3 class="text-sm font-bold text-gray-900 dark:text-white">系統日誌</h3>
+        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">預設按最新時間倒序，支援篩選搜尋與按條件清理。</p>
       </div>
       <div class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-700 dark:bg-dark-700 dark:text-gray-200">队列 {{ health.queue_depth }}/{{ health.queue_capacity }}</span>
-        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-700 dark:bg-dark-700 dark:text-gray-200">写入 {{ health.written_count }}</span>
-        <span class="rounded-md bg-amber-100 px-2 py-1 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">丢弃 {{ health.dropped_count }}</span>
-        <span class="rounded-md bg-red-100 px-2 py-1 text-red-700 dark:bg-red-900/30 dark:text-red-300">失败 {{ health.write_failed_count }}</span>
+        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-700 dark:bg-dark-700 dark:text-gray-200">佇列 {{ health.queue_depth }}/{{ health.queue_capacity }}</span>
+        <span class="rounded-md bg-gray-100 px-2 py-1 text-gray-700 dark:bg-dark-700 dark:text-gray-200">寫入 {{ health.written_count }}</span>
+        <span class="rounded-md bg-amber-100 px-2 py-1 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">丟棄 {{ health.dropped_count }}</span>
+        <span class="rounded-md bg-red-100 px-2 py-1 text-red-700 dark:bg-red-900/30 dark:text-red-300">失敗 {{ health.write_failed_count }}</span>
       </div>
     </div>
 
     <div class="mb-4 rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-dark-700 dark:bg-dark-800/70">
       <div class="mb-2 flex items-center justify-between">
-        <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">运行时日志配置（实时生效）</div>
-        <span v-if="runtimeLoading" class="text-xs text-gray-500">加载中...</span>
+        <div class="text-xs font-semibold text-gray-700 dark:text-gray-200">執行時日誌配置（即時生效）</div>
+        <span v-if="runtimeLoading" class="text-xs text-gray-500">載入中...</span>
       </div>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
         <label class="text-xs text-gray-600 dark:text-gray-300">
-          级别
+          級別
           <Select v-model="runtimeConfig.level" class="mt-1" :options="runtimeLevelOptions" />
         </label>
         <label class="text-xs text-gray-600 dark:text-gray-300">
-          堆栈阈值
+          堆疊閾值
           <Select v-model="runtimeConfig.stacktrace_level" class="mt-1" :options="stacktraceLevelOptions" />
         </label>
         <label class="text-xs text-gray-600 dark:text-gray-300">
-          采样初始
+          取樣初始
           <input v-model.number="runtimeConfig.sampling_initial" type="number" min="1" class="input mt-1" />
         </label>
         <label class="text-xs text-gray-600 dark:text-gray-300">
-          采样后续
+          取樣後續
           <input v-model.number="runtimeConfig.sampling_thereafter" type="number" min="1" class="input mt-1" />
         </label>
         <label class="text-xs text-gray-600 dark:text-gray-300">
-          保留天数
+          保留天數
           <input v-model.number="runtimeConfig.retention_days" type="number" min="1" max="3650" class="input mt-1" />
         </label>
         <div class="md:col-span-2 xl:col-span-6">
@@ -411,37 +411,37 @@ onMounted(async () => {
             </div>
             <div class="flex flex-wrap items-center gap-2 lg:justify-end">
               <button type="button" class="btn btn-primary btn-sm" :disabled="runtimeSaving" @click="saveRuntimeConfig">
-                {{ runtimeSaving ? '保存中...' : '保存并生效' }}
+                {{ runtimeSaving ? '儲存中...' : '儲存並生效' }}
               </button>
               <button type="button" class="btn btn-secondary btn-sm" :disabled="runtimeSaving" @click="resetRuntimeConfig">
-                回滚默认值
+                回滾預設值
               </button>
             </div>
           </div>
         </div>
       </div>
-      <p v-if="health.last_error" class="mt-2 text-xs text-red-600 dark:text-red-400">最近写入错误：{{ health.last_error }}</p>
+      <p v-if="health.last_error" class="mt-2 text-xs text-red-600 dark:text-red-400">最近寫入錯誤：{{ health.last_error }}</p>
     </div>
 
     <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        时间范围
+        時間範圍
         <Select v-model="filters.time_range" class="mt-1" :options="timeRangeOptions" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        开始时间（可选）
+        開始時間（可選）
         <input v-model="filters.start_time" type="datetime-local" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        结束时间（可选）
+        結束時間（可選）
         <input v-model="filters.end_time" type="datetime-local" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        级别
+        級別
         <Select v-model="filters.level" class="mt-1" :options="filterLevelOptions" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        组件
+        元件
         <input v-model="filters.component" type="text" class="input mt-1" placeholder="如 http.access" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
@@ -469,28 +469,28 @@ onMounted(async () => {
         <input v-model="filters.model" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        关键词
-        <input v-model="filters.q" type="text" class="input mt-1" placeholder="消息/request_id" />
+        關鍵詞
+        <input v-model="filters.q" type="text" class="input mt-1" placeholder="訊息/request_id" />
       </label>
     </div>
 
     <div class="mb-3 flex flex-wrap gap-2">
-      <button type="button" class="btn btn-primary btn-sm" @click="applyFilters">查询</button>
+      <button type="button" class="btn btn-primary btn-sm" @click="applyFilters">查詢</button>
       <button type="button" class="btn btn-secondary btn-sm" @click="resetFilters">重置</button>
-      <button type="button" class="btn btn-danger btn-sm" @click="cleanupCurrentFilter">按当前筛选清理</button>
-      <button type="button" class="btn btn-secondary btn-sm" @click="fetchHealth">刷新健康指标</button>
+      <button type="button" class="btn btn-danger btn-sm" @click="cleanupCurrentFilter">按當前篩選清理</button>
+      <button type="button" class="btn btn-secondary btn-sm" @click="fetchHealth">重新整理健康指標</button>
     </div>
 
     <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
-      <div v-if="loading" class="px-4 py-8 text-center text-sm text-gray-500">加载中...</div>
-      <div v-else-if="!hasData" class="px-4 py-8 text-center text-sm text-gray-500">暂无系统日志</div>
+      <div v-if="loading" class="px-4 py-8 text-center text-sm text-gray-500">載入中...</div>
+      <div v-else-if="!hasData" class="px-4 py-8 text-center text-sm text-gray-500">暫無系統日誌</div>
       <div v-else class="overflow-auto">
         <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-dark-700">
           <thead class="bg-gray-50 dark:bg-dark-900">
             <tr>
-              <th class="w-[170px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">时间</th>
-              <th class="w-[80px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">级别</th>
-              <th class="px-3 py-2 text-left text-[11px] font-semibold text-gray-500">日志详细信息</th>
+              <th class="w-[170px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">時間</th>
+              <th class="w-[80px] px-3 py-2 text-left text-[11px] font-semibold text-gray-500">級別</th>
+              <th class="px-3 py-2 text-left text-[11px] font-semibold text-gray-500">日誌詳細資訊</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-dark-800">

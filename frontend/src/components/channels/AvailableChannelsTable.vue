@@ -25,8 +25,8 @@
           </td>
         </tr>
       </tbody>
-      <!-- 每个渠道一个 tbody：首行 td rowspan 渠道名，后续行只渲染其余三列。
-           tbody 之间强分隔线表达"渠道边界"，tbody 内部用淡分隔线区分平台。 -->
+      <!-- 每個渠道一個 tbody：首行 td rowspan 渠道名，後續行只渲染其餘三列。
+           tbody 之間強分隔線表達"渠道邊界"，tbody 內部用淡分隔線區分平台。 -->
       <tbody
         v-else
         v-for="(channel, chIdx) in rows"
@@ -39,7 +39,7 @@
           class="transition-colors hover:bg-gray-50/40 dark:hover:bg-dark-800/40"
           :class="{ 'border-t border-gray-100/70 dark:border-dark-700/50': secIdx > 0 }"
         >
-          <!-- 渠道名：只在第一行渲染并用 rowspan 纵向合并 -->
+          <!-- 渠道名：只在第一行渲染並用 rowspan 縱向合併 -->
           <td
             v-if="secIdx === 0"
             :rowspan="channel.platforms.length"
@@ -48,7 +48,7 @@
             {{ channel.name }}
           </td>
 
-          <!-- 描述：独立一列，同样用 rowspan 纵向合并 -->
+          <!-- 描述：獨立一列，同樣用 rowspan 縱向合併 -->
           <td
             v-if="secIdx === 0"
             :rowspan="channel.platforms.length"
@@ -71,7 +71,7 @@
             </span>
           </td>
 
-          <!-- 分组：专属分组在前（紫色 shield 行），公开分组在后（灰色 globe 行）。 -->
+          <!-- 分組：專屬分組在前（紫色 shield 行），公開分組在後（灰色 globe 行）。 -->
           <td class="align-top px-4 py-3">
             <div class="flex flex-col gap-1.5">
               <div
@@ -122,7 +122,7 @@
             </div>
           </td>
 
-          <!-- 支持模型 -->
+          <!-- 支援模型 -->
           <td class="align-top px-4 py-3">
             <div class="flex flex-wrap gap-1">
               <SupportedModelChip
@@ -169,7 +169,7 @@ const props = defineProps<{
   noPricingLabel: string
   noModelsLabel: string
   emptyLabel: string
-  /** 用户专属倍率（group_id → multiplier）；无专属时由 GroupBadge 仅显示默认倍率。 */
+  /** 使用者專屬倍率（group_id → multiplier）；無專屬時由 GroupBadge 僅顯示預設倍率。 */
   userGroupRates: Record<number, number>
 }>()
 

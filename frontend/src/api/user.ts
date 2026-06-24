@@ -187,7 +187,7 @@ export async function transferAffiliateQuota(): Promise<AffiliateTransferRespons
 }
 
 /**
- * 获取当前用户的平台限额 + 用量。
+ * 獲取當前使用者的平台限額 + 用量。
  */
 export async function getMyPlatformQuotas(): Promise<PlatformQuotasResponse> {
   const { data } = await apiClient.get<PlatformQuotasResponse>('/user/platform-quotas')

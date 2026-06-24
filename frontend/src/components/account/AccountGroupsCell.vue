@@ -1,6 +1,6 @@
 <template>
   <div v-if="groups && groups.length > 0" class="relative max-w-56">
-    <!-- 分组容器：固定最大宽度，最多显示2行 -->
+    <!-- 分組容器：固定最大寬度，最多顯示2行 -->
     <div class="flex flex-wrap gap-1 max-h-14 overflow-hidden">
       <GroupBadge
         v-for="group in displayGroups"
@@ -12,7 +12,7 @@
         :show-rate="false"
         class="max-w-24"
       />
-      <!-- 更多数量徽章 -->
+      <!-- 更多數量徽章 -->
       <button
         v-if="hiddenCount > 0"
         ref="moreButtonRef"
@@ -23,7 +23,7 @@
       </button>
     </div>
 
-    <!-- Popover 显示完整列表 -->
+    <!-- Popover 顯示完整列表 -->
     <Teleport to="body">
       <Transition
         enter-active-class="transition duration-150 ease-out"
@@ -67,7 +67,7 @@
       </Transition>
     </Teleport>
 
-    <!-- 点击外部关闭 popover -->
+    <!-- 點選外部關閉 popover -->
     <div
       v-if="showPopover"
       class="fixed inset-0 z-40"
@@ -98,24 +98,24 @@ const moreButtonRef = ref<HTMLElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
 const showPopover = ref(false)
 
-// 显示的分组（最多显示 maxDisplay 个）
+// 顯示的分組（最多顯示 maxDisplay 個）
 const displayGroups = computed(() => {
   if (!props.groups) return []
   if (props.groups.length <= props.maxDisplay) {
     return props.groups
   }
-  // 留一个位置给 +N 按钮
+  // 留一個位置給 +N 按鈕
   return props.groups.slice(0, props.maxDisplay - 1)
 })
 
-// 隐藏的数量
+// 隱藏的數量
 const hiddenCount = computed(() => {
   if (!props.groups) return 0
   if (props.groups.length <= props.maxDisplay) return 0
   return props.groups.length - (props.maxDisplay - 1)
 })
 
-// Popover 位置样式
+// Popover 位置樣式
 const popoverStyle = computed(() => {
   if (!moreButtonRef.value) return {}
   const rect = moreButtonRef.value.getBoundingClientRect()
@@ -125,12 +125,12 @@ const popoverStyle = computed(() => {
   let top = rect.bottom + 8
   let left = rect.left
 
-  // 如果下方空间不足，显示在上方
+  // 如果下方空間不足，顯示在上方
   if (top + 280 > viewportHeight) {
     top = Math.max(8, rect.top - 280)
   }
 
-  // 如果右侧空间不足，向左偏移
+  // 如果右側空間不足，向左偏移
   if (left + 384 > viewportWidth) {
     left = Math.max(8, viewportWidth - 392)
   }
@@ -141,7 +141,7 @@ const popoverStyle = computed(() => {
   }
 })
 
-// 关闭 popover 的键盘事件
+// 關閉 popover 的鍵盤事件
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     showPopover.value = false

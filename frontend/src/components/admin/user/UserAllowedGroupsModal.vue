@@ -1,7 +1,7 @@
 <template>
   <BaseDialog :show="show" :title="t('admin.users.groupConfig')" width="wide" @close="$emit('close')">
     <div v-if="user" class="space-y-6">
-      <!-- 用户信息头部 -->
+      <!-- 使用者資訊頭部 -->
       <div class="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary-50 to-primary-100 p-5 dark:from-primary-900/30 dark:to-primary-800/20">
         <div class="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm dark:bg-dark-700">
           <span class="text-2xl font-semibold text-primary-600 dark:text-primary-400">{{ user.email.charAt(0).toUpperCase() }}</span>
@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <!-- 加载状态 -->
+      <!-- 載入狀態 -->
       <div v-if="loading" class="flex justify-center py-12">
         <svg class="h-10 w-10 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -21,7 +21,7 @@
       </div>
 
       <div v-else class="space-y-6">
-        <!-- 专属分组区域 -->
+        <!-- 專屬分組區域 -->
         <div v-if="exclusiveGroups.length > 0">
           <div class="mb-3 flex items-center gap-2">
             <div class="h-1.5 w-1.5 rounded-full bg-purple-500"></div>
@@ -38,7 +38,7 @@
                 : 'border-gray-200 bg-white hover:border-gray-300 dark:border-dark-600 dark:bg-dark-800 dark:hover:border-dark-500'"
             >
               <div class="flex items-center gap-4">
-                <!-- 复选框 -->
+                <!-- 核取方塊 -->
                 <div class="flex-shrink-0">
                   <label class="relative flex h-6 w-6 cursor-pointer items-center justify-center">
                     <input
@@ -55,7 +55,7 @@
                   </label>
                 </div>
 
-                <!-- 分组信息 -->
+                <!-- 分組資訊 -->
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <span class="text-base font-semibold text-gray-900 dark:text-white">{{ config.groupName }}</span>
@@ -75,7 +75,7 @@
                   </div>
                 </div>
 
-                <!-- 专属倍率输入 -->
+                <!-- 專屬倍率輸入 -->
                 <div class="flex flex-shrink-0 items-center gap-3">
                   <label class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('admin.users.customRate') }}</label>
                   <input
@@ -93,7 +93,7 @@
           </div>
         </div>
 
-        <!-- 公开分组区域 -->
+        <!-- 公開分組區域 -->
         <div v-if="publicGroups.length > 0">
           <div class="mb-3 flex items-center gap-2">
             <div class="h-1.5 w-1.5 rounded-full bg-green-500"></div>
@@ -107,7 +107,7 @@
               class="relative overflow-hidden rounded-xl border-2 border-green-200 bg-green-50/50 p-4 dark:border-green-800/50 dark:bg-green-900/10"
             >
               <div class="flex items-center gap-4">
-                <!-- 复选框（禁用状态） -->
+                <!-- 核取方塊（停用狀態） -->
                 <div class="flex-shrink-0">
                   <div class="flex h-5 w-5 items-center justify-center rounded-md border-2 border-green-400 bg-green-500 dark:border-green-600 dark:bg-green-600">
                     <svg class="h-full w-full text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -116,7 +116,7 @@
                   </div>
                 </div>
 
-                <!-- 分组信息 -->
+                <!-- 分組資訊 -->
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2">
                     <span class="text-base font-semibold text-gray-900 dark:text-white">{{ config.groupName }}</span>
@@ -133,7 +133,7 @@
                   </div>
                 </div>
 
-                <!-- 专属倍率输入 -->
+                <!-- 專屬倍率輸入 -->
                 <div class="flex flex-shrink-0 items-center gap-3">
                   <label class="text-sm font-medium text-gray-600 dark:text-gray-400">{{ t('admin.users.customRate') }}</label>
                   <input
@@ -151,7 +151,7 @@
           </div>
         </div>
 
-        <!-- 无分组提示 -->
+        <!-- 無分組提示 -->
         <div v-if="groups.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-dark-700">
             <svg class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -204,11 +204,11 @@ const appStore = useAppStore()
 
 const groups = ref<Group[]>([])
 const groupConfigs = ref<GroupRateConfig[]>([])
-const originalGroupRates = ref<Record<number, number>>({}) // 记录原始专属倍率，用于检测删除
+const originalGroupRates = ref<Record<number, number>>({}) // 記錄原始專屬倍率，用於檢測刪除
 const loading = ref(false)
 const submitting = ref(false)
 
-// 分离专属分组和公开分组
+// 分離專屬分組和公開分組
 const exclusiveGroups = computed(() => groups.value.filter((g) => g.is_exclusive))
 const publicGroups = computed(() => groups.value.filter((g) => !g.is_exclusive))
 
@@ -228,14 +228,14 @@ const load = async () => {
   loading.value = true
   try {
     const res = await adminAPI.groups.list(1, 1000)
-    // 只显示标准类型且活跃的分组
+    // 只顯示標準型別且活躍的分組
     groups.value = res.items.filter((g) => g.subscription_type === 'standard' && g.status === 'active')
 
     // 初始化配置
     const userAllowedGroups = props.user?.allowed_groups || []
     const userGroupRates = props.user?.group_rates || {}
 
-    // 保存原始专属倍率，用于检测删除操作
+    // 儲存原始專屬倍率，用於檢測刪除操作
     originalGroupRates.value = { ...userGroupRates }
 
     groupConfigs.value = groups.value.map((g) => ({
@@ -245,8 +245,8 @@ const load = async () => {
       isExclusive: g.is_exclusive,
       defaultRate: g.rate_multiplier,
       customRate: userGroupRates[g.id] ?? null,
-      // 专属分组：检查是否在 allowed_groups 中
-      // 公开分组：始终选中
+      // 專屬分組：檢查是否在 allowed_groups 中
+      // 公開分組：始終選中
       isSelected: g.is_exclusive ? userAllowedGroups.includes(g.id) : true,
     }))
   } catch (error) {
@@ -280,21 +280,21 @@ const handleSave = async () => {
   submitting.value = true
 
   try {
-    // 构建 allowed_groups（仅包含专属分组中被勾选的）
+    // 構建 allowed_groups（僅包含專屬分組中被勾選的）
     const allowedGroups = groupConfigs.value.filter((c) => c.isExclusive && c.isSelected).map((c) => c.groupId)
 
-    // 构建 group_rates
-    // - 有新专属倍率: 设置为该值
-    // - 原本有专属倍率但现在被清空: 设置为 null（表示删除）
+    // 構建 group_rates
+    // - 有新專屬倍率: 設定為該值
+    // - 原本有專屬倍率但現在被清空: 設定為 null（表示刪除）
     const groupRates: Record<number, number | null> = {}
     for (const c of groupConfigs.value) {
       const hadOriginalRate = originalGroupRates.value[c.groupId] !== undefined
 
       if (c.customRate !== null) {
-        // 有专属倍率
+        // 有專屬倍率
         groupRates[c.groupId] = c.customRate
       } else if (hadOriginalRate) {
-        // 原本有专属倍率，现在被清空，需要显式删除
+        // 原本有專屬倍率，現在被清空，需要顯式刪除
         groupRates[c.groupId] = null
       }
     }
@@ -316,7 +316,7 @@ const handleSave = async () => {
 </script>
 
 <style scoped>
-/* 隐藏数字输入框的箭头按钮 */
+/* 隱藏數字輸入框的箭頭按鈕 */
 .hide-spinner::-webkit-outer-spin-button,
 .hide-spinner::-webkit-inner-spin-button {
   -webkit-appearance: none;

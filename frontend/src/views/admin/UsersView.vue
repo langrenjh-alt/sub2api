@@ -318,7 +318,7 @@
 
           <template #cell-groups="{ row }">
             <div v-if="allGroups.length > 0" class="flex flex-col gap-1">
-              <!-- 专属分组行 -->
+              <!-- 專屬分組行 -->
               <span
                 v-if="getUserGroups(row).exclusive.length > 0"
                 class="group/ex relative inline-flex cursor-pointer items-center gap-1 whitespace-nowrap text-xs"
@@ -327,7 +327,7 @@
                 <Icon name="shield" size="xs" class="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
                 <span class="font-medium text-purple-600 dark:text-purple-400">{{ getUserGroups(row).exclusive.length }}</span>
                 <span class="text-gray-500 dark:text-dark-400">{{ t('admin.users.exclusiveLabel') }}</span>
-                <!-- Hover tooltip（操作菜单未打开时显示） -->
+                <!-- Hover tooltip（操作選單未開啟時顯示） -->
                 <div
                   v-if="expandedGroupUserId !== row.id"
                   class="pointer-events-none absolute left-0 top-full z-50 mt-1.5 rounded bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover/ex:opacity-100 dark:bg-dark-600"
@@ -337,7 +337,7 @@
                     <span v-for="g in getUserGroups(row).exclusive" :key="g.id">{{ g.name }}</span>
                   </div>
                 </div>
-                <!-- 点击展开分组操作菜单 -->
+                <!-- 點選展開分組操作選單 -->
                 <div
                   v-if="expandedGroupUserId === row.id"
                   class="absolute left-0 top-full z-50 mt-1.5 min-w-[160px] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 text-xs shadow-xl dark:border-dark-600 dark:bg-dark-700"
@@ -356,7 +356,7 @@
                   </div>
                 </div>
               </span>
-              <!-- 公开分组行 -->
+              <!-- 公開分組行 -->
               <span
                 v-if="getUserGroups(row).publicGroups.length > 0"
                 class="group/pub relative inline-flex cursor-default items-center gap-1 whitespace-nowrap text-xs"
@@ -364,7 +364,7 @@
                 <Icon name="globe" size="xs" class="h-3.5 w-3.5 text-gray-400 dark:text-dark-500" />
                 <span class="font-medium text-gray-600 dark:text-dark-300">{{ getUserGroups(row).publicGroups.length }}</span>
                 <span class="text-gray-400 dark:text-dark-500">{{ t('admin.users.publicLabel') }}</span>
-                <!-- Tooltip: 向下弹出 -->
+                <!-- Tooltip: 向下彈出 -->
                 <div class="pointer-events-none absolute left-0 top-full z-50 mt-1.5 rounded bg-gray-900 px-2.5 py-1.5 text-xs text-white opacity-0 shadow-lg transition-opacity duration-75 group-hover/pub:opacity-100 dark:bg-dark-600">
                   <div class="absolute left-4 bottom-full border-4 border-transparent border-b-gray-900 dark:border-b-dark-600"></div>
                   <div class="flex flex-col gap-0.5 whitespace-nowrap">
@@ -372,7 +372,7 @@
                   </div>
                 </div>
               </span>
-              <!-- 都没有 -->
+              <!-- 都沒有 -->
               <span
                 v-if="getUserGroups(row).exclusive.length === 0 && getUserGroups(row).publicGroups.length === 0"
                 class="text-xs text-gray-400 dark:text-dark-500"
@@ -442,9 +442,9 @@
             </button>
           </template>
 
-          <!-- 用量列自定义表头：列名 + 单个排序图标按钮，点击展开"今日/近30天"菜单。
-               column.sortable=false，DataTable 内置点击逻辑不会触发；
-               菜单项三态循环：desc → asc → off。 -->
+          <!-- 用量列自定義表頭：列名 + 單個排序圖示按鈕，點選展開"今日/近30天"選單。
+               column.sortable=false，DataTable 內建點選邏輯不會觸發；
+               選單項三態迴圈：desc → asc → off。 -->
           <template
             v-for="usageKey in USAGE_COLUMN_KEYS"
             :key="usageKey"
@@ -483,7 +483,7 @@
                     <path d="M10 3l-4 5h8l-4-5zM10 17l4-5H6l4 5z" />
                   </svg>
                 </button>
-                <!-- 弹出菜单：今日 / 近30天，点击进行三态循环切换。 -->
+                <!-- 彈出選單：今日 / 近30天，點選進行三態迴圈切換。 -->
                 <div
                   v-if="openUsageSortMenu === usageKey"
                   class="absolute right-0 top-full z-50 mt-1 min-w-[120px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-600 dark:bg-dark-800"
@@ -876,15 +876,15 @@ const DEFAULT_HIDDEN_COLUMNS = [
   'balance_platform_quota'
 ]
 const REMOVED_COLUMNS = new Set(['last_login_at'])
-// 强制可见列：加载时会被强制移出 hiddenColumns，并在列设置 UI 上 disabled。
-// 当前没有列需要强制可见 —— last_active_at 已改为可被用户隐藏。
+// 強制可見列：載入時會被強制移出 hiddenColumns，並在列設定 UI 上 disabled。
+// 當前沒有列需要強制可見 —— last_active_at 已改為可被使用者隱藏。
 const FORCED_VISIBLE_COLUMNS = new Set<string>()
 
 // localStorage keys for column settings
 const HIDDEN_COLUMNS_KEY = 'user-hidden-columns'
-// 列设置 schema 版本号。每次给 DEFAULT_HIDDEN_COLUMNS 新增列时 bump 一次，
-// 并在 VERSION_NEW_HIDDEN_COLUMNS 中登记该版本新增的 key。
-// 这样老用户升级后这些新列会被自动隐藏一次，而不会影响他们对其它老列的偏好。
+// 列設定 schema 版本號。每次給 DEFAULT_HIDDEN_COLUMNS 新增列時 bump 一次，
+// 並在 VERSION_NEW_HIDDEN_COLUMNS 中登記該版本新增的 key。
+// 這樣老使用者升級後這些新列會被自動隱藏一次，而不會影響他們對其它老列的偏好。
 const COLUMN_SETTINGS_VERSION_KEY = 'user-column-settings-version'
 const COLUMN_SETTINGS_VERSION = 3
 const VERSION_NEW_HIDDEN_COLUMNS: Record<number, string[]> = {
@@ -902,7 +902,7 @@ const loadSavedColumns = () => {
         .filter(key => !REMOVED_COLUMNS.has(key) && !FORCED_VISIBLE_COLUMNS.has(key))
         .forEach(key => hiddenColumns.add(key))
 
-      // 老用户升级：把每个未应用过的版本里新增的默认隐藏列自动追加到 hiddenColumns。
+      // 老使用者升級：把每個未套用過的版本里新增的預設隱藏列自動追加到 hiddenColumns。
       const storedVersion = Number(localStorage.getItem(COLUMN_SETTINGS_VERSION_KEY) ?? '1')
       if (storedVersion < COLUMN_SETTINGS_VERSION) {
         let mutated = false
@@ -942,8 +942,8 @@ const saveColumnsToStorage = () => {
 // Toggle column visibility
 const isForcedVisibleColumn = (key: string) => FORCED_VISIBLE_COLUMNS.has(key)
 const toggleColumn = (key: string) => {
-  // 强制可见列(如 last_active_at)在加载时会被恢复成可见，
-  // 这里阻止用户在当前会话隐藏它，避免"取消勾选 → 刷新又恢复"的反直觉行为。
+  // 強制可見列(如 last_active_at)在載入時會被恢復成可見，
+  // 這裡阻止使用者在當前會話隱藏它，避免"取消勾選 → 重新整理又恢復"的反直覺行為。
   if (FORCED_VISIBLE_COLUMNS.has(key)) return
   const wasHidden = hiddenColumns.has(key)
   if (hiddenColumns.has(key)) {
@@ -965,10 +965,10 @@ const toggleColumn = (key: string) => {
 
 // Check if column is visible (not in hidden set)
 const isColumnVisible = (key: string) => !hiddenColumns.has(key)
-// usage 主列或任意 usage_<platform> 子列可见时都需要批量拉取用量数据
-// 列 key → 平台名（'usage' 主列汇总所有平台时为 null）
-// 显式数组取代 Object.keys()：保证迭代顺序（决定列头排序按钮渲染顺序）
-// 不会因 JS 引擎差异或 USAGE_COLUMN_PLATFORMS 属性顺序调整而静默变化。
+// usage 主列或任意 usage_<platform> 子列可見時都需要批次拉取用量資料
+// 列 key → 平台名（'usage' 主列彙總所有平台時為 null）
+// 顯式陣列取代 Object.keys()：保證迭代順序（決定列頭排序按鈕渲染順序）
+// 不會因 JS 引擎差異或 USAGE_COLUMN_PLATFORMS 屬性順序調整而靜默變化。
 const USAGE_COLUMN_KEYS: readonly string[] = ['usage', 'usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity']
 const USAGE_COLUMN_PLATFORMS: Record<string, string | null> = {
   usage: null,
@@ -1174,9 +1174,9 @@ const getPlatformUsage = (userId: number, platform: string) =>
   usageStats.value[userId]?.by_platform?.find((p) => p.platform === platform)
 
 // 用量列前端排序：DataTable 工作在 server-side-sort 模式，所有 sortable
-// 字段都会触发后端查询，而用量列数据是异步批量拉取后再合并到当前页，
-// 因此采用独立的前端排序状态对当前页 users 做本地排序。
-// 排序状态独立于后端 sortState 持久化；缺失数据按 0 处理（desc 沉底、asc 置顶）。
+// 欄位都會觸發後端查詢，而用量列資料是非同步批次拉取後再合併到當前頁，
+// 因此採用獨立的前端排序狀態對當前頁 users 做本地排序。
+// 排序狀態獨立於後端 sortState 持久化；缺失資料按 0 處理（desc 沉底、asc 置頂）。
 type UsageMetric = 'today' | 'total'
 type UsageSortState = { key: string; metric: UsageMetric; order: 'asc' | 'desc' } | null
 const USAGE_SORT_STORAGE_KEY = 'admin-users-usage-sort'
@@ -1212,8 +1212,8 @@ const isUsageSortActive = (key: string, metric: UsageMetric) =>
 const getUsageSortOrder = (key: string, metric: UsageMetric): 'asc' | 'desc' | null =>
   isUsageSortActive(key, metric) ? usageSort.value!.order : null
 
-// 三态循环：desc → asc → off。选完即关闭菜单（用户大多希望"选中即应用"，
-// 想再切换 order 时重新打开菜单点同一项即可）。
+// 三態迴圈：desc → asc → off。選完即關閉選單（使用者大多希望"選中即套用"，
+// 想再切換 order 時重新開啟選單點同一項即可）。
 const toggleUsageSort = (key: string, metric: UsageMetric) => {
   const cur = usageSort.value
   if (cur && cur.key === key && cur.metric === metric) {
@@ -1225,8 +1225,8 @@ const toggleUsageSort = (key: string, metric: UsageMetric) => {
   openUsageSortMenu.value = null
 }
 
-// 列头排序按钮点击后弹出的"今日/近30天"选择菜单，同时只允许一个列展开。
-// 点击图标本身不触发排序，仅开关菜单；首次排序由用户在菜单内选择 metric 触发（默认 desc，详见 toggleUsageSort）。
+// 列頭排序按鈕點選後彈出的"今日/近30天"選擇選單，同時只允許一個列展開。
+// 點選圖示本身不觸發排序，僅開關選單；首次排序由使用者在選單內選擇 metric 觸發（預設 desc，詳見 toggleUsageSort）。
 const openUsageSortMenu = ref<string | null>(null)
 const toggleUsageSortMenu = (key: string) => {
   openUsageSortMenu.value = openUsageSortMenu.value === key ? null : key
@@ -1244,8 +1244,8 @@ const getUsageValue = (userId: number, key: string, metric: UsageMetric): number
   return metric === 'today' ? p.today_actual_cost ?? 0 : p.total_actual_cost ?? 0
 }
 
-// 在 server-side 排序结果之上叠加用量列的本地排序；无 usageSort 时直接透传原数组。
-// 稳定排序：等值按原 index 保序，避免拉取新用量数据时表行抖动。
+// 在 server-side 排序結果之上疊加用量列的本地排序；無 usageSort 時直接透傳原陣列。
+// 穩定排序：等值按原 index 保序，避免拉取新用量資料時錶行抖動。
 const sortedUsers = computed(() => {
   const s = usageSort.value
   if (!s) return users.value
@@ -1338,7 +1338,7 @@ const loadUsersSecondaryData = async (
     tasks.push(
       (async () => {
         try {
-          // 无批量端点：对当前页用户逐个拉取，分块并发（每批 6），批间检查中止条件，避免大 pageSize 时请求洪峰
+          // 無批次端點：對當前頁使用者逐個拉取，分塊並行（每批 6），批間檢查中止條件，避免大 pageSize 時請求洪峰
           const CHUNK = 6
           for (let i = 0; i < userIds.length; i += CHUNK) {
             if (signal?.aborted) return
@@ -1401,19 +1401,19 @@ const openActionMenu = (user: AdminUser, e: MouseEvent) => {
     let left, top
 
     if (viewportWidth < 768) {
-      // 居中显示,水平位置
+      // 居中顯示,水平位置
       left = Math.max(padding, Math.min(
         rect.left + rect.width / 2 - menuWidth / 2,
         viewportWidth - menuWidth - padding
       ))
 
-      // 优先显示在按钮下方
+      // 優先顯示在按鈕下方
       top = rect.bottom + 4
 
-      // 如果下方空间不够,显示在上方
+      // 如果下方空間不夠,顯示在上方
       if (top + menuHeight > viewportHeight - padding) {
         top = rect.top - menuHeight - 4
-        // 如果上方也不够,就贴在视口顶部
+        // 如果上方也不夠,就貼在視口頂部
         if (top < padding) {
           top = padding
         }
@@ -1487,7 +1487,7 @@ const balanceOperation = ref<'add' | 'subtract'>('add')
 const showBalanceHistoryModal = ref(false)
 const balanceHistoryUser = ref<AdminUser | null>(null)
 
-// 计算剩余天数
+// 計算剩餘天數
 const getDaysRemaining = (expiresAt: string): number => {
   const now = new Date()
   const expires = new Date(expiresAt)
@@ -1535,7 +1535,7 @@ const loadUsers = async () => {
         group_name: filters.group || undefined,
         api_key_group_id: filters.apiKeyGroup ?? undefined,
         attributes: Object.keys(attrFilters).length > 0 ? attrFilters : undefined,
-        // 始终请求 subscriptions：列隐藏时仍需用于 UserPlatformQuotaModal 的 active-subscription 警示 banner
+        // 始終請求 subscriptions：列隱藏時仍需用於 UserPlatformQuotaModal 的 active-subscription 警示 banner
         include_subscriptions: true,
         sort_by: sortState.sort_by,
         sort_order: sortState.sort_order
@@ -1586,7 +1586,7 @@ const handleSearch = () => {
 }
 
 const handlePageChange = (page: number) => {
-  // 确保页码在有效范围内
+  // 確保頁碼在有效範圍內
   const validPage = Math.max(1, Math.min(page, pagination.pages || 1))
   pagination.page = validPage
   loadUsers()
@@ -1771,7 +1771,7 @@ const handleWithdrawFromHistory = () => {
   }
 }
 
-// 滚动时关闭菜单
+// 滾動時關閉選單
 const handleScroll = () => {
   closeActionMenu()
 }

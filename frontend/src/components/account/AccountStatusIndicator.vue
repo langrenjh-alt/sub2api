@@ -43,7 +43,7 @@
           d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
         />
       </svg>
-      <!-- Tooltip - 向下显示 -->
+      <!-- Tooltip - 向下顯示 -->
       <div
         class="invisible absolute left-0 top-full z-[100] mt-1.5 min-w-[200px] max-w-[300px] rounded-lg bg-gray-800 px-3 py-2 text-xs text-white opacity-0 shadow-xl transition-all duration-200 group-hover/error:visible group-hover/error:opacity-100 dark:bg-gray-900"
       >
@@ -76,7 +76,7 @@
       </div>
     </div>
 
-    <!-- Model Status Indicators (普通限流 / 超量请求中) -->
+    <!-- Model Status Indicators (普通限流 / 超量請求中) -->
     <div
       v-if="activeModelStatuses.length > 0"
       :class="[
@@ -88,7 +88,7 @@
       ]"
     >
       <div v-for="item in activeModelStatuses" :key="`${item.kind}-${item.model}`" class="group relative mb-1 break-inside-avoid">
-        <!-- 积分已用尽 -->
+        <!-- 積分已用盡 -->
         <span
           v-if="item.kind === 'credits_exhausted'"
           class="inline-flex items-center gap-1 rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400"
@@ -97,7 +97,7 @@
           {{ t('admin.accounts.status.creditsExhausted') }}
           <span class="text-[10px] opacity-70">{{ formatModelResetTime(item.reset_at) }}</span>
         </span>
-        <!-- 正在走积分（模型限流但积分可用）-->
+        <!-- 正在走積分（模型限流但積分可用）-->
         <span
           v-else-if="item.kind === 'credits_active'"
           class="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -183,7 +183,7 @@ type AccountModelStatusItem = {
   reset_at: string
 }
 
-// Computed: active model statuses (普通模型限流 + 积分耗尽 + 走积分中)
+// Computed: active model statuses (普通模型限流 + 積分耗盡 + 走積分中)
 const activeModelStatuses = computed<AccountModelStatusItem[]>(() => {
   const extra = props.account.extra as Record<string, unknown> | undefined
   const modelLimits = extra?.model_rate_limits as
@@ -194,7 +194,7 @@ const activeModelStatuses = computed<AccountModelStatusItem[]>(() => {
 
   if (!modelLimits) return items
 
-  // 检查 AICredits key 是否生效（积分是否耗尽）
+  // 檢查 AICredits key 是否生效（積分是否耗盡）
   const aiCreditsEntry = modelLimits['AICredits']
   const hasActiveAICredits = aiCreditsEntry && new Date(aiCreditsEntry.rate_limit_reset_at) > now
   const allowOverages = !!(extra?.allow_overages)
@@ -203,10 +203,10 @@ const activeModelStatuses = computed<AccountModelStatusItem[]>(() => {
     if (new Date(info.rate_limit_reset_at) <= now) continue
 
     if (model === 'AICredits') {
-      // AICredits key → 积分已用尽
+      // AICredits key → 積分已用盡
       items.push({ kind: 'credits_exhausted', model, reset_at: info.rate_limit_reset_at })
     } else if (allowOverages && !hasActiveAICredits) {
-      // 普通模型限流 + overages 启用 + 积分可用 → 正在走积分
+      // 普通模型限流 + overages 啟用 + 積分可用 → 正在走積分
       items.push({ kind: 'credits_active', model, reset_at: info.rate_limit_reset_at })
     } else {
       // 普通模型限流
@@ -245,7 +245,7 @@ const formatScopeName = (scope: string): string => {
     // 其他
     'gpt-oss-120b-medium': 'GPT120',
     'tab_flash_lite_preview': 'TabFL',
-    // 旧版 scope 别名（兼容）
+    // 舊版 scope 別名（相容）
     claude: 'Claude',
     claude_sonnet: 'CSon',
     claude_opus: 'COpus',

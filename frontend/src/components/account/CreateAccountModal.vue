@@ -512,18 +512,18 @@
                   Google One
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                  个人账号，享受 Google One 订阅配额
+                  個人帳號，享受 Google One 訂閱配額
                 </span>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <span
                     class="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
                   >
-                    推荐个人用户
+                    推薦個人使用者
                   </span>
                   <span
                     class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                   >
-                    无需 GCP
+                    無需 GCP
                   </span>
                 </div>
               </div>
@@ -555,10 +555,10 @@
                   GCP Code Assist
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                  企业级，需要 GCP 项目
+                  企業級，需要 GCP 專案
                 </span>
                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  需要激活 GCP 项目并绑定信用卡
+                  需要啟用 GCP 專案並繫結信用卡
                   <a
                     :href="geminiHelpLinks.gcpProject"
                     class="ml-1 text-blue-600 hover:underline dark:text-blue-400"
@@ -572,12 +572,12 @@
                   <span
                     class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                   >
-                    企业用户
+                    企業使用者
                   </span>
                   <span
                     class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                   >
-                    高并发
+                    高並行
                   </span>
                 </div>
               </div>
@@ -600,7 +600,7 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span>{{ showAdvancedOAuth ? '隐藏' : '显示' }}高级选项（自建 OAuth Client）</span>
+              <span>{{ showAdvancedOAuth ? '隱藏' : '顯示' }}高階選項（自建 OAuth Client）</span>
             </button>
           </div>
 
@@ -891,7 +891,7 @@
       </div>
 
       <!-- Antigravity model restriction (applies to OAuth + Upstream) -->
-      <!-- Antigravity 只支持模型映射模式，不支持白名单模式 -->
+      <!-- Antigravity 只支援模型對映模式，不支援白名單模式 -->
       <div v-if="form.platform === 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -946,7 +946,7 @@
                   </svg>
                 </button>
               </div>
-              <!-- 校验错误提示 -->
+              <!-- 校驗錯誤提示 -->
               <p v-if="!isValidWildcardPattern(mapping.from)" class="text-xs text-red-500">
                 {{ t('admin.accounts.wildcardOnlyAtEnd') }}
               </p>
@@ -1054,7 +1054,7 @@
           <p class="input-hint">{{ t('admin.accounts.gemini.tier.aiStudioHint') }}</p>
         </div>
 
-        <!-- Model Restriction Section (Antigravity 已在上层条件排除) -->
+        <!-- Model Restriction Section (Antigravity 已在上層條件排除) -->
         <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -1662,7 +1662,7 @@
         </div>
       </div>
 
-      <!-- 配额控制 (Anthropic apikey/bedrock: 配额限制 + 亲和) -->
+      <!-- 配額控制 (Anthropic apikey/bedrock: 配額限制 + 親和) -->
       <div
         v-if="form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1714,7 +1714,7 @@
         />
       </div>
 
-      <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
+      <!-- 配額控制 (非 Anthropic apikey/bedrock) -->
       <div
         v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1766,7 +1766,7 @@
         />
       </div>
 
-      <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
+      <!-- OpenAI OAuth Model Mapping (OAuth 型別沒有 apikey 容器，需要獨立的模型對映區域) -->
       <div
         v-if="form.platform === 'openai' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2082,7 +2082,7 @@
         </div>
       </div>
 
-      <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 窗口费用 + 会话 + RPM 等) -->
+      <!-- 配額控制 (Anthropic OAuth/SetupToken: 親和 + 視窗費用 + 會話 + RPM 等) -->
       <div
         v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -2303,7 +2303,7 @@
 
           </div>
 
-          <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
+          <!-- 使用者訊息限速模式（獨立於 RPM 開關，始終可見） -->
           <div class="mt-4">
             <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -2506,7 +2506,7 @@
         <p class="input-hint">{{ t('admin.accounts.expiresAtHint') }}</p>
       </div>
 
-      <!-- OpenAI 自动透传开关（OAuth/API Key） -->
+      <!-- OpenAI 自動透傳開關（OAuth/API Key） -->
       <div
         v-if="form.platform === 'openai'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2536,7 +2536,7 @@
         </div>
       </div>
 
-      <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
+      <!-- OpenAI WS Mode 三態（off/ctx_pool/passthrough） -->
       <div
         v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2557,7 +2557,7 @@
         </div>
       </div>
 
-      <!-- Anthropic API Key 自动透传开关 -->
+      <!-- Anthropic API Key 自動透傳開關 -->
       <div
         v-if="form.platform === 'anthropic' && accountCategory === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2607,7 +2607,7 @@
         </div>
       </div>
 
-      <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
+      <!-- OpenAI OAuth Codex 官方客戶端限制開關 -->
       <div
         v-if="form.platform === 'openai' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2799,7 +2799,7 @@
             >
               ?
             </span>
-            <!-- Tooltip（向下显示避免被弹窗裁剪） -->
+            <!-- Tooltip（向下顯示避免被彈窗裁剪） -->
             <div
               class="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 w-72 rounded bg-gray-900 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700"
             >
@@ -2838,7 +2838,7 @@
           </div>
         </div>
 
-        <!-- Group Selection - 仅标准模式显示 -->
+        <!-- Group Selection - 僅標準模式顯示 -->
         <GroupSelector
           v-if="!authStore.isSimpleMode"
           v-model="form.group_ids"
@@ -3010,7 +3010,7 @@
                 rel="noreferrer"
                 class="text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
-                修改归属地
+                修改歸屬地
               </a>
               <span class="text-gray-400">·</span>
               <a
@@ -3386,7 +3386,7 @@ const openAICompactModelMappings = ref<ModelMapping[]>([])
 const modelRestrictionMode = ref<'whitelist' | 'mapping'>('whitelist')
 const allowedModels = ref<string[]>([])
 const DEFAULT_POOL_MODE_RETRY_COUNT = 3
-const MAX_POOL_MODE_RETRY_COUNT = 50
+const MAX_POOL_MODE_RETRY_COUNT = 10
 const DEFAULT_POOL_MODE_RETRY_STATUS_CODES = [401, 403, 429]
 const poolModeEnabled = ref(false)
 const poolModeRetryCount = ref(DEFAULT_POOL_MODE_RETRY_COUNT)
@@ -3698,11 +3698,11 @@ const form = reactive({
 
 // Helper to check if current type needs OAuth flow
 const isOAuthFlow = computed(() => {
-  // Antigravity upstream 类型不需要 OAuth 流程
+  // Antigravity upstream 型別不需要 OAuth 流程
   if (form.platform === 'antigravity' && antigravityAccountType.value === 'upstream') {
     return false
   }
-  // Bedrock 类型不需要 OAuth 流程
+  // Bedrock 型別不需要 OAuth 流程
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
@@ -3745,7 +3745,7 @@ watch(
         .catch(() => { tlsFingerprintProfiles.value = [] })
       // Modal opened - fill related models
       allowedModels.value = [...getModelsByPlatform(form.platform)]
-      // Antigravity: 默认使用映射模式并填充默认映射
+      // Antigravity: 預設使用對映模式並填充預設對映
       if (form.platform === 'antigravity') {
         antigravityModelRestrictionMode.value = 'mapping'
         fetchAntigravityDefaultMappings().then(mappings => {
@@ -3767,12 +3767,12 @@ watch(
 watch(
   [accountCategory, addMethod, antigravityAccountType, () => form.platform],
   ([category, method, agType]) => {
-    // Antigravity upstream 类型（实际创建为 apikey）
+    // Antigravity upstream 型別（實際建立為 apikey）
     if (form.platform === 'antigravity' && agType === 'upstream') {
       form.type = 'apikey'
       return
     }
-    // Bedrock 类型
+    // Bedrock 型別
     if (form.platform === 'anthropic' && category === 'bedrock') {
       form.type = 'bedrock' as AccountType
       return
@@ -3802,7 +3802,7 @@ watch(
     // Clear model-related settings
     allowedModels.value = []
     modelMappings.value = []
-    // Antigravity: 默认使用映射模式并填充默认映射
+    // Antigravity: 預設使用對映模式並填充預設對映
     if (newPlatform === 'antigravity') {
       antigravityModelRestrictionMode.value = 'mapping'
       fetchAntigravityDefaultMappings().then(mappings => {
@@ -3913,8 +3913,8 @@ watch(
   [antigravityModelRestrictionMode, () => form.platform],
   ([, platform]) => {
     if (platform !== 'antigravity') return
-    // Antigravity 默认不做限制：白名单留空表示允许所有（包含未来新增模型）。
-    // 如果需要快速填充常用模型，可在组件内点“填充相关模型”。
+    // Antigravity 預設不做限制：白名單留空表示允許所有（包含未來新增模型）。
+    // 如果需要快速填充常用模型，可在元件內點“填充相關模型”。
   }
 )
 
@@ -4311,7 +4311,7 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     extra.openai_apikey_responses_websockets_v2_mode = openaiAPIKeyResponsesWebSocketV2Mode.value
     extra.openai_apikey_responses_websockets_v2_enabled = isOpenAIWSModeEnabled(openaiAPIKeyResponsesWebSocketV2Mode.value)
   }
-  // 清理兼容旧键，统一改用分类型开关。
+  // 清理相容舊鍵，統一改用分型別開關。
   delete extra.responses_websockets_v2_enabled
   delete extra.openai_ws_enabled
   if (openaiPassthroughEnabled.value) {
@@ -4565,7 +4565,7 @@ const handleSubmit = async () => {
       api_key: upstreamApiKey.value.trim()
     }
 
-    // Antigravity 只使用映射模式
+    // Antigravity 只使用對映模式
     const antigravityModelMapping = buildModelMappingObject(
       'mapping',
       [],
@@ -4628,7 +4628,7 @@ const handleSubmit = async () => {
     credentials.tier_id = geminiTierAIStudio.value
   }
 
-  // Add model mapping if configured（OpenAI 开启自动透传时不应用）
+  // Add model mapping if configured（OpenAI 開啟自動透傳時不套用）
   if (!isOpenAIModelRestrictionDisabled.value) {
     const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
     if (modelMapping) {
@@ -4787,7 +4787,7 @@ const createAccountAndFinish = async (
   })
 }
 
-// OpenAI OAuth 授权码兑换
+// OpenAI OAuth 授權碼兌換
 const handleOpenAIExchange = async (authCode: string) => {
   const oauthClient = openaiOAuth
   if (!authCode.trim() || !oauthClient.sessionId.value) return
@@ -4816,7 +4816,7 @@ const handleOpenAIExchange = async (authCode: string) => {
     const extra = buildOpenAIExtra(oauthExtra)
     const shouldCreateOpenAI = form.platform === 'openai'
 
-    // Add model mapping for OpenAI OAuth accounts（透传模式下不应用）
+    // Add model mapping for OpenAI OAuth accounts（透傳模式下不套用）
     if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
       const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
       if (modelMapping) {
@@ -4830,7 +4830,7 @@ const handleOpenAIExchange = async (authCode: string) => {
       }
     }
 
-    // 应用临时不可调度配置
+    // 套用臨時不可排程配置
     if (!applyTempUnschedConfig(credentials)) {
       return
     }
@@ -4865,7 +4865,7 @@ const handleOpenAIExchange = async (authCode: string) => {
   }
 }
 
-// OpenAI 手动 RT 批量验证和创建
+// OpenAI 手動 RT 批次驗證和建立
 // OpenAI Mobile RT client_id
 const OPENAI_MOBILE_RT_CLIENT_ID = 'app_LlGpXReQgckcGGUo2JrYvtJK'
 
@@ -4976,7 +4976,7 @@ const handleOpenAIImportCodexSession = async (content: string) => {
   }
 }
 
-// OpenAI RT 批量验证和创建（共享逻辑）
+// OpenAI RT 批次驗證和建立（共享邏輯）
 const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string) => {
   const oauthClient = openaiOAuth
   if (!refreshTokenInput.trim()) return
@@ -5021,7 +5021,7 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
         const oauthExtra = oauthClient.buildExtraInfo(tokenInfo) as Record<string, unknown> | undefined
         const extra = buildOpenAIExtra(oauthExtra)
 
-        // Add model mapping for OpenAI OAuth accounts（透传模式下不应用）
+        // Add model mapping for OpenAI OAuth accounts（透傳模式下不套用）
         if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
           const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
           if (modelMapping) {
@@ -5090,13 +5090,13 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
   }
 }
 
-// 手动输入 RT（Codex CLI client_id，默认）
+// 手動輸入 RT（Codex CLI client_id，預設）
 const handleOpenAIValidateRT = (rt: string) => handleOpenAIBatchRT(rt)
 
-// 手动输入 Mobile RT
+// 手動輸入 Mobile RT
 const handleOpenAIValidateMobileRT = (rt: string) => handleOpenAIBatchRT(rt, OPENAI_MOBILE_RT_CLIENT_ID)
 
-// Antigravity 手动 RT 批量验证和创建
+// Antigravity 手動 RT 批次驗證和建立
 const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
   if (!refreshTokenInput.trim()) return
 
@@ -5187,7 +5187,7 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
   }
 }
 
-// Gemini OAuth 授权码兑换
+// Gemini OAuth 授權碼兌換
 const handleGeminiExchange = async (authCode: string) => {
   if (!authCode.trim() || !geminiOAuth.sessionId.value) return
 
@@ -5224,7 +5224,7 @@ const handleGeminiExchange = async (authCode: string) => {
   }
 }
 
-// Antigravity OAuth 授权码兑换
+// Antigravity OAuth 授權碼兌換
 const handleAntigravityExchange = async (authCode: string) => {
   if (!authCode.trim() || !antigravityOAuth.sessionId.value) return
 
@@ -5250,7 +5250,7 @@ const handleAntigravityExchange = async (authCode: string) => {
 
 		const credentials = antigravityOAuth.buildCredentials(tokenInfo)
 		applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
-		// Antigravity 只使用映射模式
+		// Antigravity 只使用對映模式
 		const antigravityModelMapping = buildModelMappingObject(
 			'mapping',
 			[],
@@ -5269,7 +5269,7 @@ const handleAntigravityExchange = async (authCode: string) => {
   }
 }
 
-// Anthropic OAuth 授权码兑换
+// Anthropic OAuth 授權碼兌換
 const handleAnthropicExchange = async (authCode: string) => {
   if (!authCode.trim() || !oauth.sessionId.value) return
 
@@ -5317,7 +5317,7 @@ const handleAnthropicExchange = async (authCode: string) => {
       }
     }
 
-    // UMQ mode（独立于 RPM）
+    // UMQ mode（獨立於 RPM）
     if (userMsgQueueMode.value) {
       extra.user_msg_queue_mode = userMsgQueueMode.value
     }
@@ -5358,7 +5358,7 @@ const handleAnthropicExchange = async (authCode: string) => {
   }
 }
 
-// 主入口：根据平台路由到对应处理函数
+// 主入口：根據平台路由到對應處理函式
 const handleExchangeCode = async () => {
   const authCode = oauthFlowRef.value?.authCode || ''
 
@@ -5440,7 +5440,7 @@ const handleCookieAuth = async (sessionKey: string) => {
           }
         }
 
-        // UMQ mode（独立于 RPM）
+        // UMQ mode（獨立於 RPM）
         if (userMsgQueueMode.value) {
           extra.user_msg_queue_mode = userMsgQueueMode.value
         }

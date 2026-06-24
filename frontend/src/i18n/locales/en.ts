@@ -105,6 +105,69 @@ export default {
       description: 'Sign up now and get free trial credits to experience seamless AI access',
       button: 'Sign Up Free'
     },
+    landing: {
+      nav: {
+        workflow: 'Workflow',
+        models: 'Models',
+        access: 'Access',
+        recharge: 'Recharge'
+      },
+      actions: {
+        rechargeNow: 'Recharge Now',
+        openWorkspace: 'Open Workspace',
+        openRecharge: 'Open Recharge',
+        rechargeEntry: 'Recharge Entry'
+      },
+      heroSubtitle:
+        'A unified API relay and quota management platform for Codex, Claude, and Gemini, with stable access from z30.top.',
+      visualLabel: 'Animated Z30 API routing canvas',
+      ctaBanner:
+        'Use one entry point for recharge, key management, and multi-model calls while keeping daily workflows simple and controlled.',
+      workflowTitle: 'Turn API relay into a clear daily workflow.',
+      modelsTitle: 'One key connects mainstream AI capabilities.',
+      accessTitle: 'Keep the path simple from recharge to request.',
+      accessDescription:
+        'After recharging, create an API key in the console, point your client Base URL to the z30.top compatible endpoint, and keep using your existing OpenAI SDK flow.',
+      metrics: {
+        gateway: 'Multi-account resilience',
+        billing: 'Visible quota',
+        baseUrl: 'OpenAI compatible'
+      },
+      featureCards: {
+        gateway: {
+          title: 'Unified Gateway',
+          description:
+            'Keep OpenAI-compatible calls and use the same Base URL and API key across multiple upstream models.'
+        },
+        routing: {
+          title: 'Stable Routing',
+          description:
+            'Automatically select available accounts and channels with session stickiness, load switching, and failover.'
+        },
+        usage: {
+          title: 'Usage Visibility',
+          description:
+            'Balance, tokens, request volume, and costs are shown in one place so team usage stays easy to audit.'
+        },
+        keys: {
+          title: 'Key Management',
+          description:
+            'Create separate keys for different projects and control quota, permissions, and lifecycle by scenario.'
+        }
+      },
+      providerCaptions: {
+        codex: 'coding agent',
+        claude: 'messages API',
+        gpt: 'OpenAI compatible',
+        gemini: 'v1beta support',
+        antigravity: 'dedicated routes',
+        more: 'extendable upstreams'
+      },
+      providerStatus: {
+        ready: 'ready',
+        soon: 'soon'
+      }
+    },
     footer: {
       allRightsReserved: 'All rights reserved.'
     }
@@ -878,6 +941,10 @@ export default {
     cacheTtlOverridden1h: 'Billed as 1h',
     totalRequests: 'Total Requests',
     totalTokens: 'Total Tokens',
+    cacheTotal: 'Cache',
+    cacheBreakdown: 'Cache Token Breakdown',
+    cacheCreationTokensLabel: 'Cache Creation',
+    cacheReadTokensLabel: 'Cache Read',
     totalCost: 'Total Cost',
     standardCost: 'Standard',
     actualCost: 'Actual',

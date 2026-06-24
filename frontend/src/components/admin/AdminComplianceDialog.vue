@@ -155,7 +155,7 @@ watch(visible, (isVisible) => {
 })
 
 function noop(): void {
-  // 强制确认弹窗不允许通过关闭按钮绕过。
+  // 強制確認彈窗不允許通過關閉按鈕繞過。
 }
 
 async function submit(): Promise<void> {

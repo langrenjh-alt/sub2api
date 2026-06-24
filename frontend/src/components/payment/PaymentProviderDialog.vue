@@ -186,7 +186,7 @@
           </div>
         </div>
 
-        <!-- 服务商 Webhook 提示 -->
+        <!-- 服務商 Webhook 提示 -->
         <div v-if="providerWebhookUrl" class="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800/50 dark:bg-blue-900/20">
           <p class="text-xs text-blue-700 dark:text-blue-300">
             {{ t(providerWebhookHint) }}
@@ -544,7 +544,7 @@ function hasAnyLimit(paymentType: string): boolean {
   return (l.singleMin > 0) || (l.singleMax > 0) || (l.dailyLimit > 0)
 }
 
-/** Dynamic placeholder: "不限制" if sibling has value, "使用全局配置" if all empty */
+/** Dynamic placeholder: "不限制" if sibling has value, "使用全域性配置" if all empty */
 function limitPlaceholder(paymentType: string): string {
   return hasAnyLimit(paymentType)
     ? t('admin.settings.payment.limitsNoLimit')

@@ -50,7 +50,7 @@ type TranslateWithExistsFn = TranslateFn & { te?: (key: string) => boolean }
 
 /**
  * Translate a value via i18n if a matching key exists, otherwise return the original.
- * Example: "certSerial" → t('admin.settings.payment.field_certSerial') → "证书序列号".
+ * Example: "certSerial" → t('admin.settings.payment.field_certSerial') → "證書序列號".
  */
 function tryTranslate(t: TranslateFn, key: string, fallback: string): string {
   const translated = t(key)
@@ -62,7 +62,7 @@ function tryTranslate(t: TranslateFn, key: string, fallback: string): string {
 
 /**
  * Replace raw config field names in metadata (e.g. "certSerial") with their
- * localized UI labels (e.g. "证书序列号"), using the provider-config field i18n namespace.
+ * localized UI labels (e.g. "證書序列號"), using the provider-config field i18n namespace.
  * Handles both single `key` and `/`-joined `keys` patterns used by wxpay errors.
  */
 function localizeMetadata(metadata: Record<string, unknown>, t: TranslateFn): Record<string, unknown> {
@@ -85,7 +85,7 @@ function localizeMetadata(metadata: Record<string, unknown>, t: TranslateFn): Re
  *
  * Config-field names in metadata (`key` / `keys`) are automatically translated
  * to their UI labels before substitution, so error messages read like
- * "缺少必填项：证书序列号" instead of "缺少必填项：certSerial".
+ * "缺少必填項：證書序列號" instead of "缺少必填項：certSerial".
  *
  * @param err      - The caught error
  * @param t        - Vue i18n translate function

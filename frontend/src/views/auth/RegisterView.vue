@@ -567,7 +567,7 @@ function rejectLoginAgreement(): void {
   localStorage.removeItem(LOGIN_AGREEMENT_STORAGE_KEY)
   agreementAccepted.value = false
   showAgreementModal.value = false
-  appStore.showWarning('未同意最新条款前，无法注册或使用快捷登录。')
+  appStore.showWarning('未同意最新條款前，無法註冊或使用快捷登入。')
 }
 
 // ==================== Promo Code Validation ====================
@@ -613,7 +613,7 @@ async function validatePromoCodeDebounced(code: string): Promise<void> {
       promoValidation.valid = false
       promoValidation.invalid = true
       promoValidation.bonusAmount = null
-      // 根据错误码显示对应的翻译
+      // 根據錯誤碼顯示對應的翻譯
       promoValidation.message = getPromoErrorMessage(result.error_code)
     }
   } catch (error) {
@@ -757,7 +757,7 @@ function validateForm(): boolean {
   let isValid = true
 
   if (agreementGateActive.value) {
-    appStore.showWarning('请先阅读并同意最新条款后再注册。')
+    appStore.showWarning('請先閱讀並同意最新條款後再註冊。')
     if (loginAgreementMode.value !== 'checkbox') {
       showAgreementModal.value = true
     }

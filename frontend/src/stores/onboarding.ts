@@ -16,7 +16,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const nextStepCallback = ref<NextStepCallback | null>(null)
   const isCurrentStepCallback = ref<IsCurrentStepCallback | null>(null)
 
-  // 全局 driver 实例，跨组件保持
+  // 全域性 driver 例項，跨元件保持
   const driverInstance = shallowRef<Driver | null>(null)
 
   function setReplayCallback(callback: VoidCallback | null): void {

@@ -23,7 +23,7 @@ export const resolveUsageRequestType = (value: UsageRequestTypeLike): UsageReque
 }
 
 export const requestTypeToLegacyStream = (requestType?: UsageRequestType | null): boolean | null | undefined => {
-  // cyber 与 stream 正交（cyber 可发生在 stream 或非 stream 请求），不映射到 legacy stream 维度。
+  // cyber 與 stream 正交（cyber 可發生在 stream 或非 stream 請求），不對映到 legacy stream 維度。
   if (!requestType || requestType === 'unknown' || requestType === 'cyber') {
     return null
   }

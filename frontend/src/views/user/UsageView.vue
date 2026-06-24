@@ -164,7 +164,7 @@
       </template>
 
       <template #table>
-        <!-- Tab 切换栏 -->
+        <!-- Tab 切換欄 -->
         <div v-if="errorViewEnabled" class="mb-0 flex gap-2 border-b border-gray-200 px-4 pt-3 dark:border-dark-700">
           <button class="tab" :class="{ 'tab-active': activeTab === 'usage' }" @click="activeTab = 'usage'">
             {{ t('usage.tabs.usage') }}
@@ -174,9 +174,9 @@
           </button>
         </div>
 
-        <!-- 用量明细表 -->
-        <!-- flex 链让 DataTable 根 .table-wrapper(flex:1)拿到有界高度以启用内部滚动。
-             虚拟化器测高 race 导致的概率空白,已在 DataTable 内用「就绪门控 + initialRect 兜底」根治。 -->
+        <!-- 用量明細表 -->
+        <!-- flex 鏈讓 DataTable 根 .table-wrapper(flex:1)拿到有界高度以啟用內部滾動。
+             虛擬化器測高 race 導致的機率空白,已在 DataTable 內用「就緒門控 + initialRect 兜底」根治。 -->
         <div v-show="activeTab === 'usage'" class="flex min-h-0 flex-1 flex-col">
           <DataTable
           :columns="columns"
@@ -228,7 +228,7 @@
           </template>
 
           <template #cell-tokens="{ row }">
-            <!-- 图片生成请求 -->
+            <!-- 圖片生成請求 -->
             <div v-if="isImageUsage(row)" class="flex items-center gap-1.5">
               <svg
                 class="h-4 w-4 text-indigo-500"
@@ -246,7 +246,7 @@
               <span class="font-medium text-gray-900 dark:text-white">{{ row.image_count }}{{ t('usage.imageUnit') }}</span>
               <span class="text-gray-400">({{ formatImageBillingSize(row, t) }})</span>
             </div>
-            <!-- Token 请求 -->
+            <!-- Token 請求 -->
             <div v-else class="flex items-center gap-1.5">
               <div class="space-y-1.5 text-sm">
                 <!-- Input / Output Tokens -->
@@ -371,7 +371,7 @@
         </DataTable>
         </div>
 
-        <!-- 错误请求表 -->
+        <!-- 錯誤請求表 -->
         <div v-if="errorViewEnabled" v-show="activeTab === 'errors'" class="flex min-h-0 flex-1 flex-col">
           <UserErrorRequestsTable
             :rows="errorRows"
@@ -434,7 +434,7 @@
               <span class="font-medium text-pink-300">{{ tokenTooltipData.image_output_tokens.toLocaleString() }}</span>
             </div>
             <div v-if="tokenTooltipData && tokenTooltipData.cache_creation_tokens > 0">
-              <!-- 有 5m/1h 明细时，展开显示 -->
+              <!-- 有 5m/1h 明細時，展開顯示 -->
               <template v-if="tokenTooltipData.cache_creation_5m_tokens > 0 || tokenTooltipData.cache_creation_1h_tokens > 0">
                 <div v-if="tokenTooltipData.cache_creation_5m_tokens > 0" class="flex items-center justify-between gap-4">
                   <span class="text-gray-400 flex items-center gap-1.5">
@@ -451,7 +451,7 @@
                   <span class="font-medium text-white">{{ tokenTooltipData.cache_creation_1h_tokens.toLocaleString() }}</span>
                 </div>
               </template>
-              <!-- 无明细时，只显示聚合值 -->
+              <!-- 無明細時，只顯示聚合值 -->
               <div v-else class="flex items-center justify-between gap-4">
                 <span class="text-gray-400">{{ t('admin.usage.cacheCreationTokens') }}</span>
                 <span class="font-medium text-white">{{ tokenTooltipData.cache_creation_tokens.toLocaleString() }}</span>
@@ -665,11 +665,11 @@ const tokenTooltipData = ref<UsageLog | null>(null)
 // Usage stats from API
 const usageStats = ref<UsageStatsResponse | null>(null)
 
-// 缓存命中率 = cache_read / (input + cache_read)
-// 分母为 0（无任何输入）时显示 '-'
+// 快取命中率 = cache_read / (input + cache_read)
+// 分母為 0（無任何輸入）時顯示 '-'
 const cacheStats = computed(() => {
-  // 总输入 token = 普通输入 + 缓存写入 + 缓存读取（命中）
-  // 缓存命中率 = 缓存读取 / 总输入；总输入为 0 时返回零值，模板按 '-' 渲染。
+  // 總輸入 token = 普通輸入 + 快取寫入 + 快取讀取（命中）
+  // 快取命中率 = 快取讀取 / 總輸入；總輸入為 0 時返回零值，模板按 '-' 渲染。
   const cacheRead = usageStats.value?.total_cache_read_tokens || 0
   const cacheCreate = usageStats.value?.total_cache_creation_tokens || 0
   const input = usageStats.value?.total_input_tokens || 0
@@ -745,7 +745,7 @@ const onDateRangeChange = (range: {
   if (activeTab.value === 'errors') {
     loadErrors()
   } else {
-    errorRows.value = []  // 失效，下次切到 errors tab 时按新日期重新加载
+    errorRows.value = []  // 失效，下次切到 errors tab 時按新日期重新載入
   }
 }
 

@@ -34,7 +34,7 @@
             v-if="entry.models.length === 0"
             class="text-xs italic text-gray-400"
           >
-            {{ t('admin.channels.form.noModels', '未添加模型') }}
+            {{ t('admin.channels.form.noModels', '未新增模型') }}
           </span>
         </div>
 
@@ -48,7 +48,7 @@
 
       <!-- Expanded: show the label "Pricing Entry" or similar -->
       <div v-else class="flex-1 text-xs font-medium text-gray-500 dark:text-gray-400">
-        {{ t('admin.channels.form.pricingEntry', '定价配置') }}
+        {{ t('admin.channels.form.pricingEntry', '定價配置') }}
       </div>
 
       <!-- Remove button (always visible, stop propagation) -->
@@ -77,13 +77,13 @@
               :models="entry.models"
               :platform="props.platform"
               @update:models="onModelsUpdate($event)"
-              :placeholder="t('admin.channels.form.modelsPlaceholder', '输入模型名后按回车添加，支持通配符 *')"
+              :placeholder="t('admin.channels.form.modelsPlaceholder', '輸入模型名後按回車新增，支援萬用字元 *')"
               class="mt-1"
             />
           </div>
           <div class="w-40">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {{ t('admin.channels.form.billingMode', '计费模式') }}
+              {{ t('admin.channels.form.billingMode', '計費模式') }}
             </label>
             <Select
               :modelValue="entry.billing_mode"
@@ -98,34 +98,34 @@
         <div v-if="entry.billing_mode === 'token'">
           <!-- Default prices (fallback when no interval matches) -->
           <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
-            {{ t('admin.channels.form.defaultPrices', '默认价格（未命中区间时使用）') }}
+            {{ t('admin.channels.form.defaultPrices', '預設價格（未命中區間時使用）') }}
             <span class="ml-1 font-normal text-gray-400">$/MTok</span>
           </label>
           <div class="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-5">
             <div>
-              <label class="text-xs text-gray-400">{{ t('admin.channels.form.inputPrice', '输入') }}</label>
+              <label class="text-xs text-gray-400">{{ t('admin.channels.form.inputPrice', '輸入') }}</label>
               <input :value="entry.input_price" @input="emitField('input_price', ($event.target as HTMLInputElement).value)"
-                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
             </div>
             <div>
-              <label class="text-xs text-gray-400">{{ t('admin.channels.form.outputPrice', '输出') }}</label>
+              <label class="text-xs text-gray-400">{{ t('admin.channels.form.outputPrice', '輸出') }}</label>
               <input :value="entry.output_price" @input="emitField('output_price', ($event.target as HTMLInputElement).value)"
-                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
             </div>
             <div>
-              <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheWritePrice', '缓存写入') }}</label>
+              <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheWritePrice', '快取寫入') }}</label>
               <input :value="entry.cache_write_price" @input="emitField('cache_write_price', ($event.target as HTMLInputElement).value)"
-                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
             </div>
             <div>
-              <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheReadPrice', '缓存读取') }}</label>
+              <label class="text-xs text-gray-400">{{ t('admin.channels.form.cacheReadPrice', '快取讀取') }}</label>
               <input :value="entry.cache_read_price" @input="emitField('cache_read_price', ($event.target as HTMLInputElement).value)"
-                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
             </div>
             <div>
-              <label class="text-xs text-gray-400">{{ t('admin.channels.form.imageTokenPrice', '图片输出') }}</label>
+              <label class="text-xs text-gray-400">{{ t('admin.channels.form.imageTokenPrice', '圖片輸出') }}</label>
               <input :value="entry.image_output_price" @input="emitField('image_output_price', ($event.target as HTMLInputElement).value)"
-                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+                type="number" step="any" min="0" class="input mt-0.5 text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
             </div>
           </div>
 
@@ -133,11 +133,11 @@
           <div class="mt-3">
             <div class="flex items-center justify-between">
               <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {{ t('admin.channels.form.intervals', '上下文区间定价（可选）') }}
+                {{ t('admin.channels.form.intervals', '上下文區間定價（可選）') }}
                 <span class="ml-1 font-normal text-gray-400">(min, max]</span>
               </label>
               <button type="button" @click="addInterval" class="text-xs text-primary-600 hover:text-primary-700">
-                + {{ t('admin.channels.form.addInterval', '添加区间') }}
+                + {{ t('admin.channels.form.addInterval', '新增區間') }}
               </button>
             </div>
             <div v-if="entry.intervals && entry.intervals.length > 0" class="mt-2 space-y-2">
@@ -157,21 +157,21 @@
         <div v-else-if="entry.billing_mode === 'per_request'">
           <!-- Default per-request price -->
           <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
-            {{ t('admin.channels.form.defaultPerRequestPrice', '默认单次价格（未命中层级时使用）') }}
+            {{ t('admin.channels.form.defaultPerRequestPrice', '預設單次價格（未命中層級時使用）') }}
             <span class="ml-1 font-normal text-gray-400">$</span>
           </label>
           <div class="mt-1 w-48">
             <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+              type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
           </div>
 
           <!-- Tiers -->
           <div class="mt-3 flex items-center justify-between">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {{ t('admin.channels.form.requestTiers', '按次计费层级') }}
+              {{ t('admin.channels.form.requestTiers', '按次計費層級') }}
             </label>
             <button type="button" @click="addInterval" class="text-xs text-primary-600 hover:text-primary-700">
-              + {{ t('admin.channels.form.addTier', '添加层级') }}
+              + {{ t('admin.channels.form.addTier', '新增層級') }}
             </button>
           </div>
           <div v-if="entry.intervals && entry.intervals.length > 0" class="mt-2 space-y-2">
@@ -185,7 +185,7 @@
             />
           </div>
           <div v-else class="mt-2 rounded border border-dashed border-gray-300 p-3 text-center text-xs text-gray-400 dark:border-dark-500">
-            {{ t('admin.channels.form.noTiersYet', '暂无层级，点击添加配置按次计费价格') }}
+            {{ t('admin.channels.form.noTiersYet', '暫無層級，點選新增配置按次計費價格') }}
           </div>
         </div>
 
@@ -193,21 +193,21 @@
         <div v-else-if="entry.billing_mode === 'image'">
           <!-- Default image price (per-request, same as per_request mode) -->
           <label class="mt-3 block text-xs font-medium text-gray-500 dark:text-gray-400">
-            {{ t('admin.channels.form.defaultImagePrice', '默认图片价格（未命中层级时使用）') }}
+            {{ t('admin.channels.form.defaultImagePrice', '預設圖片價格（未命中層級時使用）') }}
             <span class="ml-1 font-normal text-gray-400">$</span>
           </label>
           <div class="mt-1 w-48">
             <input :value="entry.per_request_price" @input="emitField('per_request_price', ($event.target as HTMLInputElement).value)"
-              type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '默认')" />
+              type="number" step="any" min="0" class="input text-sm" :placeholder="t('admin.channels.form.pricePlaceholder', '預設')" />
           </div>
 
           <!-- Image tiers -->
           <div class="mt-3 flex items-center justify-between">
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {{ t('admin.channels.form.imageTiers', '图片计费层级（按次）') }}
+              {{ t('admin.channels.form.imageTiers', '圖片計費層級（按次）') }}
             </label>
             <button type="button" @click="addImageTier" class="text-xs text-primary-600 hover:text-primary-700">
-              + {{ t('admin.channels.form.addTier', '添加层级') }}
+              + {{ t('admin.channels.form.addTier', '新增層級') }}
             </button>
           </div>
           <div v-if="entry.intervals && entry.intervals.length > 0" class="mt-2 space-y-2">
@@ -256,7 +256,7 @@ const collapsed = ref(props.entry.models.length > 0)
 const billingModeOptions = computed(() => [
   { value: 'token', label: 'Token' },
   { value: 'per_request', label: t('admin.channels.billingMode.perRequest', '按次') },
-  { value: 'image', label: t('admin.channels.billingMode.image', '图片（按次）') }
+  { value: 'image', label: t('admin.channels.billingMode.image', '圖片（按次）') }
 ])
 
 const billingModeLabel = computed(() => {
@@ -307,17 +307,17 @@ async function onModelsUpdate(newModels: string[]) {
   const oldModels = props.entry.models
   emit('update', { ...props.entry, models: newModels })
 
-  // 只在新增模型且当前无价格时自动填充
+  // 只在新增模型且當前無價格時自動填充
   const addedModels = newModels.filter(m => !oldModels.includes(m))
   if (addedModels.length === 0) return
 
-  // 检查是否所有价格字段都为空
+  // 檢查是否所有價格欄位都為空
   const e = props.entry
   const hasPrice = e.input_price != null || e.output_price != null ||
                    e.cache_write_price != null || e.cache_read_price != null
   if (hasPrice) return
 
-  // 查询第一个新增模型的默认价格
+  // 查詢第一個新增模型的預設價格
   try {
     const result = await channelsAPI.getModelDefaultPricing(addedModels[0])
     if (result.found) {
@@ -332,7 +332,7 @@ async function onModelsUpdate(newModels: string[]) {
       })
     }
   } catch {
-    // 查询失败不影响用户操作
+    // 查詢失敗不影響使用者操作
   }
 }
 </script>

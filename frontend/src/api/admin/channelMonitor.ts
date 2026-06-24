@@ -28,7 +28,7 @@ export interface ChannelMonitor {
   group_name: string
   enabled: boolean
   interval_seconds: number
-  /** 每次调度在 interval 基础上 ± [0, jitter] 的随机偏移（秒），0 = 固定间隔 */
+  /** 每次排程在 interval 基礎上 ± [0, jitter] 的隨機偏移（秒），0 = 固定間隔 */
   jitter_seconds: number
   last_checked_at: string | null
   created_by: number
@@ -42,7 +42,7 @@ export interface ChannelMonitor {
   availability_7d: number
   /** Latest status per extra model (used for hover tooltip) */
   extra_models_status: ExtraModelStatus[]
-  /** 请求自定义快照字段（高级设置） */
+  /** 請求自定義快照欄位（高階設定） */
   template_id: number | null
   extra_headers: Record<string, string>
   body_override_mode: BodyOverrideMode
@@ -89,7 +89,7 @@ export interface CreateParams {
   body_override?: Record<string, unknown> | null
 }
 
-// Update request: api_key 空串 = 不修改；clear_template=true 时把 template_id 置空
+// Update request: api_key 空串 = 不修改；clear_template=true 時把 template_id 置空
 export type UpdateParams = Partial<CreateParams> & {
   clear_template?: boolean
 }

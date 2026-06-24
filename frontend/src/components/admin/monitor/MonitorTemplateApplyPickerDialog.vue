@@ -17,7 +17,7 @@
     </div>
 
     <div v-else>
-      <!-- 全选/全不选 -->
+      <!-- 全選/全不選 -->
       <div class="mb-2 flex items-center gap-3 text-xs">
         <button
           type="button"
@@ -61,7 +61,7 @@
             v-if="!m.enabled"
             class="ml-auto rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500 dark:bg-dark-700 dark:text-gray-400"
           >
-            {{ t('admin.channelMonitor.onlyDisabled').replace(/^仅|^Only /, '') }}
+            {{ t('admin.channelMonitor.onlyDisabled').replace(/^僅|^Only /, '') }}
           </span>
         </li>
       </ul>
@@ -132,7 +132,7 @@ async function fetchMonitors(id: number) {
   try {
     const { items } = await adminAPI.channelMonitorTemplate.listAssociatedMonitors(id)
     monitors.value = items
-    // 默认全选
+    // 預設全選
     selectedIds.value = items.map((m) => m.id)
   } catch (err: unknown) {
     appStore.showError(extractApiErrorMessage(err, t('common.error')))

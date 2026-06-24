@@ -56,7 +56,7 @@
                 class="text-blue-600 focus:ring-blue-500"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
-                t('admin.accounts.oauth.openai.mobileRefreshTokenAuth', '手动输入 Mobile RT')
+                t('admin.accounts.oauth.openai.mobileRefreshTokenAuth', '手動輸入 Mobile RT')
               }}</span>
             </label>
             <label v-if="showSessionTokenOption" class="flex cursor-pointer items-center gap-2">
@@ -78,7 +78,7 @@
                 class="text-blue-600 focus:ring-blue-500"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
-                t('admin.accounts.oauth.openai.accessTokenAuth', '手动输入 AT')
+                t('admin.accounts.oauth.openai.accessTokenAuth', '手動輸入 AT')
               }}</span>
             </label>
             <label v-if="showCodexSessionImportOption" class="flex cursor-pointer items-center gap-2">
@@ -179,7 +179,7 @@
           </div>
         </div>
 
-        <!-- Codex JSON / AT 批量输入 -->
+        <!-- Codex JSON / AT 批次輸入 -->
         <div v-if="inputMethod === 'codex_session'" class="space-y-4">
           <div
             class="rounded-lg border border-blue-300 bg-white/80 p-4 dark:border-blue-600 dark:bg-gray-800/80"

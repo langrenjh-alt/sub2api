@@ -12,7 +12,7 @@ import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { getSetupStatus } from '@/api/setup'
 import { resolveCompletedSetupRedirectPath } from './setupRedirect'
-import { resolveDocumentTitle } from './title'
+import { resolveRouteDocumentTitle } from './title'
 
 /**
  * Route definitions with lazy loading
@@ -686,9 +686,9 @@ const router = createRouter({
  */
 let authInitialized = false
 
-// 初始化导航加载状态和预加载
+// 初始化導航載入狀態和預載入
 const navigationLoading = useNavigationLoadingState()
-// 延迟初始化预加载，传入 router 实例
+// 延遲初始化預載入，傳入 router 例項
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
 const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal']
 const BACKEND_MODE_CALLBACK_PATHS = [
@@ -719,7 +719,7 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
 }
 
 router.beforeEach(async (to, _from, next) => {
-  // 开始导航加载状态
+  // 開始導航載入狀態
   navigationLoading.startNavigation()
 
   const authStore = useAuthStore()
@@ -732,22 +732,12 @@ router.beforeEach(async (to, _from, next) => {
 
   // Set page title
   const appStore = useAppStore()
-  // For custom pages, use menu item label as document title
-  if (to.name === 'CustomPage') {
-    const id = to.params.id as string
-    const publicItems = appStore.cachedPublicSettings?.custom_menu_items ?? []
-    const adminSettingsStore = useAdminSettingsStore()
-    const menuItem = publicItems.find((item) => item.id === id)
-      ?? (authStore.isAdmin ? adminSettingsStore.customMenuItems.find((item) => item.id === id) : undefined)
-    if (menuItem?.label) {
-      const siteName = appStore.siteName || 'Sub2API'
-      document.title = `${menuItem.label} - ${siteName}`
-    } else {
-      document.title = resolveDocumentTitle(to.meta.title, appStore.siteName, to.meta.titleKey as string)
-    }
-  } else {
-    document.title = resolveDocumentTitle(to.meta.title, appStore.siteName, to.meta.titleKey as string)
-  }
+  const adminSettingsStore = useAdminSettingsStore()
+  const customMenuItems = [
+    ...(appStore.cachedPublicSettings?.custom_menu_items ?? []),
+    ...(authStore.isAdmin ? adminSettingsStore.customMenuItems : []),
+  ]
+  document.title = resolveRouteDocumentTitle(to, appStore.siteName, customMenuItems)
 
   // Check if route requires authentication
   const requiresAuth = to.meta.requiresAuth !== false // Default to true
@@ -840,7 +830,7 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // 简易模式下限制访问某些页面
+  // 簡易模式下限制訪問某些頁面
   if (authStore.isSimpleMode) {
     const restrictedPaths = [
       '/admin/groups',
@@ -851,7 +841,7 @@ router.beforeEach(async (to, _from, next) => {
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
-      // 简易模式下访问受限页面,重定向到仪表板
+      // 簡易模式下訪問受限頁面,重定向到儀表板
       next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
@@ -878,14 +868,14 @@ router.beforeEach(async (to, _from, next) => {
  * Navigation guard: End loading and trigger prefetch
  */
 router.afterEach((to) => {
-  // 结束导航加载状态
+  // 結束導航載入狀態
   navigationLoading.endNavigation()
 
-  // 懒初始化预加载（首次导航时创建，传入 router 实例）
+  // 懶初始化預載入（首次導航時建立，傳入 router 例項）
   if (!routePrefetch) {
     routePrefetch = useRoutePrefetch(router)
   }
-  // 触发路由预加载（在浏览器空闲时执行）
+  // 觸發路由預載入（在瀏覽器空閒時執行）
   routePrefetch.triggerPrefetch(to)
 })
 

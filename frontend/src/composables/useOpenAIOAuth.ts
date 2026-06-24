@@ -131,7 +131,7 @@ export function useOpenAIOAuth() {
   }
 
   // Validate refresh token and get full token info
-  // clientId: 指定 OAuth client_id（用于第三方渠道获取的 RT，如 app_LlGpXReQgckcGGUo2JrYvtJK）
+  // clientId: 指定 OAuth client_id（用於第三方渠道獲取的 RT，如 app_LlGpXReQgckcGGUo2JrYvtJK）
   const validateRefreshToken = async (
     refreshToken: string,
     proxyId?: number | null,
@@ -175,7 +175,7 @@ export function useOpenAIOAuth() {
       expires_at: tokenInfo.expires_at
     }
 
-    // 仅在返回了新的 refresh_token 时才写入，防止用空值覆盖已有令牌
+    // 僅在返回了新的 refresh_token 時才寫入，防止用空值覆蓋已有令牌
     if (tokenInfo.refresh_token) {
       creds.refresh_token = tokenInfo.refresh_token
     }

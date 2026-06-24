@@ -1,12 +1,12 @@
 <template>
   <BaseDialog :show="show" :title="t('admin.users.replaceGroupTitle')" width="narrow" @close="$emit('close')">
     <div v-if="oldGroup" class="space-y-4">
-      <!-- 提示信息 -->
+      <!-- 提示資訊 -->
       <p class="text-sm text-gray-600 dark:text-gray-400">
         {{ t('admin.users.replaceGroupHint', { old: oldGroup.name }) }}
       </p>
 
-      <!-- 当前分组 -->
+      <!-- 當前分組 -->
       <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-600 dark:bg-dark-800">
         <div class="flex items-center gap-2">
           <Icon name="shield" size="sm" class="text-purple-500" />
@@ -19,7 +19,7 @@
         </div>
       </div>
 
-      <!-- 可选分组列表 -->
+      <!-- 可選分組列表 -->
       <div v-if="availableGroups.length > 0" class="max-h-64 space-y-2 overflow-y-auto">
         <label
           v-for="group in availableGroups"
@@ -50,7 +50,7 @@
         </label>
       </div>
 
-      <!-- 无可选分组 -->
+      <!-- 無可選分組 -->
       <div v-else class="py-6 text-center text-sm text-gray-400">
         {{ t('admin.users.noOtherGroups') }}
       </div>
@@ -99,7 +99,7 @@ const appStore = useAppStore()
 const selectedGroupId = ref<number | null>(null)
 const submitting = ref(false)
 
-// 可选的专属标准分组（排除当前 oldGroup）
+// 可選的專屬標準分組（排除當前 oldGroup）
 const availableGroups = computed(() => {
   if (!props.oldGroup) return []
   return props.allGroups.filter(

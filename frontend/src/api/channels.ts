@@ -1,6 +1,6 @@
 /**
  * User Channels API endpoints (non-admin)
- * 用户侧「可用渠道」聚合查询：渠道 + 用户可访问的分组 + 支持模型（含定价）。
+ * 使用者側「可用渠道」聚合查詢：渠道 + 使用者可訪問的分組 + 支援模型（含定價）。
  */
 
 import { apiClient } from './client'
@@ -10,11 +10,11 @@ export interface UserAvailableGroup {
   id: number
   name: string
   platform: string
-  /** 'standard' | 'subscription' — 订阅分组视觉加深，和 API 密钥页保持一致。 */
+  /** 'standard' | 'subscription' — 訂閱分組視覺加深，和 API 金鑰頁保持一致。 */
   subscription_type: string
-  /** 分组默认倍率。用户专属倍率（若有）通过 /groups/rates 获取后在前端 join。 */
+  /** 分組預設倍率。使用者專屬倍率（若有）通過 /groups/rates 獲取後在前端 join。 */
   rate_multiplier: number
-  /** true = 专属分组（小范围授权）；false = 公开分组。 */
+  /** true = 專屬分組（小範圍授權）；false = 公開分組。 */
   is_exclusive: boolean
 }
 
@@ -47,9 +47,9 @@ export interface UserSupportedModel {
 }
 
 /**
- * 渠道下单个平台的子视图：用户可访问的分组 + 该平台支持的模型。
- * 后端把一个渠道按平台聚合成 sections，前端可以把渠道名作为 row-group
- * 一次渲染，后面按 sections 顺序用 rowspan 铺开。
+ * 渠道下單個平台的子檢視：使用者可訪問的分組 + 該平台支援的模型。
+ * 後端把一個渠道按平台聚合成 sections，前端可以把渠道名作為 row-group
+ * 一次渲染，後面按 sections 順序用 rowspan 鋪開。
  */
 export interface UserChannelPlatformSection {
   platform: string
@@ -63,7 +63,7 @@ export interface UserAvailableChannel {
   platforms: UserChannelPlatformSection[]
 }
 
-/** 列出当前用户可见的「可用渠道」（与 /groups/available 保持一致，返回平数组）。 */
+/** 列出當前使用者可見的「可用渠道」（與 /groups/available 保持一致，返回平陣列）。 */
 export async function getAvailable(options?: { signal?: AbortSignal }): Promise<UserAvailableChannel[]> {
   const { data } = await apiClient.get<UserAvailableChannel[]>('/channels/available', {
     signal: options?.signal

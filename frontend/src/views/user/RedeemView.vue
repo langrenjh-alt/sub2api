@@ -247,7 +247,7 @@
                           : 'bg-orange-100 dark:bg-orange-900/30'
                   ]"
                 >
-                  <!-- 余额类型图标 -->
+                  <!-- 餘額型別圖示 -->
                   <Icon
                     v-if="isBalanceType(item.type)"
                     name="dollar"
@@ -258,14 +258,14 @@
                         : 'text-red-600 dark:text-red-400'
                     "
                   />
-                  <!-- 订阅类型图标 -->
+                  <!-- 訂閱型別圖示 -->
                   <Icon
                     v-else-if="isSubscriptionType(item.type)"
                     name="badge"
                     size="md"
                     class="text-purple-600 dark:text-purple-400"
                   />
-                  <!-- 并发类型图标 -->
+                  <!-- 並行型別圖示 -->
                   <Icon
                     v-else
                     name="bolt"
@@ -410,7 +410,7 @@ const formatHistoryValue = (item: RedeemHistoryItem) => {
     const sign = item.value >= 0 ? '+' : ''
     return `${sign}$${item.value.toFixed(2)}`
   } else if (isSubscriptionType(item.type)) {
-    // 订阅类型显示有效天数和分组名称
+    // 訂閱型別顯示有效天數和分組名稱
     const days = item.validity_days || Math.round(item.value)
     const groupName = item.group?.name || ''
     return groupName ? `${days}${t('redeem.days')} - ${groupName}` : `${days}${t('redeem.days')}`

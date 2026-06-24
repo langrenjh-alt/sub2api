@@ -69,7 +69,7 @@
           <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
         </div>
 
-        <!-- Model Restriction Section (不适用于 Antigravity) -->
+        <!-- Model Restriction Section (不適用於 Antigravity) -->
         <div v-if="account.platform !== 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -419,7 +419,7 @@
 
       </div>
 
-      <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型映射区域) -->
+      <!-- OpenAI OAuth Model Mapping (OAuth 型別沒有 apikey 容器，需要獨立的模型對映區域) -->
       <div
         v-if="account.platform === 'openai' && account.type === 'oauth'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1001,7 +1001,7 @@
       </div>
 
       <!-- Antigravity model restriction (applies to all antigravity types) -->
-      <!-- Antigravity 只支持模型映射模式，不支持白名单模式 -->
+      <!-- Antigravity 只支援模型對映模式，不支援白名單模式 -->
       <div v-if="account.platform === 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -1066,7 +1066,7 @@
                   </svg>
                 </button>
               </div>
-              <!-- 校验错误提示 -->
+              <!-- 校驗錯誤提示 -->
               <p v-if="!isValidWildcardPattern(mapping.from)" class="text-xs text-red-500">
                 {{ t('admin.accounts.wildcardOnlyAtEnd') }}
               </p>
@@ -1325,7 +1325,7 @@
         <p class="input-hint">{{ t('admin.accounts.expiresAtHint') }}</p>
       </div>
 
-      <!-- OpenAI 自动透传开关（OAuth/API Key） -->
+      <!-- OpenAI 自動透傳開關（OAuth/API Key） -->
       <div
         v-if="account?.platform === 'openai' && (account?.type === 'oauth' || account?.type === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1355,7 +1355,7 @@
         </div>
       </div>
 
-      <!-- OpenAI Codex 图片生成桥接账号级覆盖 -->
+      <!-- OpenAI Codex 圖片生成橋接帳號級覆蓋 -->
       <div
         v-if="account?.platform === 'openai' && (account?.type === 'oauth' || account?.type === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1415,7 +1415,7 @@
         </div>
       </div>
 
-      <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
+      <!-- OpenAI WS Mode 三態（off/ctx_pool/passthrough） -->
       <div
         v-if="account?.platform === 'openai' && (account?.type === 'oauth' || account?.type === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1492,7 +1492,7 @@
         </div>
       </div>
 
-      <!-- Anthropic API Key 自动透传开关 -->
+      <!-- Anthropic API Key 自動透傳開關 -->
       <div
         v-if="account?.platform === 'anthropic' && account?.type === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1542,7 +1542,7 @@
         </div>
       </div>
 
-      <!-- 配额控制 (Anthropic apikey/bedrock: 配额限制 + 亲和) -->
+      <!-- 配額控制 (Anthropic apikey/bedrock: 配額限制 + 親和) -->
       <div
         v-if="account?.platform === 'anthropic' && (account?.type === 'apikey' || account?.type === 'bedrock')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1593,7 +1593,7 @@
           @update:quotaNotifyTotalThresholdType="quotaNotifyState.total.thresholdType = $event"
         />
       </div>
-      <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
+      <!-- 配額控制 (非 Anthropic apikey/bedrock) -->
       <div
         v-else-if="account?.type === 'apikey' || account?.type === 'bedrock'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1645,7 +1645,7 @@
         />
       </div>
 
-      <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
+      <!-- OpenAI OAuth Codex 官方客戶端限制開關 -->
       <div
         v-if="account?.platform === 'openai' && account?.type === 'oauth'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -1865,7 +1865,7 @@
         </div>
       </div>
 
-      <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 窗口费用 + 会话 + RPM 等) -->
+      <!-- 配額控制 (Anthropic OAuth/SetupToken: 親和 + 視窗費用 + 會話 + RPM 等) -->
       <div
         v-if="account?.platform === 'anthropic' && (account?.type === 'oauth' || account?.type === 'setup-token')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -2086,7 +2086,7 @@
 
           </div>
 
-          <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
+          <!-- 使用者訊息限速模式（獨立於 RPM 開關，始終可見） -->
           <div class="mt-4">
             <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -2270,7 +2270,7 @@
             >
               ?
             </span>
-            <!-- Tooltip（向下显示避免被弹窗裁剪） -->
+            <!-- Tooltip（向下顯示避免被彈窗裁剪） -->
             <div
               class="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 w-72 rounded bg-gray-900 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700"
             >
@@ -2310,7 +2310,7 @@
         </div>
       </div>
 
-      <!-- Group Selection - 仅标准模式显示 -->
+      <!-- Group Selection - 僅標準模式顯示 -->
       <GroupSelector
         v-if="!authStore.isSimpleMode"
         v-model="form.group_ids"
@@ -2483,7 +2483,7 @@ const openAICompactModelMappings = ref<ModelMapping[]>([])
 const modelRestrictionMode = ref<'whitelist' | 'mapping'>('whitelist')
 const allowedModels = ref<string[]>([])
 const DEFAULT_POOL_MODE_RETRY_COUNT = 3
-const MAX_POOL_MODE_RETRY_COUNT = 50
+const MAX_POOL_MODE_RETRY_COUNT = 10
 const DEFAULT_POOL_MODE_RETRY_STATUS_CODES = [401, 403, 429]
 const poolModeEnabled = ref(false)
 const poolModeRetryCount = ref(DEFAULT_POOL_MODE_RETRY_COUNT)
@@ -2576,7 +2576,7 @@ const cacheTTLOverrideTarget = ref<string>('5m')
 const customBaseUrlEnabled = ref(false)
 const customBaseUrl = ref('')
 
-// OpenAI 自动透传开关（OAuth/API Key）
+// OpenAI 自動透傳開關（OAuth/API Key）
 const openaiPassthroughEnabled = ref(false)
 const openAICompactMode = ref<OpenAICompactMode>('auto')
 const openAIResponsesMode = ref<OpenAIResponsesMode>('auto')
@@ -3011,7 +3011,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   }
   if (newAccount.platform === 'anthropic' && newAccount.type === 'apikey') {
     anthropicPassthroughEnabled.value = extra?.anthropic_passthrough === true
-    // 三态：string "default"/"enabled"/"disabled"，向后兼容旧 bool
+    // 三態：string "default"/"enabled"/"disabled"，向後相容舊 bool
     const wsVal = extra?.web_search_emulation
     if (wsVal === 'enabled' || wsVal === 'disabled') {
       webSearchEmulationMode.value = wsVal
@@ -3052,22 +3052,22 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     resetQuotaNotify()
   }
 
-  // Load antigravity model mapping (Antigravity 只支持映射模式)
+  // Load antigravity model mapping (Antigravity 只支援對映模式)
   if (newAccount.platform === 'antigravity') {
     const credentials = newAccount.credentials as Record<string, unknown> | undefined
 
-    // Antigravity 始终使用映射模式
+    // Antigravity 始終使用對映模式
     antigravityModelRestrictionMode.value = 'mapping'
     antigravityWhitelistModels.value = []
 
-    // 从 model_mapping 读取映射配置
+    // 從 model_mapping 讀取對映配置
     const rawAgMapping = credentials?.model_mapping as Record<string, string> | undefined
     if (rawAgMapping && typeof rawAgMapping === 'object') {
       const entries = Object.entries(rawAgMapping)
-      // 无论是白名单样式(key===value)还是真正的映射，都统一转换为映射列表
+      // 無論是白名單樣式(key===value)還是真正的對映，都統一轉換為對映列表
       antigravityModelMappings.value = entries.map(([from, to]) => ({ from, to }))
     } else {
-      // 兼容旧数据：从 model_whitelist 读取，转换为映射格式
+      // 相容舊資料：從 model_whitelist 讀取，轉換為對映格式
       const rawWhitelist = credentials?.model_whitelist
       if (Array.isArray(rawWhitelist) && rawWhitelist.length > 0) {
         antigravityModelMappings.value = rawWhitelist
@@ -3487,7 +3487,7 @@ function loadQuotaControlSettings(account: Account) {
     rpmStickyBuffer.value = account.rpm_sticky_buffer ?? null
   }
 
-  // UMQ mode（独立于 RPM 加载，防止编辑无 RPM 账号时丢失已有配置）
+  // UMQ mode（獨立於 RPM 載入，防止編輯無 RPM 帳號時丟失已有配置）
   userMsgQueueMode.value = account.user_msg_queue_mode ?? ''
 
   // Load TLS fingerprint setting
@@ -3667,14 +3667,14 @@ const handleSubmit = async () => {
 
   const updatePayload: Record<string, unknown> = { ...form }
   try {
-    // 后端期望 proxy_id: 0 表示清除代理，而不是 null
+    // 後端期望 proxy_id: 0 表示清除代理，而不是 null
     if (updatePayload.proxy_id === null) {
       updatePayload.proxy_id = 0
     }
     if (form.expires_at === null) {
       updatePayload.expires_at = 0
     }
-    // load_factor: 空值/NaN/0/负数 时发送 0（后端约定 <= 0 = 清除）
+    // load_factor: 空值/NaN/0/負數 時傳送 0（後端約定 <= 0 = 清除）
     const lf = form.load_factor
     if (lf == null || Number.isNaN(lf) || lf <= 0) {
       updatePayload.load_factor = 0
@@ -3694,10 +3694,10 @@ const handleSubmit = async () => {
       }
 
       // Handle API key
-      // 后端响应已脱敏：currentCredentials 不会再包含 api_key 原文。
-      // 用户填入新值则覆盖；留空时优先看 credentials_status.has_api_key；
-      // 若后端尚未升级（无 credentials_status），回退读旧结构 currentCredentials.api_key。
-      // 两者都无才报错。
+      // 後端響應已脫敏：currentCredentials 不會再包含 api_key 原文。
+      // 使用者填入新值則覆蓋；留空時優先看 credentials_status.has_api_key；
+      // 若後端尚未升級（無 credentials_status），回退讀舊結構 currentCredentials.api_key。
+      // 兩者都無才報錯。
       const hasExistingApiKey =
         props.account.credentials_status?.has_api_key ?? Boolean(currentCredentials.api_key)
       if (editApiKey.value.trim()) {
@@ -3707,7 +3707,7 @@ const handleSubmit = async () => {
         return
       }
 
-      // Add model mapping if configured（OpenAI 开启自动透传时保留现有映射，不再编辑）
+      // Add model mapping if configured（OpenAI 開啟自動透傳時保留現有對映，不再編輯）
       if (shouldApplyModelMapping) {
         const modelMapping = buildModelRestrictionMapping()
         if (modelMapping) {
@@ -3795,8 +3795,8 @@ const handleSubmit = async () => {
         return
       }
 
-      // SA JSON 已脱敏不再随 credentials 返回，存在性优先读 credentials_status。
-      // 若后端尚未升级（无 credentials_status），回退读旧结构 service_account_json / service_account。
+      // SA JSON 已脫敏不再隨 credentials 返回，存在性優先讀 credentials_status。
+      // 若後端尚未升級（無 credentials_status），回退讀舊結構 service_account_json / service_account。
       const credentialsStatus = props.account.credentials_status
       const hasExistingServiceAccountJson = credentialsStatus
         ? Boolean(
@@ -3911,7 +3911,7 @@ const handleSubmit = async () => {
           delete newCredentials.model_mapping
         }
       } else if (currentCredentials.model_mapping) {
-        // 透传模式保留现有映射
+        // 透傳模式保留現有對映
         newCredentials.model_mapping = currentCredentials.model_mapping
       }
       const compactModelMapping = buildModelMappingObject('mapping', [], openAICompactModelMappings.value)
@@ -3925,17 +3925,17 @@ const handleSubmit = async () => {
     }
 
     // Antigravity: persist model mapping to credentials (applies to all antigravity types)
-    // Antigravity 只支持映射模式
+    // Antigravity 只支援對映模式
     if (props.account.platform === 'antigravity') {
       const currentCredentials = (updatePayload.credentials as Record<string, unknown>) ||
         ((props.account.credentials as Record<string, unknown>) || {})
       const newCredentials: Record<string, unknown> = { ...currentCredentials }
 
-      // 移除旧字段
+      // 移除舊欄位
       delete newCredentials.model_whitelist
       delete newCredentials.model_mapping
 
-      // 只使用映射模式
+      // 只使用對映模式
       const antigravityModelMapping = buildModelMappingObject(
         'mapping',
         [],
@@ -4006,13 +4006,13 @@ const handleSubmit = async () => {
         delete newExtra.rpm_sticky_buffer
       }
 
-      // UMQ mode（独立于 RPM 保存）
+      // UMQ mode（獨立於 RPM 儲存）
       if (userMsgQueueMode.value) {
         newExtra.user_msg_queue_mode = userMsgQueueMode.value
       } else {
         delete newExtra.user_msg_queue_mode
       }
-      delete newExtra.user_msg_queue_enabled  // 清理旧字段
+      delete newExtra.user_msg_queue_enabled  // 清理舊欄位
 
       // TLS fingerprint setting
       if (tlsFingerprintEnabled.value) {
@@ -4136,12 +4136,12 @@ const handleSubmit = async () => {
         if (codexCLIOnlyEnabled.value) {
           newExtra.codex_cli_only = true
         } else if (hadCodexCLIOnlyEnabled) {
-          // 关闭时显式写 false，避免 extra 为空被后端忽略导致旧值无法清除
+          // 關閉時顯式寫 false，避免 extra 為空被後端忽略導致舊值無法清除
           newExtra.codex_cli_only = false
         } else {
           delete newExtra.codex_cli_only
         }
-        // 仅当 codex_cli_only 开启且子开关开启时写入 Claude Code 插件白名单，否则清除避免孤立字段
+        // 僅當 codex_cli_only 開啟且子開關開啟時寫入 Claude Code 外掛白名單，否則清除避免孤立欄位
         if (codexCLIOnlyEnabled.value && codexCLIOnlyAllowClaudeCodeEnabled.value) {
           newExtra.codex_cli_only_allowed_clients = ['claude_code']
         } else {

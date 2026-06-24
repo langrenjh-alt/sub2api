@@ -24,11 +24,11 @@
         </router-link>
 
         <div class="nav-links" data-animate="nav">
-          <a href="#work" data-magnetic>工作流</a>
-          <a href="#models" data-magnetic>模型</a>
-          <a href="#access" data-magnetic>接入</a>
+          <a href="#work" data-magnetic>{{ t('home.landing.nav.workflow') }}</a>
+          <a href="#models" data-magnetic>{{ t('home.landing.nav.models') }}</a>
+          <a href="#access" data-magnetic>{{ t('home.landing.nav.access') }}</a>
           <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer" data-magnetic>
-            文档
+            {{ t('home.docs') }}
           </a>
         </div>
 
@@ -37,7 +37,7 @@
           <button
             @click="toggleTheme"
             class="icon-button"
-            :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
+            :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
             data-button
           >
             <Icon v-if="isDark" name="sun" size="sm" />
@@ -48,7 +48,7 @@
             class="pill-button pill-button-dark"
             data-button
           >
-            {{ isAuthenticated ? '进入控制台' : '登录' }}
+            {{ isAuthenticated ? t('home.goToDashboard') : t('home.login') }}
           </router-link>
         </div>
       </nav>
@@ -70,7 +70,7 @@
                 class="pill-button pill-button-dark"
                 data-button
               >
-                立即充值
+                {{ t('home.landing.actions.rechargeNow') }}
                 <Icon name="externalLink" size="sm" />
               </a>
               <router-link
@@ -78,7 +78,7 @@
                 class="pill-button pill-button-light"
                 data-button
               >
-                {{ isAuthenticated ? '打开工作台' : '开始使用' }}
+                {{ isAuthenticated ? t('home.landing.actions.openWorkspace') : t('home.getStarted') }}
                 <Icon name="arrowRight" size="sm" />
               </router-link>
             </div>
@@ -96,51 +96,18 @@
             </div>
 
             <div class="visual-body">
-              <div class="route-map" aria-hidden="true">
-                <svg viewBox="0 0 620 340" role="img" aria-label="Z30 API routing diagram">
-                  <defs>
-                    <linearGradient id="flowLine" x1="0" x2="1" y1="0" y2="1">
-                      <stop offset="0%" stop-color="#2f7cf6" />
-                      <stop offset="55%" stop-color="#1f9d8a" />
-                      <stop offset="100%" stop-color="#f0a33a" />
-                    </linearGradient>
-                    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#1d2430" flood-opacity="0.16" />
-                    </filter>
-                  </defs>
-                  <rect x="30" y="28" width="560" height="284" rx="28" fill="rgba(255,255,255,0.58)" stroke="rgba(255,255,255,0.8)" />
-                  <path class="svg-flow-line" d="M142 170 C242 78 372 78 478 138" fill="none" stroke="url(#flowLine)" stroke-width="4" stroke-linecap="round" />
-                  <path class="svg-flow-line delay" d="M142 170 C246 258 370 260 478 204" fill="none" stroke="url(#flowLine)" stroke-width="4" stroke-linecap="round" />
-
-                  <g class="svg-node" filter="url(#softShadow)">
-                    <rect x="76" y="118" width="132" height="104" rx="24" fill="#ffffff" />
-                    <circle cx="111" cy="153" r="15" fill="#2f7cf6" opacity="0.14" />
-                    <path d="M106 153h34m-17-17v34" stroke="#2f7cf6" stroke-width="5" stroke-linecap="round" />
-                    <text x="103" y="201" fill="#1f2937" font-size="17" font-weight="600">Client</text>
-                  </g>
-
-                  <g class="svg-node center" filter="url(#softShadow)">
-                    <rect x="244" y="100" width="132" height="140" rx="28" fill="#111827" />
-                    <circle cx="310" cy="155" r="34" fill="#ffffff" opacity="0.1" />
-                    <path d="M290 166l19-46 22 46" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M299 149h23" stroke="#ffffff" stroke-width="6" stroke-linecap="round" />
-                    <text x="278" y="212" fill="#ffffff" font-size="17" font-weight="600">Z30 API</text>
-                  </g>
-
-                  <g class="svg-node" filter="url(#softShadow)">
-                    <rect x="432" y="84" width="116" height="80" rx="22" fill="#ffffff" />
-                    <circle cx="467" cy="124" r="14" fill="#1f9d8a" opacity="0.16" />
-                    <path d="M462 124h39" stroke="#1f9d8a" stroke-width="5" stroke-linecap="round" />
-                    <text x="454" y="147" fill="#1f2937" font-size="14" font-weight="600">Models</text>
-                  </g>
-
-                  <g class="svg-node" filter="url(#softShadow)">
-                    <rect x="432" y="184" width="116" height="80" rx="22" fill="#ffffff" />
-                    <circle cx="467" cy="224" r="14" fill="#f0a33a" opacity="0.18" />
-                    <path d="M457 231l12-18 13 18 15-27" stroke="#b66d0d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-                    <text x="452" y="247" fill="#1f2937" font-size="14" font-weight="600">Billing</text>
-                  </g>
-                </svg>
+              <div class="route-map">
+                <canvas
+                  ref="heroCanvas"
+                  class="route-canvas"
+                  :aria-label="t('home.landing.visualLabel')"
+                  role="img"
+                ></canvas>
+                <div class="visual-labels" aria-hidden="true">
+                  <span>Client</span>
+                  <span>Z30 API</span>
+                  <span>Models</span>
+                </div>
               </div>
 
               <div class="metric-strip">
@@ -155,7 +122,7 @@
         </div>
 
         <div class="cta-glass glass-panel" data-animate="banner" data-card>
-          <p>通过统一入口完成充值、密钥管理和多模型调用，保持日常工作流简洁可控。</p>
+          <p>{{ t('home.landing.ctaBanner') }}</p>
           <a
             :href="rechargeUrl"
             target="_blank"
@@ -163,7 +130,7 @@
             class="pill-button pill-button-dark"
             data-button
           >
-            打开充值页
+            {{ t('home.landing.actions.openRecharge') }}
             <Icon name="externalLink" size="sm" />
           </a>
         </div>
@@ -172,7 +139,7 @@
       <section id="work" class="section-shell">
         <div class="section-heading" data-animate-scroll>
           <p class="eyebrow">Workflow</p>
-          <h2>把 API 中转变成清晰的日常工作流。</h2>
+          <h2>{{ t('home.landing.workflowTitle') }}</h2>
         </div>
 
         <div class="feature-grid">
@@ -195,7 +162,7 @@
       <section id="models" class="section-shell section-tight">
         <div class="section-heading" data-animate-scroll>
           <p class="eyebrow">Models</p>
-          <h2>一个 Key，连接主流 AI 能力。</h2>
+          <h2>{{ t('home.landing.modelsTitle') }}</h2>
         </div>
 
         <div class="provider-grid">
@@ -218,10 +185,8 @@
       <section id="access" class="section-shell access-section">
         <div class="access-copy" data-animate-scroll>
           <p class="eyebrow">Access</p>
-          <h2>从充值到调用，路径保持简单。</h2>
-          <p>
-            充值后在控制台创建 API Key，把客户端 Base URL 指向 z30.top 的兼容接口，即可按原有 OpenAI SDK 方式调用。
-          </p>
+          <h2>{{ t('home.landing.accessTitle') }}</h2>
+          <p>{{ t('home.landing.accessDescription') }}</p>
           <div class="hero-actions">
             <a
               :href="rechargeUrl"
@@ -230,7 +195,7 @@
               class="pill-button pill-button-dark"
               data-button
             >
-              充值入口
+              {{ t('home.landing.actions.rechargeEntry') }}
               <Icon name="externalLink" size="sm" />
             </a>
             <router-link
@@ -238,7 +203,7 @@
               class="pill-button pill-button-light"
               data-button
             >
-              控制台
+              {{ t('home.dashboard') }}
               <Icon name="arrowRight" size="sm" />
             </router-link>
           </div>
@@ -266,7 +231,7 @@
       <p>&copy; {{ currentYear }} {{ brandName }}</p>
       <div>
         <a :href="siteUrl" target="_blank" rel="noopener noreferrer" data-magnetic>z30.top</a>
-        <a :href="rechargeUrl" target="_blank" rel="noopener noreferrer" data-magnetic>充值</a>
+        <a :href="rechargeUrl" target="_blank" rel="noopener noreferrer" data-magnetic>{{ t('home.landing.nav.recharge') }}</a>
       </div>
     </footer>
   </div>
@@ -276,16 +241,22 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 type HoverCleanup = () => void
+type CanvasCleanup = () => void
+type FeatureIcon = 'server' | 'shield' | 'chart' | 'key'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 const homeRoot = ref<HTMLElement | null>(null)
+const heroCanvas = ref<HTMLCanvasElement | null>(null)
 const animationCleanups: HoverCleanup[] = []
+let canvasCleanup: CanvasCleanup | undefined
 let animationContext: ReturnType<typeof gsap.context> | undefined
 
 const configuredSiteName = computed(() => appStore.cachedPublicSettings?.site_name || appStore.siteName || '')
@@ -297,7 +268,7 @@ const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appS
 const heroSubtitle = computed(
   () =>
     appStore.cachedPublicSettings?.site_subtitle ||
-    '面向 Codex / Claude / Gemini 的统一 API 中转与额度管理平台，由 z30.top 提供稳定接入。'
+    t('home.landing.heroSubtitle')
 )
 const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
@@ -323,48 +294,53 @@ const modelLogos = [
   { name: 'OpenAI' }
 ]
 
-const heroMetrics = [
-  { label: 'Gateway', value: '99.9%', detail: '多账号容灾' },
-  { label: 'Billing', value: 'Usage', detail: '额度可见' },
-  { label: 'Base URL', value: '/v1', detail: '兼容 OpenAI' }
-]
+const heroMetrics = computed(() => [
+  { label: 'Gateway', value: '99.9%', detail: t('home.landing.metrics.gateway') },
+  { label: 'Billing', value: 'Usage', detail: t('home.landing.metrics.billing') },
+  { label: 'Base URL', value: '/v1', detail: t('home.landing.metrics.baseUrl') }
+])
 
-const features = [
+const features = computed<Array<{ icon: FeatureIcon; title: string; description: string }>>(() => [
   {
     icon: 'server',
-    title: '统一网关',
-    description: '保持 OpenAI 兼容调用方式，用同一套 Base URL 和 API Key 接入多种上游模型。'
+    title: t('home.landing.featureCards.gateway.title'),
+    description: t('home.landing.featureCards.gateway.description')
   },
   {
     icon: 'shield',
-    title: '稳定调度',
-    description: '自动选择可用账号和通道，支持会话保持、负载切换和失败降级。'
+    title: t('home.landing.featureCards.routing.title'),
+    description: t('home.landing.featureCards.routing.description')
   },
   {
     icon: 'chart',
-    title: '用量可见',
-    description: '余额、Token、请求量和成本集中呈现，团队使用情况清晰可查。'
+    title: t('home.landing.featureCards.usage.title'),
+    description: t('home.landing.featureCards.usage.description')
   },
   {
     icon: 'key',
-    title: '密钥管理',
-    description: '为不同项目创建独立密钥，按场景控制额度、权限和使用周期。'
+    title: t('home.landing.featureCards.keys.title'),
+    description: t('home.landing.featureCards.keys.description')
   }
-] as const
+])
 
-const providers = [
-  { name: 'Codex', caption: 'coding agent', status: 'ready' },
-  { name: 'Claude', caption: 'messages API', status: 'ready' },
-  { name: 'GPT', caption: 'OpenAI compatible', status: 'ready' },
-  { name: 'Gemini', caption: 'v1beta support', status: 'ready' },
-  { name: 'Antigravity', caption: 'dedicated routes', status: 'ready' },
-  { name: 'More', caption: 'extendable upstreams', status: 'soon' }
-]
+const providers = computed(() => [
+  { name: 'Codex', caption: t('home.landing.providerCaptions.codex'), status: t('home.landing.providerStatus.ready') },
+  { name: 'Claude', caption: t('home.landing.providerCaptions.claude'), status: t('home.landing.providerStatus.ready') },
+  { name: 'GPT', caption: t('home.landing.providerCaptions.gpt'), status: t('home.landing.providerStatus.ready') },
+  { name: 'Gemini', caption: t('home.landing.providerCaptions.gemini'), status: t('home.landing.providerStatus.ready') },
+  { name: 'Antigravity', caption: t('home.landing.providerCaptions.antigravity'), status: t('home.landing.providerStatus.ready') },
+  { name: 'More', caption: t('home.landing.providerCaptions.more'), status: t('home.landing.providerStatus.soon') }
+])
 
 function toggleTheme() {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle('dark', isDark.value)
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  requestAnimationFrame(() => {
+    canvasCleanup?.()
+    canvasCleanup = undefined
+    initCanvasAnimation()
+  })
 }
 
 function initTheme() {
@@ -375,6 +351,243 @@ function initTheme() {
   ) {
     isDark.value = true
     document.documentElement.classList.add('dark')
+  }
+}
+
+function roundedRectPath(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+) {
+  const r = Math.min(radius, width / 2, height / 2)
+  context.beginPath()
+  context.moveTo(x + r, y)
+  context.lineTo(x + width - r, y)
+  context.quadraticCurveTo(x + width, y, x + width, y + r)
+  context.lineTo(x + width, y + height - r)
+  context.quadraticCurveTo(x + width, y + height, x + width - r, y + height)
+  context.lineTo(x + r, y + height)
+  context.quadraticCurveTo(x, y + height, x, y + height - r)
+  context.lineTo(x, y + r)
+  context.quadraticCurveTo(x, y, x + r, y)
+  context.closePath()
+}
+
+function drawRoundedCard(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string,
+  stroke: string
+) {
+  roundedRectPath(context, x, y, width, height, radius)
+  context.fillStyle = fill
+  context.fill()
+  context.strokeStyle = stroke
+  context.lineWidth = 1
+  context.stroke()
+}
+
+function drawNodeIcon(
+  context: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  color: string,
+  variant: 'client' | 'gateway' | 'models'
+) {
+  context.save()
+  context.lineWidth = 4
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.strokeStyle = color
+  if (variant === 'client') {
+    context.beginPath()
+    context.moveTo(cx - 14, cy)
+    context.lineTo(cx + 14, cy)
+    context.moveTo(cx, cy - 14)
+    context.lineTo(cx, cy + 14)
+    context.stroke()
+  } else if (variant === 'gateway') {
+    context.fillStyle = color
+    context.beginPath()
+    context.arc(cx, cy, 5, 0, Math.PI * 2)
+    context.fill()
+    for (let i = 0; i < 6; i++) {
+      const angle = (Math.PI * 2 * i) / 6
+      const x = cx + Math.cos(angle) * 23
+      const y = cy + Math.sin(angle) * 23
+      context.beginPath()
+      context.moveTo(cx, cy)
+      context.lineTo(x, y)
+      context.stroke()
+      context.beginPath()
+      context.arc(x, y, 4, 0, Math.PI * 2)
+      context.fill()
+    }
+  } else {
+    for (let i = 0; i < 3; i++) {
+      context.beginPath()
+      context.arc(cx - 16 + i * 16, cy, 5, 0, Math.PI * 2)
+      context.stroke()
+    }
+    context.beginPath()
+    context.moveTo(cx - 11, cy)
+    context.lineTo(cx - 5, cy)
+    context.moveTo(cx + 5, cy)
+    context.lineTo(cx + 11, cy)
+    context.stroke()
+  }
+  context.restore()
+}
+
+function initCanvasAnimation() {
+  const canvas = heroCanvas.value
+  const container = canvas?.parentElement
+  if (!canvas || !container) return
+
+  const context = canvas.getContext('2d')
+  if (!context) return
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  let animationFrame = 0
+  let running = true
+
+  const render = (time = 0) => {
+    const rect = container.getBoundingClientRect()
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+    const width = Math.max(320, rect.width)
+    const height = Math.max(250, rect.height)
+
+    if (canvas.width !== Math.round(width * pixelRatio) || canvas.height !== Math.round(height * pixelRatio)) {
+      canvas.width = Math.round(width * pixelRatio)
+      canvas.height = Math.round(height * pixelRatio)
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+    }
+
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+    context.clearRect(0, 0, width, height)
+
+    const dark = document.documentElement.classList.contains('dark')
+    const progress = reduceMotion ? 0.36 : time * 0.00018
+    const pulse = reduceMotion ? 0.5 : (Math.sin(time * 0.0016) + 1) / 2
+    const primary = dark ? '#78a8ff' : '#2f7cf6'
+    const teal = dark ? '#67e8d0' : '#1f9d8a'
+    const amber = dark ? '#f7c66a' : '#f0a33a'
+    const ink = dark ? '#f8fafc' : '#111827'
+    const muted = dark ? 'rgba(248, 250, 252, 0.66)' : 'rgba(17, 24, 39, 0.62)'
+    const panelFill = dark ? 'rgba(12, 16, 24, 0.76)' : 'rgba(255, 255, 255, 0.72)'
+    const cardFill = dark ? 'rgba(22, 28, 39, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const lineSoft = dark ? 'rgba(255, 255, 255, 0.09)' : 'rgba(17, 24, 39, 0.08)'
+
+    const margin = width < 430 ? 18 : 26
+    drawRoundedCard(context, margin, 20, width - margin * 2, height - 42, 28, panelFill, lineSoft)
+
+    const nodes = [
+      { x: width * 0.2, y: height * 0.52, w: 118, h: 92, label: 'Client', color: primary, variant: 'client' as const },
+      { x: width * 0.5, y: height * 0.48 - pulse * 5, w: 134, h: 122, label: 'Z30 API', color: ink, variant: 'gateway' as const },
+      { x: width * 0.8, y: height * 0.34, w: 126, h: 86, label: 'Models', color: teal, variant: 'models' as const },
+      { x: width * 0.8, y: height * 0.68, w: 126, h: 86, label: 'Billing', color: amber, variant: 'models' as const }
+    ]
+
+    const drawBezier = (
+      fromX: number,
+      fromY: number,
+      toX: number,
+      toY: number,
+      colorA: string,
+      colorB: string,
+      offset: number
+    ) => {
+      const gradient = context.createLinearGradient(fromX, fromY, toX, toY)
+      gradient.addColorStop(0, colorA)
+      gradient.addColorStop(1, colorB)
+      context.save()
+      context.lineWidth = 3
+      context.lineCap = 'round'
+      context.strokeStyle = gradient
+      context.setLineDash([12, 13])
+      context.lineDashOffset = -((progress * 160 + offset) % 25)
+      context.beginPath()
+      context.moveTo(fromX, fromY)
+      context.bezierCurveTo(width * 0.36, fromY - 76, width * 0.63, toY - 76, toX, toY)
+      context.stroke()
+      context.restore()
+
+      for (let i = 0; i < 3; i++) {
+        const p = (progress + offset * 0.01 + i / 3) % 1
+        const inv = 1 - p
+        const cx1 = width * 0.36
+        const cy1 = fromY - 76
+        const cx2 = width * 0.63
+        const cy2 = toY - 76
+        const x = inv ** 3 * fromX + 3 * inv ** 2 * p * cx1 + 3 * inv * p ** 2 * cx2 + p ** 3 * toX
+        const y = inv ** 3 * fromY + 3 * inv ** 2 * p * cy1 + 3 * inv * p ** 2 * cy2 + p ** 3 * toY
+        context.fillStyle = i % 2 ? colorB : colorA
+        context.beginPath()
+        context.arc(x, y, 3.5, 0, Math.PI * 2)
+        context.fill()
+      }
+    }
+
+    drawBezier(nodes[0].x + 48, nodes[0].y - 8, nodes[2].x - 54, nodes[2].y, primary, teal, 0)
+    drawBezier(nodes[0].x + 48, nodes[0].y + 12, nodes[3].x - 54, nodes[3].y, primary, amber, 8)
+
+    for (const node of nodes) {
+      const x = node.x - node.w / 2
+      const y = node.y - node.h / 2
+      context.save()
+      context.shadowColor = dark ? 'rgba(0, 0, 0, 0.34)' : 'rgba(31, 41, 55, 0.14)'
+      context.shadowBlur = 22
+      context.shadowOffsetY = 12
+      drawRoundedCard(
+        context,
+        x,
+        y,
+        node.w,
+        node.h,
+        node.label === 'Z30 API' ? 28 : 22,
+        node.label === 'Z30 API' ? (dark ? '#f8fafc' : '#111827') : cardFill,
+        lineSoft
+      )
+      context.restore()
+
+      const iconColor = node.label === 'Z30 API' ? (dark ? '#111827' : '#ffffff') : node.color
+      drawNodeIcon(context, node.x, node.y - 12, iconColor, node.variant)
+      context.fillStyle = node.label === 'Z30 API' ? (dark ? '#111827' : '#ffffff') : ink
+      context.font = '700 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.fillText(node.label, node.x, node.y + node.h * 0.27)
+    }
+
+    context.fillStyle = muted
+    context.font = '650 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    context.textAlign = 'left'
+    context.fillText('OpenAI-compatible routing', margin + 24, height - 38)
+    context.textAlign = 'right'
+    context.fillText('live usage + failover', width - margin - 24, height - 38)
+
+    if (running && !reduceMotion) {
+      animationFrame = requestAnimationFrame(render)
+    }
+  }
+
+  const resizeObserver = new ResizeObserver(() => render(performance.now()))
+  resizeObserver.observe(container)
+
+  render(performance.now())
+
+  canvasCleanup = () => {
+    running = false
+    cancelAnimationFrame(animationFrame)
+    resizeObserver.disconnect()
   }
 }
 
@@ -460,21 +673,6 @@ function initHomeAnimations() {
       }
     })
 
-    gsap.to('.svg-node.center', {
-      y: -8,
-      duration: 2.8,
-      repeat: -1,
-      yoyo: true,
-      ease: 'sine.inOut'
-    })
-
-    gsap.to('.svg-flow-line', {
-      strokeDashoffset: -80,
-      duration: 2.6,
-      repeat: -1,
-      ease: 'none'
-    })
-
     gsap.utils.toArray<HTMLElement>('[data-animate-scroll]').forEach((element) => {
       gsap.from(element, {
         y: 28,
@@ -518,6 +716,8 @@ function cleanupAnimations() {
   animationCleanups.splice(0).forEach((cleanup) => cleanup())
   animationContext?.revert()
   animationContext = undefined
+  canvasCleanup?.()
+  canvasCleanup = undefined
 }
 
 onMounted(async () => {
@@ -529,6 +729,7 @@ onMounted(async () => {
   }
 
   await nextTick()
+  initCanvasAnimation()
   initHomeAnimations()
 })
 
@@ -554,7 +755,7 @@ onBeforeUnmount(() => {
     sans-serif;
 }
 
-:global(.dark) .home-codex {
+:global(.dark .home-codex){
   color: #f6f7fb;
   background:
     linear-gradient(180deg, rgba(26, 28, 34, 0.97), rgba(12, 14, 18, 0.98)),
@@ -579,7 +780,7 @@ onBeforeUnmount(() => {
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.88), transparent 72%);
 }
 
-:global(.dark) .desktop-grid {
+:global(.dark .desktop-grid){
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
@@ -617,7 +818,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(24px) saturate(1.35);
 }
 
-:global(.dark) .home-nav {
+:global(.dark .home-nav){
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(24, 27, 34, 0.62);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.34);
@@ -650,7 +851,7 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 8px 22px rgba(31, 41, 55, 0.12);
 }
 
-:global(.dark) .brand-mark {
+:global(.dark .brand-mark){
   background: rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 8px 22px rgba(0, 0, 0, 0.34);
 }
@@ -678,17 +879,17 @@ onBeforeUnmount(() => {
   color: #15171c;
 }
 
-:global(.dark) .nav-links {
+:global(.dark .nav-links){
   background: rgba(255, 255, 255, 0.06);
 }
 
-:global(.dark) .nav-links a,
-:global(.dark) .home-footer a {
+:global(.dark .nav-links a),
+:global(.dark .home-footer a){
   color: rgba(246, 247, 251, 0.68);
 }
 
-:global(.dark) .nav-links a:hover,
-:global(.dark) .home-footer a:hover {
+:global(.dark .nav-links a:hover),
+:global(.dark .home-footer a:hover){
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
@@ -715,7 +916,7 @@ onBeforeUnmount(() => {
   color: #15171c;
 }
 
-:global(.dark) .icon-button {
+:global(.dark .icon-button){
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(246, 247, 251, 0.76);
@@ -755,7 +956,7 @@ onBeforeUnmount(() => {
   background: rgba(255, 255, 255, 0.82);
 }
 
-:global(.dark) .pill-button-light {
+:global(.dark .pill-button-light){
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.08);
   color: #f6f7fb;
@@ -788,9 +989,9 @@ onBeforeUnmount(() => {
   color: #111827;
 }
 
-:global(.dark) .hero-copy h1,
-:global(.dark) .section-heading h2,
-:global(.dark) .access-copy h2 {
+:global(.dark .hero-copy h1),
+:global(.dark .section-heading h2),
+:global(.dark .access-copy h2){
   color: #ffffff;
 }
 
@@ -809,10 +1010,10 @@ onBeforeUnmount(() => {
   line-height: 1.55;
 }
 
-:global(.dark) .hero-subtitle,
-:global(.dark) .access-copy > p,
-:global(.dark) .feature-card p,
-:global(.dark) .provider-card p {
+:global(.dark .hero-subtitle),
+:global(.dark .access-copy > p),
+:global(.dark .feature-card p),
+:global(.dark .provider-card p){
   color: rgba(246, 247, 251, 0.66);
 }
 
@@ -857,8 +1058,8 @@ onBeforeUnmount(() => {
   padding: 0 13px;
 }
 
-:global(.dark) .compat-row span,
-:global(.dark) .provider-card span {
+:global(.dark .compat-row span),
+:global(.dark .provider-card span){
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.08);
   color: rgba(246, 247, 251, 0.7);
@@ -872,7 +1073,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(28px) saturate(1.32);
 }
 
-:global(.dark) .glass-panel {
+:global(.dark .glass-panel){
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(28, 31, 39, 0.58);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
@@ -893,7 +1094,7 @@ onBeforeUnmount(() => {
   padding: 0 18px;
 }
 
-:global(.dark) .window-toolbar {
+:global(.dark .window-toolbar){
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -923,7 +1124,7 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
-:global(.dark) .window-toolbar small {
+:global(.dark .window-toolbar small){
   color: rgba(246, 247, 251, 0.46);
 }
 
@@ -932,30 +1133,43 @@ onBeforeUnmount(() => {
 }
 
 .route-map {
+  position: relative;
   overflow: hidden;
+  width: 100%;
+  height: clamp(270px, 29vw, 340px);
   border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.48), rgba(255, 255, 255, 0.2)),
     rgba(238, 242, 247, 0.5);
 }
 
-:global(.dark) .route-map {
+:global(.dark .route-map){
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
     rgba(8, 10, 15, 0.42);
 }
 
-.route-map svg {
+.route-canvas {
   display: block;
   width: 100%;
+  height: 100%;
 }
 
-.svg-flow-line {
-  stroke-dasharray: 22 14;
+.visual-labels {
+  pointer-events: none;
+  position: absolute;
+  inset: auto 22px 20px;
+  display: flex;
+  justify-content: space-between;
+  color: rgba(21, 23, 28, 0.42);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.svg-flow-line.delay {
-  stroke-dasharray: 16 16;
+:global(.dark .visual-labels){
+  color: rgba(246, 247, 251, 0.4);
 }
 
 .metric-strip {
@@ -982,7 +1196,7 @@ onBeforeUnmount(() => {
   padding: 18px;
 }
 
-:global(.dark) .metric-card {
+:global(.dark .metric-card){
   border-color: rgba(255, 255, 255, 0.09);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -1007,7 +1221,7 @@ onBeforeUnmount(() => {
   line-height: 1;
 }
 
-:global(.dark) .metric-card strong {
+:global(.dark .metric-card strong){
   color: #ffffff;
 }
 
@@ -1030,7 +1244,7 @@ onBeforeUnmount(() => {
   line-height: 1.7;
 }
 
-:global(.dark) .cta-glass p {
+:global(.dark .cta-glass p){
   color: rgba(246, 247, 251, 0.68);
 }
 
@@ -1087,8 +1301,8 @@ onBeforeUnmount(() => {
   font-weight: 740;
 }
 
-:global(.dark) .feature-card h3,
-:global(.dark) .provider-card h3 {
+:global(.dark .feature-card h3),
+:global(.dark .provider-card h3){
   color: #ffffff;
 }
 
@@ -1182,9 +1396,9 @@ onBeforeUnmount(() => {
   color: rgba(21, 23, 28, 0.46);
 }
 
-:global(.dark) .comment-line,
-:global(.dark) .metric-card span,
-:global(.dark) .metric-card small {
+:global(.dark .comment-line),
+:global(.dark .metric-card span),
+:global(.dark .metric-card small){
   color: rgba(246, 247, 251, 0.5);
 }
 
@@ -1201,7 +1415,7 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 
-:global(.dark) .home-footer {
+:global(.dark .home-footer){
   border-top-color: rgba(255, 255, 255, 0.1);
   color: rgba(246, 247, 251, 0.54);
 }
@@ -1328,6 +1542,7 @@ onBeforeUnmount(() => {
 
   .route-map {
     border-radius: 18px;
+    height: 260px;
   }
 
   .metric-strip,

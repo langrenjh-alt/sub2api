@@ -21,7 +21,7 @@ interface Props {
   queryMode: string
   loading: boolean
   lastUpdated: Date | null
-  thresholds?: OpsMetricThresholds | null // 阈值配置
+  thresholds?: OpsMetricThresholds | null // 閾值配置
   autoRefreshEnabled?: boolean
   autoRefreshCountdown?: number
   fullscreen?: boolean
@@ -176,7 +176,7 @@ function handleGroupChange(val: string | number | boolean | null) {
 function handleTimeRangeChange(val: string | number | boolean | null) {
   const newValue = String(val || '1h')
   if (newValue === 'custom') {
-    // 初始化为最近1小时
+    // 初始化為最近1小時
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
     customStartTimeInput.value = oneHourAgo.toISOString().slice(0, 16)
@@ -200,8 +200,8 @@ function handleCustomTimeRangeConfirm() {
 
 function handleCustomTimeRangeCancel() {
   showCustomTimeRangeDialog.value = false
-  // 如果当前不是 custom，不需要做任何事
-  // 如果当前是 custom，保持不变
+  // 如果當前不是 custom，不需要做任何事
+  // 如果當前是 custom，保持不變
 }
 
 function handleQueryModeChange(val: string | number | boolean | null) {
@@ -888,7 +888,7 @@ function handleToolbarRefresh() {
 
           <template v-if="props.autoRefreshEnabled && props.autoRefreshCountdown !== undefined">
             <span>·</span>
-            <span>剩余 {{ props.autoRefreshCountdown }}s</span>
+            <span>剩餘 {{ props.autoRefreshCountdown }}s</span>
           </template>
         </div>
       </div>

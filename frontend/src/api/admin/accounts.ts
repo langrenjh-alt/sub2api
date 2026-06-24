@@ -439,9 +439,9 @@ export interface BatchTodayStatsResponse {
 }
 
 /**
- * 批量获取多个账号的今日统计
- * @param accountIds - 账号 ID 列表
- * @returns 以账号 ID（字符串）为键的统计映射
+ * 批次獲取多個帳號的今日統計
+ * @param accountIds - 帳號 ID 列表
+ * @returns 以帳號 ID（字串）為鍵的統計對映
  */
 export async function getBatchTodayStats(accountIds: number[]): Promise<BatchTodayStatsResponse> {
   const { data } = await apiClient.post<BatchTodayStatsResponse>('/admin/accounts/today-stats/batch', {

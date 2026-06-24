@@ -13,7 +13,7 @@
         <button class="btn btn-primary mt-6" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
       </div>
       <template v-else>
-        <!-- 金额头部 -->
+        <!-- 金額頭部 -->
         <div v-if="order" class="card overflow-hidden">
           <div class="bg-gradient-to-br from-[#635bff] to-[#4f46e5] px-6 py-6 text-center">
             <p class="text-sm font-medium text-indigo-200">{{ t('payment.actualPay') }}</p>
@@ -21,7 +21,7 @@
           </div>
         </div>
 
-        <!-- 微信二维码展示 -->
+        <!-- 微信QR Code展示 -->
         <template v-if="wechatQrUrl">
           <div class="card p-6">
             <div class="flex flex-col items-center space-y-4">
@@ -42,7 +42,7 @@
           </div>
         </template>
 
-        <!-- 支付宝跳转状态 -->
+        <!-- 支付寶跳轉狀態 -->
         <template v-else-if="redirecting">
           <div class="card p-6">
             <div class="flex flex-col items-center space-y-4 py-4">
@@ -52,7 +52,7 @@
           </div>
         </template>
 
-        <!-- 成功状态 -->
+        <!-- 成功狀態 -->
         <template v-else-if="stripeSuccess">
           <div class="card p-6 text-center">
             <div class="flex flex-col items-center gap-3 py-4">
@@ -65,7 +65,7 @@
           </div>
         </template>
 
-        <!-- 无指定方式或未知方式时展示完整 Payment Element -->
+        <!-- 無指定方式或未知方式時展示完整 Payment Element -->
         <template v-else-if="showPaymentElement">
           <div class="card p-6">
             <div id="stripe-payment-element" class="min-h-[200px]"></div>
@@ -83,7 +83,7 @@
           </div>
         </template>
 
-        <!-- 错误状态 -->
+        <!-- 錯誤狀態 -->
         <div v-if="stripeError && !showPaymentElement" class="card p-4">
           <p class="text-sm text-red-600 dark:text-red-400">{{ stripeError }}</p>
           <button class="btn btn-secondary mt-3 w-full" @click="router.push('/purchase')">{{ t('payment.result.backToRecharge') }}</button>
@@ -114,7 +114,7 @@ const route = useRoute()
 const router = useRouter()
 const paymentStore = usePaymentStore()
 
-// 弹窗模式：指定支付宝或微信方式时跳过 AppLayout
+// 彈窗模式：指定支付寶或微信方式時跳過 AppLayout
 const isPopup = computed(() => !!route.query.method)
 
 const loading = ref(true)
@@ -172,13 +172,13 @@ onMounted(async () => {
     stripeInstance = stripe
     loading.value = false
 
-    // 指定方式直接确认，无需渲染完整 Payment Element
+    // 指定方式直接確認，無需渲染完整 Payment Element
     if (method === 'alipay') {
       await confirmAlipay(stripe, clientSecret, orderId)
     } else if (method === 'wechat_pay') {
       await confirmWechatPay(stripe, clientSecret)
     } else {
-      // 未指定方式时渲染完整 Payment Element
+      // 未指定方式時渲染完整 Payment Element
       showPaymentElement.value = true
       await nextTick()
       mountPaymentElement(stripe, clientSecret)
@@ -211,7 +211,7 @@ async function confirmAlipay(stripe: Stripe, clientSecret: string, orderId: numb
     redirecting.value = false
     stripeError.value = error.message || t('payment.result.failed')
   }
-  // 无错误时 Stripe 会自动跳转
+  // 無錯誤時 Stripe 會自動跳轉
 }
 
 async function confirmWechatPay(stripe: Stripe, clientSecret: string) {
@@ -226,11 +226,11 @@ async function confirmWechatPay(stripe: Stripe, clientSecret: string) {
     return
   }
 
-  // 从 next_action 中提取二维码
+  // 從 next_action 中提取QR Code
   const qrData = paymentIntent?.next_action?.wechat_pay_display_qr_code?.image_data_url
   if (qrData) {
     wechatQrUrl.value = qrData
-    // 轮询支付完成状态
+    // 輪詢支付完成狀態
     startPolling()
   } else if (paymentIntent?.status === 'succeeded') {
     stripeSuccess.value = true

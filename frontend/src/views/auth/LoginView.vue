@@ -397,7 +397,7 @@ function rejectLoginAgreement(): void {
   localStorage.removeItem(LOGIN_AGREEMENT_STORAGE_KEY)
   agreementAccepted.value = false
   showAgreementModal.value = false
-  appStore.showWarning('未同意最新条款前，无法输入账号密码或使用快捷登录。')
+  appStore.showWarning('未同意最新條款前，無法輸入帳號密碼或使用快捷登入。')
 }
 
 // ==================== Turnstile Handlers ====================
@@ -428,7 +428,7 @@ function validateForm(): boolean {
   let isValid = true
 
   if (agreementGateActive.value) {
-    appStore.showWarning('请先阅读并同意最新条款后再登录。')
+    appStore.showWarning('請先閱讀並同意最新條款後再登入。')
     if (loginAgreementMode.value !== 'checkbox') {
       showAgreementModal.value = true
     }

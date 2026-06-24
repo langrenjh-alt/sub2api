@@ -41,26 +41,26 @@ const { t } = useI18n()
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
 
-// 是否为 Code Assist OAuth
-// 判断逻辑与后端保持一致：project_id 存在即为 Code Assist
+// 是否為 Code Assist OAuth
+// 判斷邏輯與後端保持一致：project_id 存在即為 Code Assist
 const isCodeAssist = computed(() => {
   const creds = props.account.credentials as GeminiCredentials | undefined
-  // 显式为 code_assist，或 legacy 情况（oauth_type 为空但 project_id 存在）
+  // 顯式為 code_assist，或 legacy 情況（oauth_type 為空但 project_id 存在）
   return creds?.oauth_type === 'code_assist' || (!creds?.oauth_type && !!creds?.project_id)
 })
 
-// 是否为 Google One OAuth
+// 是否為 Google One OAuth
 const isGoogleOne = computed(() => {
   const creds = props.account.credentials as GeminiCredentials | undefined
   return creds?.oauth_type === 'google_one'
 })
 
-// 是否应该显示配额信息
+// 是否應該顯示配額資訊
 const shouldShowQuota = computed(() => {
   return props.account.platform === 'gemini'
 })
 
-// Tier 标签文本
+// Tier 標籤文本
 const tierLabel = computed(() => {
   const creds = props.account.credentials as GeminiCredentials | undefined
 
@@ -88,14 +88,14 @@ const tierLabel = computed(() => {
     return 'Google One'
   }
 
-  // API Key: 显示 AI Studio
+  // API Key: 顯示 AI Studio
   const tier = (creds?.tier_id || '').toString().trim().toLowerCase()
   if (tier === 'aistudio_paid') return 'AI Studio Pay-as-you-go'
   if (tier === 'aistudio_free') return 'AI Studio Free Tier'
   return 'AI Studio'
 })
 
-// Tier Badge 样式（统一样式）
+// Tier Badge 樣式（統一樣式）
 const tierBadgeClass = computed(() => {
   const creds = props.account.credentials as GeminiCredentials | undefined
 
@@ -121,7 +121,7 @@ const tierBadgeClass = computed(() => {
     return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
   }
 
-  // AI Studio 默认样式：蓝色
+  // AI Studio 預設樣式：藍色
   const tier = (creds?.tier_id || '').toString().trim().toLowerCase()
   if (tier === 'aistudio_paid') return 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300'
   if (tier === 'aistudio_free') return 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
@@ -132,16 +132,16 @@ const tierBadgeClass = computed(() => {
 const isRateLimited = computed(() => {
   if (!props.account.rate_limit_reset_at) return false
   const resetTime = Date.parse(props.account.rate_limit_reset_at)
-  // 防护：如果日期解析失败（NaN），则认为未限流
+  // 防護：如果日期解析失敗（NaN），則認為未限流
   if (Number.isNaN(resetTime)) return false
   return resetTime > now.value.getTime()
 })
 
-// 倒计时文本
+// 倒計時文本
 const resetCountdown = computed(() => {
   if (!props.account.rate_limit_reset_at) return ''
   const resetTime = Date.parse(props.account.rate_limit_reset_at)
-  // 防护：如果日期解析失败，显示 "-"
+  // 防護：如果日期解析失敗，顯示 "-"
   if (Number.isNaN(resetTime)) return '-'
 
   const diffMs = resetTime - now.value.getTime()
@@ -160,33 +160,33 @@ const resetCountdown = computed(() => {
   return `${diffHours}h ${mins}m`
 })
 
-// 是否紧急（< 1分钟）
+// 是否緊急（< 1分鐘）
 const isUrgent = computed(() => {
   if (!props.account.rate_limit_reset_at) return false
   const resetTime = Date.parse(props.account.rate_limit_reset_at)
-  // 防护：如果日期解析失败，返回 false
+  // 防護：如果日期解析失敗，返回 false
   if (Number.isNaN(resetTime)) return false
 
   const diffMs = resetTime - now.value.getTime()
   return diffMs > 0 && diffMs < 60000
 })
 
-// 监听限流状态，动态启动/停止定时器
+// 監聽限流狀態，動態啟動/停止定時器
 watch(
   () => isRateLimited.value,
   (limited) => {
     if (limited && !timer) {
-      // 进入限流状态，启动定时器
+      // 進入限流狀態，啟動定時器
       timer = setInterval(() => {
         now.value = new Date()
       }, 1000)
     } else if (!limited && timer) {
-      // 解除限流，停止定时器
+      // 解除限流，停止定時器
       clearInterval(timer)
       timer = null
     }
   },
-  { immediate: true } // 立即执行，确保挂载时已限流的情况也能启动定时器
+  { immediate: true } // 立即執行，確保掛載時已限流的情況也能啟動定時器
 )
 
 onUnmounted(() => {

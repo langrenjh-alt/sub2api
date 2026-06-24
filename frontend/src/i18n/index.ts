@@ -22,12 +22,11 @@ function getDefaultLocale(): LocaleCode {
     return saved
   }
 
-  const browserLang = navigator.language.toLowerCase()
-  if (browserLang.startsWith('zh')) {
-    return 'zh'
-  }
-
   return DEFAULT_LOCALE
+}
+
+function resolveDocumentLang(locale: LocaleCode): string {
+  return locale === 'zh' ? 'zh-Hant-TW' : locale
 }
 
 export const i18n = createI18n({
@@ -35,8 +34,8 @@ export const i18n = createI18n({
   locale: getDefaultLocale(),
   fallbackLocale: DEFAULT_LOCALE,
   messages: {},
-  // 禁用 HTML 消息警告 - 引导步骤使用富文本内容（driver.js 支持 HTML）
-  // 这些内容是内部定义的，不存在 XSS 风险
+  // 停用 HTML 訊息警告 - 引導步驟使用富文字內容（driver.js 支援 HTML）
+  // 這些內容是內部定義的，不存在 XSS 風險
   warnHtmlMessage: false
 })
 
@@ -56,7 +55,7 @@ export async function loadLocaleMessages(locale: LocaleCode): Promise<void> {
 export async function initI18n(): Promise<void> {
   const current = getLocale()
   await loadLocaleMessages(current)
-  document.documentElement.setAttribute('lang', current)
+  document.documentElement.setAttribute('lang', resolveDocumentLang(current))
 }
 
 export async function setLocale(locale: string): Promise<void> {
@@ -67,15 +66,23 @@ export async function setLocale(locale: string): Promise<void> {
   await loadLocaleMessages(locale)
   i18n.global.locale.value = locale
   localStorage.setItem(LOCALE_KEY, locale)
-  document.documentElement.setAttribute('lang', locale)
+  document.documentElement.setAttribute('lang', resolveDocumentLang(locale))
 
-  // 同步更新浏览器页签标题，使其跟随语言切换
-  const { resolveDocumentTitle } = await import('@/router/title')
+  // 同步更新瀏覽器頁籤標題，使其跟隨語言切換
+  const { resolveRouteDocumentTitle } = await import('@/router/title')
   const { default: router } = await import('@/router')
   const { useAppStore } = await import('@/stores/app')
+  const { useAuthStore } = await import('@/stores/auth')
+  const { useAdminSettingsStore } = await import('@/stores/adminSettings')
   const route = router.currentRoute.value
   const appStore = useAppStore()
-  document.title = resolveDocumentTitle(route.meta.title, appStore.siteName, route.meta.titleKey as string)
+  const authStore = useAuthStore()
+  const adminSettingsStore = useAdminSettingsStore()
+  const customMenuItems = [
+    ...(appStore.cachedPublicSettings?.custom_menu_items ?? []),
+    ...(authStore.isAdmin ? adminSettingsStore.customMenuItems : []),
+  ]
+  document.title = resolveRouteDocumentTitle(route, appStore.siteName, customMenuItems)
 }
 
 export function getLocale(): LocaleCode {
@@ -84,8 +91,8 @@ export function getLocale(): LocaleCode {
 }
 
 export const availableLocales = [
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' }
+  { code: 'en', name: 'English', flag: 'US' },
+  { code: 'zh', name: '繁體中文', flag: 'TW' }
 ] as const
 
 export default i18n

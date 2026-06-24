@@ -59,8 +59,8 @@ interface Bar {
   title: string
 }
 
-// 4 级高度 + 颜色双重编码：高=好+绿，短=坏+红，灰=未测试。
-// 长绿(正常) > 中黄(降级) > 短红(失败/系统错误) > 很短灰(未测试)。
+// 4 級高度 + 顏色雙重編碼：高=好+綠，短=壞+紅，灰=未測試。
+// 長綠(正常) > 中黃(降級) > 短紅(失敗/系統錯誤) > 很短灰(未測試)。
 const STATUS_HEIGHT: Record<string, number> = {
   operational: 100,
   degraded: 65,

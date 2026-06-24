@@ -1,4 +1,4 @@
-// Ops 前端视图层的共享类型（与后端 DTO 解耦）。
+// Ops 前端檢視層的共享型別（與後端 DTO 解耦）。
 
 export type ChartState = 'loading' | 'empty' | 'ready'
 

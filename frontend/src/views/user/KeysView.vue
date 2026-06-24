@@ -1190,7 +1190,7 @@ const formData = ref({
   expiration_date: ''
 })
 
-// 自定义Key验证
+// 自定義Key驗證
 const customKeyError = computed(() => {
   if (!formData.value.use_custom_key || !formData.value.custom_key) {
     return ''
@@ -1199,7 +1199,7 @@ const customKeyError = computed(() => {
   if (key.length < 16) {
     return t('keys.customKeyTooShort')
   }
-  // 检查字符：只允许字母、数字、下划线、连字符
+  // 檢查字元：只允許字母、數字、下劃線、連字元
   if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
     return t('keys.customKeyInvalidChars')
   }
@@ -1585,9 +1585,9 @@ const handleSubmit = async () => {
 }
 
 /**
- * 处理删除 API Key 的操作
- * 优化：错误处理改进，优先显示后端返回的具体错误消息（如权限不足等），
- * 若后端未返回消息则显示默认的国际化文本
+ * 處理刪除 API Key 的操作
+ * 最佳化：錯誤處理改進，優先顯示後端返回的具體錯誤訊息（如權限不足等），
+ * 若後端未返回訊息則顯示預設的國際化文本
  */
 const handleDelete = async () => {
   if (!selectedKey.value) return
@@ -1598,7 +1598,7 @@ const handleDelete = async () => {
     showDeleteDialog.value = false
     loadApiKeys()
   } catch (error: any) {
-    // 优先使用后端返回的错误消息，提供更具体的错误信息给用户
+    // 優先使用後端返回的錯誤訊息，提供更具體的錯誤資訊給使用者
     const errorMsg = error?.message || t('keys.failedToDelete')
     appStore.showError(errorMsg)
   }

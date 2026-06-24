@@ -118,7 +118,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-// string | null:clearable 清空时 Select 回传 null,apply 中归一为空串
+// string | null:clearable 清空時 Select 回傳 null,apply 中歸一為空串
 const localModel = ref<string | null>('')
 const localCategory = ref<string>('')
 const localApiKeyId = ref<number | null>(null)
@@ -130,13 +130,13 @@ const categoryOptions = computed(() => [
   ...categoryCodes.map((c) => ({ value: c, label: t('usage.errors.categories.' + c) })),
 ])
 
-// 首项 value: null 表示不按 key 过滤；其余项取自父组件传入的 apiKeys 候选列表。
+// 首項 value: null 表示不按 key 過濾；其餘項取自父元件傳入的 apiKeys 候選列表。
 const keyOptions = computed(() => [
   { value: null, label: t('usage.errors.allKeys') },
   ...(props.apiKeys ?? []).map((k) => ({ value: k.id, label: k.name })),
 ])
 
-// 模型候选取自当前已加载错误中出现过的模型；creatable 允许输入任意片段做后端模糊。
+// 模型候選取自當前已載入錯誤中出現過的模型；creatable 允許輸入任意片段做後端模糊。
 const modelOptions = computed(() => {
   const seen = new Set<string>()
   const opts: { value: string; label: string }[] = []

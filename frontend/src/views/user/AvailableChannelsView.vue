@@ -77,10 +77,10 @@ const columnLabels = computed(() => ({
 }))
 
 /**
- * 搜索过滤：
- * - 命中渠道名/描述 → 整个渠道（所有 platforms）都保留
- * - 否则按 platform/group/model 维度在 sections 里过滤，保留有匹配的 section
- * - 所有 sections 都不匹配时，渠道本身被过滤掉
+ * 搜尋過濾：
+ * - 命中渠道名/描述 → 整個渠道（所有 platforms）都保留
+ * - 否則按 platform/group/model 維度在 sections 裡過濾，保留有匹配的 section
+ * - 所有 sections 都不匹配時，渠道本身被過濾掉
  */
 const filteredChannels = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
@@ -105,8 +105,8 @@ const filteredChannels = computed(() => {
 async function loadChannels() {
   loading.value = true
   try {
-    // 渠道列表和用户专属倍率并发拉取。专属倍率失败不阻塞渠道展示——
-    // 失败时只是无法渲染专属倍率角标，降级为仅显示默认倍率。
+    // 渠道列表和使用者專屬倍率並行拉取。專屬倍率失敗不阻塞渠道展示——
+    // 失敗時只是無法渲染專屬倍率角標，降級為僅顯示預設倍率。
     const [list, rates] = await Promise.all([
       userChannelsAPI.getAvailable(),
       userGroupsAPI.getUserGroupRates().catch((err: unknown) => {

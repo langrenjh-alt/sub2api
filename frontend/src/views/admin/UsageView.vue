@@ -360,7 +360,7 @@ const loadStats = async (force = false) => {
   }
 }
 
-// 失效模型统计缓存:仅标记需要重取,保留旧数据直到新数据到达(避免刷新时图表闪空)。
+// 失效模型統計快取:僅標記需要重取,保留舊資料直到新資料到達(避免重新整理時圖表閃空)。
 const invalidateModelStatsCache = () => {
   loadedModelSources.requested = false
   loadedModelSources.upstream = false
@@ -633,7 +633,7 @@ const errTotal = ref(0)
 const showErrorModal = ref(false)
 const selectedErrorId = ref<number | null>(null)
 
-// 注意：'YYYY-MM-DDT00:00:00' 无时区后缀，按本地时区解析后再转 UTC——与页面其它日期处理语义一致，刻意如此，勿改成 'T00:00:00Z'
+// 注意：'YYYY-MM-DDT00:00:00' 無時區字尾，按本地時區解析後再轉 UTC——與頁面其它日期處理語義一致，刻意如此，勿改成 'T00:00:00Z'
 const toRFC3339 = (d: string | undefined, endOfDay = false): string | undefined =>
   d ? new Date(d + (endOfDay ? 'T23:59:59.999' : 'T00:00:00')).toISOString() : undefined
 

@@ -72,18 +72,6 @@ func TestGetPoolModeRetryCount(t *testing.T) {
 			expected: 2,
 		},
 		{
-			name: "supports_boundary_value_at_max",
-			account: &Account{
-				Type:     AccountTypeAPIKey,
-				Platform: PlatformOpenAI,
-				Credentials: map[string]any{
-					"pool_mode":             true,
-					"pool_mode_retry_count": 50,
-				},
-			},
-			expected: 50,
-		},
-		{
 			name: "negative_value_is_clamped_to_zero",
 			account: &Account{
 				Type:     AccountTypeAPIKey,
