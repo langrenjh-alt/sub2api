@@ -416,7 +416,27 @@ func (s *AccountUsageService) GetUsage(ctx context.Context, accountID int64, for
 	}
 
 	// API Key账号不支持usage查询
-	return nil, fmt.Errorf("account type %s does not support usage query", account.Type)
+	return s.buildUnsupportedActiveUsage(ctx, account), nil
+}
+
+func (s *AccountUsageService) buildUnsupportedActiveUsage(ctx context.Context, account *Account) *UsageInfo {
+	now := time.Now()
+	accountType := ""
+	if account != nil {
+		accountType = account.Type
+	}
+	info := &UsageInfo{
+		Source:    "active",
+		UpdatedAt: &now,
+		ErrorCode: "unsupported_active_usage",
+		Error:     fmt.Sprintf("account type %s does not support active upstream usage query", accountType),
+	}
+	if account == nil || s.usageLogRepo == nil || s.cache == nil {
+		return info
+	}
+	info.FiveHour = &UsageProgress{}
+	s.addWindowStats(ctx, account, info)
+	return info
 }
 
 // GetPassiveUsage 从 Account.Extra 中的被动采样数据构建 UsageInfo，不调用外部 API。
@@ -953,6 +973,9 @@ func (s *AccountUsageService) addWindowStats(ctx context.Context, account *Accou
 		if err != nil {
 			log.Printf("Failed to get window stats for account %d: %v", account.ID, err)
 			return
+		}
+		if stats == nil {
+			stats = &usagestats.AccountStats{}
 		}
 
 		windowStats = &WindowStats{

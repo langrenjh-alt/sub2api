@@ -66,6 +66,38 @@ func TestShouldRefreshOpenAICodexSnapshot(t *testing.T) {
 	}
 }
 
+func TestAccountUsageService_GetUsage_APIKeyReturnsUnsupportedUsageInfo(t *testing.T) {
+	t.Parallel()
+
+	svc := &AccountUsageService{
+		accountRepo: stubOpenAIAccountRepo{accounts: []Account{{
+			ID:       7,
+			Platform: PlatformAnthropic,
+			Type:     AccountTypeAPIKey,
+		}}},
+	}
+
+	usage, err := svc.GetUsage(context.Background(), 7)
+	if err != nil {
+		t.Fatalf("GetUsage() error = %v", err)
+	}
+	if usage == nil {
+		t.Fatal("expected usage info")
+	}
+	if usage.Source != "active" {
+		t.Fatalf("Source = %q, want active", usage.Source)
+	}
+	if usage.ErrorCode != "unsupported_active_usage" {
+		t.Fatalf("ErrorCode = %q, want unsupported_active_usage", usage.ErrorCode)
+	}
+	if usage.Error == "" {
+		t.Fatal("expected unsupported active usage message")
+	}
+	if usage.UpdatedAt == nil {
+		t.Fatal("expected UpdatedAt to be set")
+	}
+}
+
 func TestExtractOpenAICodexProbeUpdatesAccepts429WithCodexHeaders(t *testing.T) {
 	t.Parallel()
 

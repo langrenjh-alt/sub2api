@@ -1,19 +1,24 @@
-.PHONY: wire build build-embed test-unit test-integration test-e2e test-cover-integration
+.PHONY: wire build build-api build-embed test-unit test-integration test-e2e test-cover-integration
 
 wire:
-	@echo "生成 Wire 代码..."
+	@echo "Generating Wire code..."
 	@cd cmd/server && go generate
-	@echo "Wire 代码生成完成"
+	@echo "Wire code generated"
 
 build:
-	@echo "构建后端（不嵌入前端）..."
+	@echo "Building backend with embedded frontend..."
+	@go build -tags embed -o bin/server ./cmd/server
+	@echo "Build complete: bin/server (with embedded frontend)"
+
+build-api:
+	@echo "Building backend API-only binary..."
 	@go build -o bin/server ./cmd/server
-	@echo "构建完成: bin/server"
+	@echo "Build complete: bin/server"
 
 build-embed:
-	@echo "构建后端（嵌入前端）..."
+	@echo "Building backend with embedded frontend..."
 	@go build -tags embed -o bin/server ./cmd/server
-	@echo "构建完成: bin/server (with embedded frontend)"
+	@echo "Build complete: bin/server (with embedded frontend)"
 
 test-unit:
 	@go test -tags unit ./... -count=1
@@ -22,20 +27,20 @@ test-integration:
 	@go test -tags integration ./... -count=1 -race -parallel=8
 
 test-e2e:
-	@echo "运行 E2E 测试（需要本地服务器运行）..."
+	@echo "Running E2E tests (requires local server)..."
 	@go test -tags e2e ./internal/integration/... -count=1 -v
 
 test-cover-integration:
-	@echo "运行集成测试并生成覆盖率报告..."
+	@echo "Running integration tests and generating coverage report..."
 	@go test -tags=integration -cover -coverprofile=coverage.out -count=1 -race -parallel=8 ./...
 	@go tool cover -func=coverage.out | tail -1
 	@go tool cover -html=coverage.out -o coverage.html
-	@echo "覆盖率报告已生成: coverage.html"
+	@echo "Coverage report generated: coverage.html"
 
 clean-coverage:
 	@rm -f coverage.out coverage.html
-	@echo "覆盖率文件已清理"
+	@echo "Coverage files cleaned"
 
 clean: clean-coverage
 	@rm -rf bin/
-	@echo "构建产物已清理"
+	@echo "Build artifacts cleaned"

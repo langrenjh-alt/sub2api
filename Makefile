@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
+.PHONY: build build-backend build-backend-api build-frontend build-datamanagementd test test-backend test-frontend test-frontend-critical test-datamanagementd secret-scan
 
 FRONTEND_CRITICAL_VITEST := \
 	src/views/auth/__tests__/LinuxDoCallbackView.spec.ts \
@@ -9,11 +9,14 @@ FRONTEND_CRITICAL_VITEST := \
 	src/views/admin/__tests__/SettingsView.spec.ts
 
 # 一键编译前后端
-build: build-backend build-frontend
+build: build-frontend build-backend
 
 # 编译后端（复用 backend/Makefile）
 build-backend:
 	@$(MAKE) -C backend build
+
+build-backend-api:
+	@$(MAKE) -C backend build-api
 
 # 编译前端（需要已安装依赖）
 build-frontend:
