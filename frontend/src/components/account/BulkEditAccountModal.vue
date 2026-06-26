@@ -1542,13 +1542,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
     extra.codex_cli_only = codexCLIOnlyEnabled.value
   }
 
-  // 子开关从属于 codex_cli_only：仅当同一次批量编辑也把父开关设为开启时才写入，
-  // 与 Create/Edit 语义对齐，避免在父开关关闭的账号上写入无意义的孤立字段。
-  if (
-    enableCodexCLIOnlyAppServer.value &&
-    enableCodexCLIOnly.value &&
-    codexCLIOnlyEnabled.value
-  ) {
+  if (enableCodexCLIOnlyAppServer.value) {
     const extra = ensureExtra()
     extra.codex_cli_only_allow_app_server = codexCLIOnlyAppServerEnabled.value
   }
