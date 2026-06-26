@@ -72,7 +72,7 @@
             <router-link
               v-else
               :to="item.path"
-              class="sidebar-link mb-1"
+              class="sidebar-link relative mb-1"
               :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
               :title="sidebarCollapsed ? item.label : undefined"
               :id="
@@ -89,6 +89,12 @@
               <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
               <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
               <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
+              <span
+                v-if="showTicketReplyDot(item.path)"
+                class="ml-auto h-2 w-2 flex-shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40"
+                :class="{ 'absolute right-3 top-2.5': sidebarCollapsed }"
+                aria-hidden="true"
+              ></span>
             </router-link>
           </template>
         </div>
@@ -105,7 +111,7 @@
             v-for="item in personalNavItems"
             :key="item.path"
             :to="item.path"
-            class="sidebar-link mb-1"
+            class="sidebar-link relative mb-1"
             :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
             :title="sidebarCollapsed ? item.label : undefined"
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
@@ -114,6 +120,12 @@
             <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
             <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
             <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
+            <span
+              v-if="showTicketReplyDot(item.path)"
+              class="ml-auto h-2 w-2 flex-shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40"
+              :class="{ 'absolute right-3 top-2.5': sidebarCollapsed }"
+              aria-hidden="true"
+            ></span>
           </router-link>
         </div>
       </template>
@@ -125,7 +137,7 @@
             v-for="item in userNavItems"
             :key="item.path"
             :to="item.path"
-            class="sidebar-link mb-1"
+            class="sidebar-link relative mb-1"
             :class="{ 'sidebar-link-active': isActive(item.path), 'sidebar-link-collapsed': sidebarCollapsed }"
             :title="sidebarCollapsed ? item.label : undefined"
             :data-tour="item.path === '/keys' ? 'sidebar-my-keys' : undefined"
@@ -134,6 +146,12 @@
             <span v-if="item.iconSvg" class="h-5 w-5 flex-shrink-0 sidebar-svg-icon" v-html="sanitizeSvg(item.iconSvg)"></span>
             <component v-else :is="item.icon" class="h-5 w-5 flex-shrink-0" />
             <span class="sidebar-label" :class="{ 'sidebar-label-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">{{ item.label }}</span>
+            <span
+              v-if="showTicketReplyDot(item.path)"
+              class="ml-auto h-2 w-2 flex-shrink-0 rounded-full bg-red-500 shadow-sm shadow-red-500/40"
+              :class="{ 'absolute right-3 top-2.5': sidebarCollapsed }"
+              aria-hidden="true"
+            ></span>
           </router-link>
         </div>
       </template>
@@ -183,7 +201,7 @@
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useAdminSettingsStore, useAppStore, useAuthStore, useOnboardingStore } from '@/stores'
+import { useAdminSettingsStore, useAppStore, useAuthStore, useNotificationStore, useOnboardingStore } from '@/stores'
 import VersionBadge from '@/components/common/VersionBadge.vue'
 import { sanitizeSvg } from '@/utils/sanitize'
 import { FeatureFlags, makeSidebarFlag } from '@/utils/featureFlags'
@@ -232,6 +250,7 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const adminSettingsStore = useAdminSettingsStore()
+const notificationStore = useNotificationStore()
 
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
 const mobileOpen = computed(() => appStore.mobileOpen)
@@ -246,6 +265,14 @@ const siteName = computed(() => appStore.siteName)
 const siteLogo = computed(() => appStore.siteLogo)
 const siteVersion = computed(() => appStore.siteVersion)
 const settingsLoaded = computed(() => appStore.publicSettingsLoaded)
+const hasUnreadTicketReplies = computed(() =>
+  notificationStore.items.some((item) => item.type === 'ticket_reply')
+)
+
+function showTicketReplyDot(path: string): boolean {
+  if (!hasUnreadTicketReplies.value) return false
+  return authStore.isAdmin ? path === '/admin/tickets' : path === '/tickets'
+}
 
 // SVG Icon Components
 const DashboardIcon = {
