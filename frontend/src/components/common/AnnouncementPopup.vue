@@ -46,10 +46,11 @@
                 <time>{{ formatRelativeWithDateTime(announcementStore.currentPopup.created_at) }}</time>
               </div>
             </div>
+
           </div>
 
           <!-- Body -->
-          <div class="max-h-[50vh] overflow-y-auto bg-white px-8 py-8 dark:bg-dark-800">
+          <div class="max-h-[58vh] overflow-y-auto bg-white px-8 py-8 dark:bg-dark-800">
             <div class="relative">
               <div class="absolute left-0 top-0 bottom-0 w-1 rounded-full bg-gradient-to-b from-amber-500 via-orange-500 to-yellow-500"></div>
               <div class="pl-6">
@@ -59,6 +60,12 @@
                 ></div>
               </div>
             </div>
+
+            <AnnouncementCommentsPanel
+              v-if="announcementStore.currentPopup.comments_enabled"
+              class="mt-8"
+              :announcement="announcementStore.currentPopup"
+            />
           </div>
 
           <!-- Footer -->
@@ -90,6 +97,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useAnnouncementStore } from '@/stores/announcements'
 import { formatRelativeWithDateTime } from '@/utils/format'
+import AnnouncementCommentsPanel from '@/components/common/AnnouncementCommentsPanel.vue'
 
 const { t } = useI18n()
 const announcementStore = useAnnouncementStore()

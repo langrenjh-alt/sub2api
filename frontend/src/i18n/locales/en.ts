@@ -6842,6 +6842,13 @@ export default {
     }
   },
 
+  notifications: {
+    replySectionTitle: 'Replies',
+    markRepliesRead: 'Mark replies read',
+    ticketReply: 'New ticket reply: {title}',
+    announcementReply: 'New announcement reply: {title}'
+  },
+
   tickets: {
     title: 'Tickets',
     description: 'Submit and track support tickets',

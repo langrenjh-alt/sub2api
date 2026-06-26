@@ -6996,6 +6996,13 @@ export default {
     }
   },
 
+  notifications: {
+    replySectionTitle: '回覆提醒',
+    markRepliesRead: '標記回覆已讀',
+    ticketReply: '新的工單回覆：{title}',
+    announcementReply: '新的公告回覆：{title}'
+  },
+
   tickets: {
     title: '工單',
     description: '提交並追蹤支援工單',

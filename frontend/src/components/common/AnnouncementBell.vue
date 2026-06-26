@@ -4,13 +4,13 @@
     <button
       @click="openModal"
       class="relative flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-all hover:bg-gray-100 hover:scale-105 dark:text-gray-400 dark:hover:bg-dark-800"
-      :class="{ 'text-blue-600 dark:text-blue-400': unreadCount > 0 }"
+      :class="{ 'text-blue-600 dark:text-blue-400': totalUnreadCount > 0 }"
       :aria-label="t('announcements.title')"
     >
       <Icon name="bell" size="md" />
       <!-- 未讀紅點 -->
       <span
-        v-if="unreadCount > 0"
+        v-if="totalUnreadCount > 0"
         class="absolute right-1 top-1 flex h-2 w-2"
       >
         <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
@@ -42,16 +42,16 @@
                       {{ t('announcements.title') }}
                     </h2>
                   </div>
-                  <p v-if="unreadCount > 0" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span class="font-medium text-blue-600 dark:text-blue-400">{{ unreadCount }}</span>
+                  <p v-if="totalUnreadCount > 0" class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-medium text-blue-600 dark:text-blue-400">{{ totalUnreadCount }}</span>
                     {{ t('announcements.unread') }}
                   </p>
                 </div>
                 <div class="flex items-center gap-2">
                   <button
-                    v-if="unreadCount > 0"
+                    v-if="totalUnreadCount > 0"
                     @click="markAllAsRead"
-                    :disabled="loading"
+                    :disabled="loading || notificationStore.loading"
                     class="rounded-lg bg-blue-600 px-4 py-2 text-xs font-medium text-white shadow-lg shadow-blue-500/30 transition-all hover:bg-blue-700 hover:shadow-xl disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
                   >
                     {{ t('announcements.markAllRead') }}
@@ -72,7 +72,7 @@
             <!-- Body -->
             <div class="max-h-[65vh] overflow-y-auto">
               <!-- Loading -->
-              <div v-if="loading" class="flex items-center justify-center py-16">
+              <div v-if="listLoading" class="flex items-center justify-center py-16">
                 <div class="relative">
                   <div class="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-dark-600 dark:border-t-blue-400"></div>
                   <div class="absolute inset-0 h-12 w-12 animate-pulse rounded-full border-4 border-blue-400/30"></div>
@@ -80,65 +80,55 @@
               </div>
 
               <!-- Announcements List -->
-              <div v-else-if="announcements.length > 0">
-                <div
-                  v-for="item in announcements"
-                  :key="item.id"
-                  class="group relative flex items-center gap-4 border-b border-gray-100 px-6 py-4 transition-all hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700/30"
-                  :class="{ 'bg-blue-50/30 dark:bg-blue-900/5': !item.read_at }"
-                  style="min-height: 72px"
-                  @click="openDetail(item)"
-                >
-                  <!-- Status Indicator -->
-                  <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center">
-                    <div
-                      v-if="!item.read_at"
-                      class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+              <div v-else-if="notificationItems.length > 0 || announcements.length > 0">
+                <div v-if="notificationItems.length > 0" class="border-b border-gray-100 dark:border-dark-700">
+                  <div class="flex items-center justify-between bg-gray-50 px-6 py-2 dark:bg-dark-900/40">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {{ t('notifications.replySectionTitle') }}
+                    </span>
+                    <button
+                      class="text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      @click="markNotificationRepliesRead"
                     >
-                      <!-- Pulse ring -->
-                      <span class="absolute inline-flex h-full w-full animate-ping rounded-xl bg-blue-400 opacity-75"></span>
-                      <!-- Icon -->
-                      <svg class="relative z-10 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div
-                      v-else
-                      class="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-400 dark:bg-dark-700 dark:text-gray-600"
-                    >
-                      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
+                      {{ t('notifications.markRepliesRead') }}
+                    </button>
                   </div>
 
-                  <!-- Content -->
-                  <div class="flex min-w-0 flex-1 items-center justify-between gap-4">
-                    <div class="min-w-0 flex-1">
-                      <h3 class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                        {{ item.title }}
-                      </h3>
-                      <div class="mt-1 flex items-center gap-2">
-                        <time class="text-xs text-gray-500 dark:text-gray-400">
-                          {{ formatRelativeTime(item.created_at) }}
-                        </time>
-                        <span
-                          v-if="!item.read_at"
-                          class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                        >
-                          <span class="relative flex h-1.5 w-1.5">
-                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-75"></span>
-                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-600"></span>
-                          </span>
-                          {{ t('announcements.unread') }}
-                        </span>
+                  <button
+                    v-for="item in notificationItems"
+                    :key="item.id"
+                    class="group relative flex w-full items-center gap-4 border-t border-gray-100 px-6 py-4 text-left transition-all hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700/30"
+                    style="min-height: 72px"
+                    @click="openNotification(item)"
+                  >
+                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                      <div class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-xl bg-emerald-400 opacity-60"></span>
+                        <Icon
+                          class="relative z-10"
+                          :name="item.type === 'ticket_reply' ? 'mail' : 'chat'"
+                          size="sm"
+                        />
                       </div>
                     </div>
 
-                    <!-- Arrow -->
-                    <div class="flex-shrink-0">
+                    <div class="flex min-w-0 flex-1 items-center justify-between gap-4">
+                      <div class="min-w-0 flex-1">
+                        <h3 class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                          {{ notificationTitle(item) }}
+                        </h3>
+                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                          <span v-if="item.actor_name" class="truncate text-xs text-gray-500 dark:text-gray-400">
+                            {{ item.actor_name }}
+                          </span>
+                          <time class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ formatRelativeTime(item.created_at) }}
+                          </time>
+                        </div>
+                      </div>
+
                       <svg
-                        class="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1 dark:text-gray-600"
+                        class="h-5 w-5 flex-shrink-0 text-gray-400 transition-transform group-hover:translate-x-1 dark:text-gray-600"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -147,13 +137,86 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
-                  </div>
 
-                  <!-- Unread indicator bar -->
+                    <div class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-emerald-500 to-teal-600"></div>
+                  </button>
+                </div>
+
+                <div v-if="announcements.length > 0">
                   <div
-                    v-if="!item.read_at"
-                    class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-indigo-600"
-                  ></div>
+                    v-for="item in announcements"
+                    :key="item.id"
+                    class="group relative flex items-center gap-4 border-b border-gray-100 px-6 py-4 transition-all hover:bg-gray-50 dark:border-dark-700 dark:hover:bg-dark-700/30"
+                    :class="{ 'bg-blue-50/30 dark:bg-blue-900/5': !item.read_at }"
+                    style="min-height: 72px"
+                    @click="openDetail(item)"
+                  >
+                    <!-- Status Indicator -->
+                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center">
+                      <div
+                        v-if="!item.read_at"
+                        class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                      >
+                        <!-- Pulse ring -->
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-xl bg-blue-400 opacity-75"></span>
+                        <!-- Icon -->
+                        <svg class="relative z-10 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div
+                        v-else
+                        class="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-400 dark:bg-dark-700 dark:text-gray-600"
+                      >
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex min-w-0 flex-1 items-center justify-between gap-4">
+                      <div class="min-w-0 flex-1">
+                        <h3 class="truncate text-sm font-medium text-gray-900 dark:text-white">
+                          {{ item.title }}
+                        </h3>
+                        <div class="mt-1 flex items-center gap-2">
+                          <time class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ formatRelativeTime(item.created_at) }}
+                          </time>
+                          <span
+                            v-if="!item.read_at"
+                            class="inline-flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                          >
+                            <span class="relative flex h-1.5 w-1.5">
+                              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-500 opacity-75"></span>
+                              <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-600"></span>
+                            </span>
+                            {{ t('announcements.unread') }}
+                          </span>
+                        </div>
+                      </div>
+
+                      <!-- Arrow -->
+                      <div class="flex-shrink-0">
+                        <svg
+                          class="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1 dark:text-gray-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          stroke-width="2"
+                        >
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Unread indicator bar -->
+                    <div
+                      v-if="!item.read_at"
+                      class="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-blue-500 to-indigo-600"
+                    ></div>
+                  </div>
                 </div>
               </div>
 
@@ -272,114 +335,7 @@
                 </div>
               </div>
 
-              <div
-                v-if="selectedAnnouncement.comments_enabled"
-                class="mt-8 border-t border-gray-100 pt-6 dark:border-dark-700"
-              >
-                <div class="mb-4 flex items-center justify-between">
-                  <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-                    {{ t('announcements.comments.title') }}
-                  </h3>
-                  <button
-                    @click="loadComments"
-                    :disabled="commentsLoading"
-                    class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-gray-200"
-                    :title="t('common.refresh')"
-                  >
-                    <Icon name="refresh" size="sm" :class="commentsLoading ? 'animate-spin' : ''" />
-                  </button>
-                </div>
-
-                <div v-if="commentsLoading" class="flex items-center justify-center py-8">
-                  <div class="h-6 w-6 animate-spin rounded-full border-2 border-gray-200 border-t-blue-600 dark:border-dark-600 dark:border-t-blue-400"></div>
-                </div>
-
-                <div v-else-if="commentRows.length === 0" class="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400">
-                  {{ t('announcements.comments.empty') }}
-                </div>
-
-                <div v-else class="space-y-3">
-                  <div
-                    v-for="row in commentRows"
-                    :key="row.comment.id"
-                    class="rounded-lg border border-gray-100 bg-gray-50 p-3 dark:border-dark-700 dark:bg-dark-900/50"
-                    :style="{ marginLeft: `${Math.min(row.depth, 3) * 1.25}rem` }"
-                  >
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="truncate text-sm font-medium text-gray-900 dark:text-white">
-                            {{ commentAuthorLabel(row.comment) }}
-                          </span>
-                          <span
-                            :class="[
-                              'rounded px-1.5 py-0.5 text-[11px] font-medium',
-                              row.comment.author_role === 'admin'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
-                                : 'bg-gray-200 text-gray-600 dark:bg-dark-700 dark:text-gray-300'
-                            ]"
-                          >
-                            {{ row.comment.author_role === 'admin' ? t('announcements.comments.admin') : t('announcements.comments.user') }}
-                          </span>
-                          <time class="text-xs text-gray-400 dark:text-gray-500">
-                            {{ formatRelativeWithDateTime(row.comment.created_at) }}
-                          </time>
-                        </div>
-                        <p class="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300">
-                          {{ row.comment.content }}
-                        </p>
-                      </div>
-                      <div class="flex flex-shrink-0 items-center gap-1">
-                        <button
-                          @click="startReply(row.comment)"
-                          class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-white hover:text-blue-600 dark:text-gray-400 dark:hover:bg-dark-800 dark:hover:text-blue-300"
-                          :title="t('announcements.comments.reply')"
-                        >
-                          <Icon name="chat" size="sm" />
-                        </button>
-                        <button
-                          v-if="row.comment.can_delete"
-                          @click="deleteAnnouncementComment(row.comment)"
-                          :disabled="deletingCommentId === row.comment.id"
-                          class="rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-white hover:text-red-600 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-dark-800 dark:hover:text-red-300"
-                          :title="t('common.delete')"
-                        >
-                          <Icon name="trash" size="sm" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <form class="mt-4 space-y-3" @submit.prevent="submitComment">
-                  <div
-                    v-if="replyTo"
-                    class="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-700 dark:bg-blue-900/20 dark:text-blue-300"
-                  >
-                    <span>{{ t('announcements.comments.replyingTo', { name: commentAuthorLabel(replyTo) }) }}</span>
-                    <button type="button" class="font-medium hover:underline" @click="cancelReply">
-                      {{ t('common.cancel') }}
-                    </button>
-                  </div>
-                  <textarea
-                    v-model="commentContent"
-                    rows="3"
-                    class="input resize-none"
-                    :placeholder="t('announcements.comments.placeholder')"
-                  ></textarea>
-                  <div class="flex justify-end">
-                    <button
-                      type="submit"
-                      class="btn btn-primary btn-sm"
-                      :disabled="commentSubmitting || !commentContent.trim()"
-                    >
-                      <Icon v-if="commentSubmitting" name="refresh" size="sm" class="animate-spin" />
-                      <Icon v-else name="chat" size="sm" />
-                      <span>{{ commentSubmitting ? t('announcements.comments.sending') : t('announcements.comments.send') }}</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
+              <AnnouncementCommentsPanel class="mt-8" :announcement="selectedAnnouncement" />
             </div>
 
             <!-- Footer with Actions -->
@@ -423,23 +379,25 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useAppStore } from '@/stores/app'
-import { useAuthStore } from '@/stores/auth'
 import { useAnnouncementStore } from '@/stores/announcements'
-import announcementsAPI from '@/api/announcements'
-import adminAnnouncementsAPI from '@/api/admin/announcements'
-import { extractApiErrorMessage } from '@/utils/apiError'
+import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore, type NotificationItem } from '@/stores/notifications'
 import { formatRelativeTime, formatRelativeWithDateTime } from '@/utils/format'
-import type { AnnouncementComment, UserAnnouncement } from '@/types'
+import type { UserAnnouncement } from '@/types'
+import AnnouncementCommentsPanel from '@/components/common/AnnouncementCommentsPanel.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
+const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const announcementStore = useAnnouncementStore()
+const notificationStore = useNotificationStore()
 
 // Configure marked
 marked.setOptions({
@@ -450,48 +408,17 @@ marked.setOptions({
 // Use store state (storeToRefs for reactivity)
 const { announcements, loading } = storeToRefs(announcementStore)
 const unreadCount = computed(() => announcementStore.unreadCount)
+const notificationItems = computed(() => notificationStore.items)
+const totalUnreadCount = computed(() => unreadCount.value + notificationStore.unreadCount)
+const listLoading = computed(() => {
+  return loading.value
+    || (notificationStore.loading && notificationItems.value.length === 0 && announcements.value.length === 0)
+})
 
 // Local modal state
 const isModalOpen = ref(false)
 const detailModalOpen = ref(false)
 const selectedAnnouncement = ref<UserAnnouncement | null>(null)
-const comments = ref<AnnouncementComment[]>([])
-const commentsLoading = ref(false)
-const commentSubmitting = ref(false)
-const deletingCommentId = ref<number | null>(null)
-const commentContent = ref('')
-const replyTo = ref<AnnouncementComment | null>(null)
-
-const commentRows = computed(() => {
-  const byParent = new Map<number | null, AnnouncementComment[]>()
-  for (const comment of comments.value) {
-    const key = comment.parent_id ?? null
-    const list = byParent.get(key) ?? []
-    list.push(comment)
-    byParent.set(key, list)
-  }
-
-  const rows: Array<{ comment: AnnouncementComment; depth: number }> = []
-  const visited = new Set<number>()
-  const append = (parentId: number | null, depth: number) => {
-    for (const comment of byParent.get(parentId) ?? []) {
-      if (visited.has(comment.id)) continue
-      visited.add(comment.id)
-      rows.push({ comment, depth })
-      append(comment.id, depth + 1)
-    }
-  }
-
-  append(null, 0)
-  for (const comment of comments.value) {
-    if (!visited.has(comment.id)) rows.push({ comment, depth: 0 })
-  }
-  return rows
-})
-
-const activeAnnouncementAPI = computed(() => {
-  return authStore.isAdmin ? adminAnnouncementsAPI : announcementsAPI
-})
 
 // Methods
 function renderMarkdown(content: string): string {
@@ -502,6 +429,7 @@ function renderMarkdown(content: string): string {
 
 function openModal() {
   isModalOpen.value = true
+  void notificationStore.refresh(true)
 }
 
 function closeModal() {
@@ -511,10 +439,6 @@ function closeModal() {
 function openDetail(announcement: UserAnnouncement) {
   selectedAnnouncement.value = announcement
   detailModalOpen.value = true
-  resetComments()
-  if (announcement.comments_enabled) {
-    void loadComments()
-  }
   if (!announcement.read_at) {
     markAsRead(announcement.id)
   }
@@ -523,73 +447,6 @@ function openDetail(announcement: UserAnnouncement) {
 function closeDetail() {
   detailModalOpen.value = false
   selectedAnnouncement.value = null
-  resetComments()
-}
-
-function resetComments() {
-  comments.value = []
-  commentContent.value = ''
-  replyTo.value = null
-  commentsLoading.value = false
-  commentSubmitting.value = false
-  deletingCommentId.value = null
-}
-
-function commentAuthorLabel(comment: AnnouncementComment): string {
-  return comment.author_name || comment.author_email || `#${comment.user_id}`
-}
-
-async function loadComments() {
-  if (!selectedAnnouncement.value?.comments_enabled) return
-  const announcementId = selectedAnnouncement.value.id
-  commentsLoading.value = true
-  try {
-    comments.value = await activeAnnouncementAPI.value.listComments(announcementId)
-  } catch (err) {
-    appStore.showError(extractApiErrorMessage(err, t('announcements.comments.loadFailed')))
-  } finally {
-    commentsLoading.value = false
-  }
-}
-
-function startReply(comment: AnnouncementComment) {
-  replyTo.value = comment
-}
-
-function cancelReply() {
-  replyTo.value = null
-}
-
-async function submitComment() {
-  if (!selectedAnnouncement.value || !commentContent.value.trim() || commentSubmitting.value) return
-  commentSubmitting.value = true
-  try {
-    await activeAnnouncementAPI.value.createComment(selectedAnnouncement.value.id, {
-      content: commentContent.value.trim(),
-      parent_id: replyTo.value?.id,
-    })
-    commentContent.value = ''
-    replyTo.value = null
-    await loadComments()
-  } catch (err) {
-    appStore.showError(extractApiErrorMessage(err, t('announcements.comments.sendFailed')))
-  } finally {
-    commentSubmitting.value = false
-  }
-}
-
-async function deleteAnnouncementComment(comment: AnnouncementComment) {
-  if (!selectedAnnouncement.value || deletingCommentId.value !== null) return
-  deletingCommentId.value = comment.id
-  try {
-    await activeAnnouncementAPI.value.deleteComment(selectedAnnouncement.value.id, comment.id)
-    appStore.showSuccess(t('announcements.comments.deleted'))
-    await loadComments()
-  } catch (err) {
-    appStore.showError(extractApiErrorMessage(err, t('announcements.comments.deleteFailed')))
-  } finally {
-    deletingCommentId.value = null
-  }
 }
 
 async function markAsRead(id: number) {
@@ -609,9 +466,43 @@ async function markAsReadAndClose(id: number) {
 async function markAllAsRead() {
   try {
     await announcementStore.markAllAsRead()
+    notificationStore.markAllAsRead()
     appStore.showSuccess(t('announcements.allMarkedAsRead'))
   } catch (err: any) {
     appStore.showError(err?.message || t('common.unknownError'))
+  }
+}
+
+function markNotificationRepliesRead() {
+  notificationStore.markAllAsRead()
+}
+
+function notificationTitle(item: NotificationItem): string {
+  if (item.type === 'ticket_reply') {
+    return t('notifications.ticketReply', { title: item.title })
+  }
+  return t('notifications.announcementReply', { title: item.title, count: item.count ?? 1 })
+}
+
+async function openNotification(item: NotificationItem) {
+  notificationStore.markItemRead(item)
+
+  if (item.type === 'ticket_reply' && item.ticket_id !== undefined) {
+    closeModal()
+    closeDetail()
+    await router.push({
+      name: authStore.isAdmin ? 'AdminTickets' : 'Tickets',
+      query: { ticket_id: String(item.ticket_id) },
+    })
+    return
+  }
+
+  if (item.type === 'announcement_comment_reply') {
+    const announcement = item.announcement
+      ?? announcements.value.find((a) => a.id === item.announcement_id)
+    if (announcement) {
+      openDetail(announcement)
+    }
   }
 }
 

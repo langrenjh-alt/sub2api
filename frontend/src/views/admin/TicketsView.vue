@@ -191,10 +191,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import adminTicketsAPI from '@/api/admin/tickets'
 import { useAppStore } from '@/stores/app'
+import { useNotificationStore } from '@/stores/notifications'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime } from '@/utils/format'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
@@ -208,7 +210,9 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 const { t } = useI18n()
+const route = useRoute()
 const appStore = useAppStore()
+const notificationStore = useNotificationStore()
 
 const tickets = ref<Ticket[]>([])
 const loading = ref(false)
@@ -236,6 +240,7 @@ const closeDialog = reactive<{ show: boolean; ticket: Ticket | null }>({
 
 let listController: AbortController | null = null
 let searchTimer: number | null = null
+let lastOpenedQueryTicketId: number | null = null
 
 const statusFilterOptions = computed(() => [
   { value: '', label: t('admin.tickets.status.all') },
@@ -323,11 +328,22 @@ async function openDetail(id: number) {
   try {
     selectedDetail.value = await adminTicketsAPI.getById(id)
     replyContent.value = ''
+    notificationStore.markTicketRead(id, selectedDetail.value.messages.at(-1)?.created_at)
   } catch (err) {
     appStore.showError(extractApiErrorMessage(err, t('admin.tickets.detailLoadFailed')))
   } finally {
     detailLoading.value = false
   }
+}
+
+async function openTicketFromQuery() {
+  const raw = route.query.ticket_id
+  const value = Array.isArray(raw) ? raw[0] : raw
+  const id = Number(value)
+  if (!Number.isInteger(id) || id <= 0 || id === lastOpenedQueryTicketId) return
+
+  lastOpenedQueryTicketId = id
+  await openDetail(id)
 }
 
 function handleStatusChange() {
@@ -399,11 +415,21 @@ async function closeTicket() {
 }
 
 onMounted(() => {
-  void loadTickets()
+  void (async () => {
+    await loadTickets()
+    await openTicketFromQuery()
+  })()
 })
 
 onBeforeUnmount(() => {
   listController?.abort()
   if (searchTimer) window.clearTimeout(searchTimer)
 })
+
+watch(
+  () => route.query.ticket_id,
+  () => {
+    void openTicketFromQuery()
+  },
+)
 </script>
