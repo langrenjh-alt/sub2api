@@ -383,9 +383,18 @@ export interface AnnouncementComment {
 export type TicketStatus = 'open' | 'closed'
 export type TicketSenderRole = 'user' | 'admin'
 
+export interface TicketUser {
+  id: number
+  email: string
+  username: string
+  role: string
+  status: string
+}
+
 export interface Ticket {
   id: number
   user_id: number
+  user?: TicketUser | null
   title: string
   status: TicketStatus
   created_by?: number
@@ -400,6 +409,7 @@ export interface TicketMessage {
   id: number
   ticket_id: number
   user_id: number
+  user?: TicketUser | null
   sender_role: TicketSenderRole
   content: string
   created_at: string

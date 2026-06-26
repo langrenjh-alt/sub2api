@@ -36,13 +36,23 @@
               <button class="block min-w-0 text-left" @click="openDetail(row.id)">
                 <span class="block truncate font-medium text-gray-900 dark:text-white">{{ row.title }}</span>
                 <span class="mt-1 block text-xs text-gray-500 dark:text-dark-400">
-                  #{{ row.id }} · {{ formatDateTime(row.created_at) }}
+                  #{{ row.id }} | {{ formatDateTime(row.created_at) }}
                 </span>
               </button>
             </template>
 
-            <template #cell-user_id="{ value }">
-              <span class="text-sm text-gray-700 dark:text-gray-300">#{{ value }}</span>
+            <template #cell-user="{ row }">
+              <div class="min-w-[12rem]">
+                <span class="block truncate text-sm font-medium text-gray-800 dark:text-gray-100">
+                  {{ ticketUserPrimary(row) }}
+                </span>
+                <span
+                  v-if="ticketUserSecondary(row)"
+                  class="mt-1 block truncate text-xs text-gray-500 dark:text-dark-400"
+                >
+                  {{ ticketUserSecondary(row) }}
+                </span>
+              </div>
             </template>
 
             <template #cell-status="{ value }">
@@ -87,7 +97,7 @@
                   {{ selectedDetail.ticket.title }}
                 </h2>
                 <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
-                  #{{ selectedDetail.ticket.id }} · {{ t('admin.tickets.userId', { id: selectedDetail.ticket.user_id }) }} · {{ statusLabel(selectedDetail.ticket.status) }}
+                  #{{ selectedDetail.ticket.id }} | {{ ticketUserLabel(selectedDetail.ticket) }} | {{ statusLabel(selectedDetail.ticket.status) }}
                 </p>
               </div>
               <button
@@ -121,7 +131,7 @@
               >
                 <div class="mb-2 flex items-center justify-between gap-2">
                   <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-                    {{ senderLabel(message.sender_role) }}
+                    {{ messageSenderLabel(message) }}
                   </span>
                   <time class="text-xs text-gray-400 dark:text-dark-400">{{ formatDateTime(message.created_at) }}</time>
                 </div>
@@ -188,7 +198,7 @@ import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime } from '@/utils/format'
 import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
-import type { Ticket, TicketSenderRole, TicketStatus, TicketWithMessages } from '@/types'
+import type { Ticket, TicketMessage, TicketSenderRole, TicketStatus, TicketWithMessages } from '@/types'
 import type { Column } from '@/components/common/types'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
@@ -235,7 +245,7 @@ const statusFilterOptions = computed(() => [
 
 const columns = computed<Column[]>(() => [
   { key: 'title', label: t('admin.tickets.columns.title'), sortable: true },
-  { key: 'user_id', label: t('admin.tickets.columns.user') },
+  { key: 'user', label: t('admin.tickets.columns.user') },
   { key: 'status', label: t('admin.tickets.columns.status'), sortable: true },
   { key: 'last_reply_at', label: t('admin.tickets.columns.lastReply'), sortable: true },
   { key: 'actions', label: t('admin.tickets.columns.actions') },
@@ -247,6 +257,31 @@ function statusLabel(status: string): string {
 
 function senderLabel(role: TicketSenderRole): string {
   return role === 'admin' ? t('admin.tickets.sender.admin') : t('admin.tickets.sender.user')
+}
+
+function ticketUserPrimary(item: Pick<Ticket | TicketMessage, 'user_id' | 'user'>): string {
+  const user = item.user
+  if (user?.username) return user.username
+  if (user?.email) return user.email
+  return t('admin.tickets.userId', { id: item.user_id })
+}
+
+function ticketUserSecondary(item: Pick<Ticket | TicketMessage, 'user_id' | 'user'>): string {
+  const user = item.user
+  if (!user) return ''
+  const parts: string[] = []
+  if (user.email && user.email !== user.username) parts.push(user.email)
+  parts.push(`#${user.id || item.user_id}`)
+  return parts.join(' | ')
+}
+
+function ticketUserLabel(item: Pick<Ticket | TicketMessage, 'user_id' | 'user'>): string {
+  const secondary = ticketUserSecondary(item)
+  return secondary ? `${ticketUserPrimary(item)} (${secondary})` : ticketUserPrimary(item)
+}
+
+function messageSenderLabel(message: TicketMessage): string {
+  return `${senderLabel(message.sender_role)} | ${ticketUserLabel(message)}`
 }
 
 async function loadTickets() {

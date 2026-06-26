@@ -55,7 +55,7 @@ func (h *TicketHandler) List(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Paginated(c, dto.TicketsFromService(items), pageResult.Total, page, pageSize)
+	response.Paginated(c, dto.TicketsFromServiceAdmin(items), pageResult.Total, page, pageSize)
 }
 
 func (h *TicketHandler) Get(c *gin.Context) {
@@ -68,7 +68,7 @@ func (h *TicketHandler) Get(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, dto.TicketWithMessagesFromService(item))
+	response.Success(c, dto.TicketWithMessagesFromServiceAdmin(item))
 }
 
 func (h *TicketHandler) Reply(c *gin.Context) {
@@ -91,7 +91,7 @@ func (h *TicketHandler) Reply(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, dto.TicketMessageFromService(created))
+	response.Success(c, dto.TicketMessageFromServiceAdmin(created))
 }
 
 func (h *TicketHandler) Close(c *gin.Context) {
@@ -109,7 +109,7 @@ func (h *TicketHandler) Close(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, dto.TicketFromService(updated))
+	response.Success(c, dto.TicketFromServiceAdmin(updated))
 }
 
 func parseTicketID(c *gin.Context) (int64, bool) {

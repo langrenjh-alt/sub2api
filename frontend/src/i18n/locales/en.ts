@@ -4608,7 +4608,7 @@ export default {
     tickets: {
       title: 'Ticket Management',
       description: 'Reply to user tickets and close resolved issues',
-      searchPlaceholder: 'Search title...',
+      searchPlaceholder: 'Search title, email, username, or user ID...',
       view: 'View',
       close: 'Close Ticket',
       closeConfirm: 'Are you sure you want to close this ticket?',

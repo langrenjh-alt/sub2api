@@ -4761,7 +4761,7 @@ export default {
     tickets: {
       title: '工單管理',
       description: '回覆使用者工單並關閉已解決問題',
-      searchPlaceholder: '搜尋標題...',
+      searchPlaceholder: '搜尋標題、電子信箱、使用者名稱或使用者 ID...',
       view: '查看',
       close: '關閉工單',
       closeConfirm: '確定要關閉此工單嗎？',

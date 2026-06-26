@@ -29,6 +29,7 @@ var (
 
 type Ticket = domain.Ticket
 type TicketMessage = domain.TicketMessage
+type UserSummary = domain.UserSummary
 
 type TicketWithMessages struct {
 	Ticket   Ticket

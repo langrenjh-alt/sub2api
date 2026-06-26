@@ -2,12 +2,16 @@ package repository
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/ent/ticket"
 	"github.com/Wei-Shaw/sub2api/ent/ticketmessage"
+	dbuser "github.com/Wei-Shaw/sub2api/ent/user"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 
@@ -42,9 +46,11 @@ func (r *ticketRepository) Create(ctx context.Context, t *service.Ticket) error 
 }
 
 func (r *ticketRepository) GetByID(ctx context.Context, id int64) (*service.Ticket, error) {
+	ctx = mixins.SkipSoftDelete(ctx)
 	client := clientFromContext(ctx, r.client)
 	m, err := client.Ticket.Query().
 		Where(ticket.IDEQ(id)).
+		WithUser().
 		Only(ctx)
 	if err != nil {
 		return nil, translatePersistenceError(err, service.ErrTicketNotFound, nil)
@@ -57,6 +63,7 @@ func (r *ticketRepository) List(
 	params pagination.PaginationParams,
 	filters service.TicketListFilters,
 ) ([]service.Ticket, *pagination.PaginationResult, error) {
+	ctx = mixins.SkipSoftDelete(ctx)
 	client := clientFromContext(ctx, r.client)
 	q := client.Ticket.Query()
 
@@ -66,9 +73,20 @@ func (r *ticketRepository) List(
 	if filters.Status != "" {
 		q = q.Where(ticket.StatusEQ(filters.Status))
 	}
-	if filters.Search != "" {
-		search := strings.TrimSpace(filters.Search)
-		q = q.Where(ticket.TitleContainsFold(search))
+	if search := strings.TrimSpace(filters.Search); search != "" {
+		preds := []predicate.Ticket{
+			ticket.TitleContainsFold(search),
+			ticket.HasUserWith(
+				dbuser.Or(
+					dbuser.EmailContainsFold(search),
+					dbuser.UsernameContainsFold(search),
+				),
+			),
+		}
+		if parsedID, err := strconv.ParseInt(search, 10, 64); err == nil && parsedID > 0 {
+			preds = append(preds, ticket.UserIDEQ(parsedID))
+		}
+		q = q.Where(ticket.Or(preds...))
 	}
 
 	total, err := q.Clone().Count(ctx)
@@ -77,6 +95,7 @@ func (r *ticketRepository) List(
 	}
 
 	itemsQuery := q.
+		WithUser().
 		Offset(params.Offset()).
 		Limit(params.Limit())
 	for _, order := range ticketListOrders(params) {
@@ -100,10 +119,14 @@ func (r *ticketRepository) Close(ctx context.Context, ticketID int64, closedBy i
 	if err != nil {
 		return nil, translatePersistenceError(err, service.ErrTicketNotFound, nil)
 	}
+	if enriched, err := r.GetByID(ctx, updated.ID); err == nil {
+		return enriched, nil
+	}
 	return ticketEntityToService(updated), nil
 }
 
 func (r *ticketRepository) AddMessage(ctx context.Context, m *service.TicketMessage) error {
+	queryCtx := mixins.SkipSoftDelete(ctx)
 	client := clientFromContext(ctx, r.client)
 	created, err := client.TicketMessage.Create().
 		SetTicketID(m.TicketID).
@@ -116,6 +139,14 @@ func (r *ticketRepository) AddMessage(ctx context.Context, m *service.TicketMess
 	}
 	m.ID = created.ID
 	m.CreatedAt = created.CreatedAt
+	if enriched, err := client.TicketMessage.Query().
+		Where(ticketmessage.IDEQ(created.ID)).
+		WithUser().
+		Only(queryCtx); err == nil {
+		if out := ticketMessageEntityToService(enriched); out != nil {
+			*m = *out
+		}
+	}
 
 	_, err = client.Ticket.UpdateOneID(m.TicketID).
 		SetLastReplyAt(created.CreatedAt).
@@ -127,9 +158,11 @@ func (r *ticketRepository) AddMessage(ctx context.Context, m *service.TicketMess
 }
 
 func (r *ticketRepository) ListMessages(ctx context.Context, ticketID int64) ([]service.TicketMessage, error) {
+	ctx = mixins.SkipSoftDelete(ctx)
 	client := clientFromContext(ctx, r.client)
 	items, err := client.TicketMessage.Query().
 		Where(ticketmessage.TicketIDEQ(ticketID)).
+		WithUser().
 		Order(dbent.Asc(ticketmessage.FieldCreatedAt), dbent.Asc(ticketmessage.FieldID)).
 		All(ctx)
 	if err != nil {
@@ -183,7 +216,7 @@ func ticketEntityToService(m *dbent.Ticket) *service.Ticket {
 	if m == nil {
 		return nil
 	}
-	return &service.Ticket{
+	out := &service.Ticket{
 		ID:          m.ID,
 		UserID:      m.UserID,
 		Title:       m.Title,
@@ -195,6 +228,8 @@ func ticketEntityToService(m *dbent.Ticket) *service.Ticket {
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
+	out.User = ticketUserSummaryFromEntity(m.Edges.User)
+	return out
 }
 
 func ticketEntitiesToService(models []*dbent.Ticket) []service.Ticket {
@@ -211,7 +246,7 @@ func ticketMessageEntityToService(m *dbent.TicketMessage) *service.TicketMessage
 	if m == nil {
 		return nil
 	}
-	return &service.TicketMessage{
+	out := &service.TicketMessage{
 		ID:         m.ID,
 		TicketID:   m.TicketID,
 		UserID:     m.UserID,
@@ -219,6 +254,8 @@ func ticketMessageEntityToService(m *dbent.TicketMessage) *service.TicketMessage
 		Content:    m.Content,
 		CreatedAt:  m.CreatedAt,
 	}
+	out.User = ticketUserSummaryFromEntity(m.Edges.User)
+	return out
 }
 
 func ticketMessageEntitiesToService(models []*dbent.TicketMessage) []service.TicketMessage {
@@ -229,4 +266,17 @@ func ticketMessageEntitiesToService(models []*dbent.TicketMessage) []service.Tic
 		}
 	}
 	return out
+}
+
+func ticketUserSummaryFromEntity(u *dbent.User) *service.UserSummary {
+	if u == nil {
+		return nil
+	}
+	return &service.UserSummary{
+		ID:       u.ID,
+		Email:    u.Email,
+		Username: u.Username,
+		Role:     u.Role,
+		Status:   u.Status,
+	}
 }
