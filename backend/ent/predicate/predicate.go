@@ -18,6 +18,9 @@ type AccountGroup func(*sql.Selector)
 // Announcement is the predicate function for announcement builders.
 type Announcement func(*sql.Selector)
 
+// AnnouncementComment is the predicate function for announcementcomment builders.
+type AnnouncementComment func(*sql.Selector)
+
 // AnnouncementRead is the predicate function for announcementread builders.
 type AnnouncementRead func(*sql.Selector)
 
@@ -86,6 +89,12 @@ type SubscriptionPlan func(*sql.Selector)
 
 // TLSFingerprintProfile is the predicate function for tlsfingerprintprofile builders.
 type TLSFingerprintProfile func(*sql.Selector)
+
+// Ticket is the predicate function for ticket builders.
+type Ticket func(*sql.Selector)
+
+// TicketMessage is the predicate function for ticketmessage builders.
+type TicketMessage func(*sql.Selector)
 
 // UsageCleanupTask is the predicate function for usagecleanuptask builders.
 type UsageCleanupTask func(*sql.Selector)

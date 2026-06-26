@@ -211,6 +211,7 @@ export interface PublicSettings {
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean
+  ticket_system_enabled: boolean
   table_default_page_size: number
   table_page_size_options: number[]
   custom_menu_items: CustomMenuItem[]
@@ -311,6 +312,7 @@ export interface Announcement {
   content: string
   status: AnnouncementStatus
   notify_mode: AnnouncementNotifyMode
+  comments_enabled: boolean
   targeting: AnnouncementTargeting
   starts_at?: string
   ends_at?: string
@@ -325,6 +327,7 @@ export interface UserAnnouncement {
   title: string
   content: string
   notify_mode: AnnouncementNotifyMode
+  comments_enabled: boolean
   starts_at?: string
   ends_at?: string
   read_at?: string
@@ -337,6 +340,7 @@ export interface CreateAnnouncementRequest {
   content: string
   status?: AnnouncementStatus
   notify_mode?: AnnouncementNotifyMode
+  comments_enabled?: boolean
   targeting: AnnouncementTargeting
   starts_at?: number
   ends_at?: number
@@ -347,6 +351,7 @@ export interface UpdateAnnouncementRequest {
   content?: string
   status?: AnnouncementStatus
   notify_mode?: AnnouncementNotifyMode
+  comments_enabled?: boolean
   targeting?: AnnouncementTargeting
   starts_at?: number
   ends_at?: number
@@ -359,6 +364,59 @@ export interface AnnouncementUserReadStatus {
   balance: number
   eligible: boolean
   read_at?: string
+}
+
+export interface AnnouncementComment {
+  id: number
+  announcement_id: number
+  user_id: number
+  parent_id?: number
+  content: string
+  author_email: string
+  author_name: string
+  author_role: 'user' | 'admin' | string
+  can_delete: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type TicketStatus = 'open' | 'closed'
+export type TicketSenderRole = 'user' | 'admin'
+
+export interface Ticket {
+  id: number
+  user_id: number
+  title: string
+  status: TicketStatus
+  created_by?: number
+  closed_by?: number
+  closed_at?: string
+  last_reply_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TicketMessage {
+  id: number
+  ticket_id: number
+  user_id: number
+  sender_role: TicketSenderRole
+  content: string
+  created_at: string
+}
+
+export interface TicketWithMessages {
+  ticket: Ticket
+  messages: TicketMessage[]
+}
+
+export interface CreateTicketRequest {
+  title: string
+  content: string
+}
+
+export interface ReplyTicketRequest {
+  content: string
 }
 
 // ==================== Proxy Node Types ====================

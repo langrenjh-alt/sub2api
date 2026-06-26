@@ -14,6 +14,7 @@ import (
 type AnnouncementService struct {
 	announcementRepo AnnouncementRepository
 	readRepo         AnnouncementReadRepository
+	commentRepo      AnnouncementCommentRepository
 	userRepo         UserRepository
 	userSubRepo      UserSubscriptionRepository
 }
@@ -32,26 +33,32 @@ func NewAnnouncementService(
 	}
 }
 
+func (s *AnnouncementService) SetCommentRepository(repo AnnouncementCommentRepository) {
+	s.commentRepo = repo
+}
+
 type CreateAnnouncementInput struct {
-	Title      string
-	Content    string
-	Status     string
-	NotifyMode string
-	Targeting  AnnouncementTargeting
-	StartsAt   *time.Time
-	EndsAt     *time.Time
-	ActorID    *int64 // 管理员用户ID
+	Title           string
+	Content         string
+	Status          string
+	NotifyMode      string
+	CommentsEnabled bool
+	Targeting       AnnouncementTargeting
+	StartsAt        *time.Time
+	EndsAt          *time.Time
+	ActorID         *int64 // 管理员用户ID
 }
 
 type UpdateAnnouncementInput struct {
-	Title      *string
-	Content    *string
-	Status     *string
-	NotifyMode *string
-	Targeting  *AnnouncementTargeting
-	StartsAt   **time.Time
-	EndsAt     **time.Time
-	ActorID    *int64 // 管理员用户ID
+	Title           *string
+	Content         *string
+	Status          *string
+	NotifyMode      *string
+	CommentsEnabled *bool
+	Targeting       *AnnouncementTargeting
+	StartsAt        **time.Time
+	EndsAt          **time.Time
+	ActorID         *int64 // 管理员用户ID
 }
 
 type UserAnnouncement struct {
@@ -110,13 +117,14 @@ func (s *AnnouncementService) Create(ctx context.Context, input *CreateAnnouncem
 	}
 
 	a := &Announcement{
-		Title:      title,
-		Content:    content,
-		Status:     status,
-		NotifyMode: notifyMode,
-		Targeting:  targeting,
-		StartsAt:   input.StartsAt,
-		EndsAt:     input.EndsAt,
+		Title:           title,
+		Content:         content,
+		Status:          status,
+		NotifyMode:      notifyMode,
+		CommentsEnabled: input.CommentsEnabled,
+		Targeting:       targeting,
+		StartsAt:        input.StartsAt,
+		EndsAt:          input.EndsAt,
 	}
 	if input.ActorID != nil && *input.ActorID > 0 {
 		a.CreatedBy = input.ActorID
@@ -167,6 +175,10 @@ func (s *AnnouncementService) Update(ctx context.Context, id int64, input *Updat
 			return nil, ErrAnnouncementInvalidNotifyMode
 		}
 		a.NotifyMode = notifyMode
+	}
+
+	if input.CommentsEnabled != nil {
+		a.CommentsEnabled = *input.CommentsEnabled
 	}
 
 	if input.Targeting != nil {
@@ -385,6 +397,177 @@ func (s *AnnouncementService) ListUserReadStatus(
 	}
 
 	return out, page, nil
+}
+
+func (s *AnnouncementService) ListCommentsForUser(ctx context.Context, userID, announcementID int64) ([]AnnouncementComment, error) {
+	a, err := s.getVisibleAnnouncementForUser(ctx, userID, announcementID)
+	if err != nil {
+		return nil, err
+	}
+	if !a.CommentsEnabled {
+		return []AnnouncementComment{}, nil
+	}
+	return s.listComments(ctx, announcementID)
+}
+
+func (s *AnnouncementService) ListCommentsAdmin(ctx context.Context, announcementID int64) ([]AnnouncementComment, error) {
+	a, err := s.announcementRepo.GetByID(ctx, announcementID)
+	if err != nil {
+		return nil, err
+	}
+	if !a.CommentsEnabled {
+		return []AnnouncementComment{}, nil
+	}
+	return s.listComments(ctx, announcementID)
+}
+
+func (s *AnnouncementService) CreateCommentForUser(ctx context.Context, userID, announcementID int64, parentID *int64, content string) (*AnnouncementComment, error) {
+	a, err := s.getVisibleAnnouncementForUser(ctx, userID, announcementID)
+	if err != nil {
+		return nil, err
+	}
+	return s.createComment(ctx, a, userID, parentID, content)
+}
+
+func (s *AnnouncementService) CreateCommentAdmin(ctx context.Context, adminID, announcementID int64, parentID *int64, content string) (*AnnouncementComment, error) {
+	a, err := s.announcementRepo.GetByID(ctx, announcementID)
+	if err != nil {
+		return nil, err
+	}
+	return s.createComment(ctx, a, adminID, parentID, content)
+}
+
+func (s *AnnouncementService) DeleteCommentForUser(ctx context.Context, userID, announcementID, commentID int64) error {
+	if _, err := s.getVisibleAnnouncementForUser(ctx, userID, announcementID); err != nil {
+		return err
+	}
+	comment, err := s.getComment(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment.AnnouncementID != announcementID {
+		return ErrAnnouncementCommentNotFound
+	}
+	if comment.UserID != userID {
+		return ErrAnnouncementCommentForbidden
+	}
+	return s.deleteComment(ctx, commentID)
+}
+
+func (s *AnnouncementService) DeleteCommentAdmin(ctx context.Context, announcementID, commentID int64) error {
+	if _, err := s.announcementRepo.GetByID(ctx, announcementID); err != nil {
+		return err
+	}
+	comment, err := s.getComment(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment.AnnouncementID != announcementID {
+		return ErrAnnouncementCommentNotFound
+	}
+	return s.deleteComment(ctx, commentID)
+}
+
+func (s *AnnouncementService) listComments(ctx context.Context, announcementID int64) ([]AnnouncementComment, error) {
+	if s.commentRepo == nil {
+		return []AnnouncementComment{}, nil
+	}
+	items, err := s.commentRepo.ListByAnnouncement(ctx, announcementID)
+	if err != nil {
+		return nil, fmt.Errorf("list announcement comments: %w", err)
+	}
+	return items, nil
+}
+
+func (s *AnnouncementService) createComment(ctx context.Context, a *Announcement, userID int64, parentID *int64, content string) (*AnnouncementComment, error) {
+	if a == nil {
+		return nil, ErrAnnouncementNotFound
+	}
+	if s.commentRepo == nil {
+		return nil, ErrAnnouncementCommentsDisabled
+	}
+	if !a.CommentsEnabled {
+		return nil, ErrAnnouncementCommentsDisabled
+	}
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return nil, ErrAnnouncementCommentContentRequired
+	}
+	if _, err := s.userRepo.GetByID(ctx, userID); err != nil {
+		return nil, fmt.Errorf("get comment user: %w", err)
+	}
+	if parentID != nil {
+		parent, err := s.commentRepo.GetByID(ctx, *parentID)
+		if err != nil {
+			return nil, err
+		}
+		if parent.AnnouncementID != a.ID {
+			return nil, ErrAnnouncementCommentNotFound
+		}
+	}
+
+	comment := &AnnouncementComment{
+		AnnouncementID: a.ID,
+		UserID:         userID,
+		ParentID:       parentID,
+		Content:        trimmed,
+	}
+	if err := s.commentRepo.Create(ctx, comment); err != nil {
+		return nil, fmt.Errorf("create announcement comment: %w", err)
+	}
+	return comment, nil
+}
+
+func (s *AnnouncementService) getComment(ctx context.Context, commentID int64) (*AnnouncementComment, error) {
+	if s.commentRepo == nil {
+		return nil, ErrAnnouncementCommentNotFound
+	}
+	comment, err := s.commentRepo.GetByID(ctx, commentID)
+	if err != nil {
+		return nil, err
+	}
+	return comment, nil
+}
+
+func (s *AnnouncementService) deleteComment(ctx context.Context, commentID int64) error {
+	if s.commentRepo == nil {
+		return ErrAnnouncementCommentNotFound
+	}
+	if err := s.commentRepo.Delete(ctx, commentID); err != nil {
+		return fmt.Errorf("delete announcement comment: %w", err)
+	}
+	return nil
+}
+
+func (s *AnnouncementService) getVisibleAnnouncementForUser(ctx context.Context, userID, announcementID int64) (*Announcement, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+
+	a, err := s.announcementRepo.GetByID(ctx, announcementID)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	if !a.IsActiveAt(now) {
+		return nil, ErrAnnouncementNotFound
+	}
+
+	activeSubs, err := s.userSubRepo.ListActiveByUserID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list active subscriptions: %w", err)
+	}
+	activeGroupIDs := make(map[int64]struct{}, len(activeSubs))
+	for i := range activeSubs {
+		activeGroupIDs[activeSubs[i].GroupID] = struct{}{}
+	}
+
+	if !a.Targeting.Matches(user.Balance, activeGroupIDs) {
+		return nil, ErrAnnouncementNotFound
+	}
+	return a, nil
 }
 
 func isValidAnnouncementStatus(status string) bool {

@@ -56,6 +56,12 @@ declare module 'vue-router' {
     requiresRiskControl?: boolean
 
     /**
+     * Whether this route requires ticket system to be enabled
+     * @default false
+     */
+    requiresTicketSystem?: boolean
+
+    /**
      * i18n key for the page title
      */
     titleKey?: string

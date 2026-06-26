@@ -28,6 +28,7 @@ func (r *announcementRepository) Create(ctx context.Context, a *service.Announce
 		SetContent(a.Content).
 		SetStatus(a.Status).
 		SetNotifyMode(a.NotifyMode).
+		SetCommentsEnabled(a.CommentsEnabled).
 		SetTargeting(a.Targeting)
 
 	if a.StartsAt != nil {
@@ -69,6 +70,7 @@ func (r *announcementRepository) Update(ctx context.Context, a *service.Announce
 		SetContent(a.Content).
 		SetStatus(a.Status).
 		SetNotifyMode(a.NotifyMode).
+		SetCommentsEnabled(a.CommentsEnabled).
 		SetTargeting(a.Targeting)
 
 	if a.StartsAt != nil {
@@ -219,6 +221,7 @@ func applyAnnouncementEntityToService(dst *service.Announcement, src *dbent.Anno
 		return
 	}
 	dst.ID = src.ID
+	dst.CommentsEnabled = src.CommentsEnabled
 	dst.CreatedAt = src.CreatedAt
 	dst.UpdatedAt = src.UpdatedAt
 }
@@ -228,18 +231,19 @@ func announcementEntityToService(m *dbent.Announcement) *service.Announcement {
 		return nil
 	}
 	return &service.Announcement{
-		ID:         m.ID,
-		Title:      m.Title,
-		Content:    m.Content,
-		Status:     m.Status,
-		NotifyMode: m.NotifyMode,
-		Targeting:  m.Targeting,
-		StartsAt:   m.StartsAt,
-		EndsAt:     m.EndsAt,
-		CreatedBy:  m.CreatedBy,
-		UpdatedBy:  m.UpdatedBy,
-		CreatedAt:  m.CreatedAt,
-		UpdatedAt:  m.UpdatedAt,
+		ID:              m.ID,
+		Title:           m.Title,
+		Content:         m.Content,
+		Status:          m.Status,
+		NotifyMode:      m.NotifyMode,
+		CommentsEnabled: m.CommentsEnabled,
+		Targeting:       m.Targeting,
+		StartsAt:        m.StartsAt,
+		EndsAt:          m.EndsAt,
+		CreatedBy:       m.CreatedBy,
+		UpdatedBy:       m.UpdatedBy,
+		CreatedAt:       m.CreatedAt,
+		UpdatedAt:       m.UpdatedAt,
 	}
 }
 

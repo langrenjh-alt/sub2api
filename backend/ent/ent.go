@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementcomment"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
@@ -38,6 +39,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/ticket"
+	"github.com/Wei-Shaw/sub2api/ent/ticketmessage"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -111,6 +114,7 @@ func checkColumn(t, c string) error {
 			account.Table:                       account.ValidColumn,
 			accountgroup.Table:                  accountgroup.ValidColumn,
 			announcement.Table:                  announcement.ValidColumn,
+			announcementcomment.Table:           announcementcomment.ValidColumn,
 			announcementread.Table:              announcementread.ValidColumn,
 			authidentity.Table:                  authidentity.ValidColumn,
 			authidentitychannel.Table:           authidentitychannel.ValidColumn,
@@ -134,6 +138,8 @@ func checkColumn(t, c string) error {
 			setting.Table:                       setting.ValidColumn,
 			subscriptionplan.Table:              subscriptionplan.ValidColumn,
 			tlsfingerprintprofile.Table:         tlsfingerprintprofile.ValidColumn,
+			ticket.Table:                        ticket.ValidColumn,
+			ticketmessage.Table:                 ticketmessage.ValidColumn,
 			usagecleanuptask.Table:              usagecleanuptask.ValidColumn,
 			usagelog.Table:                      usagelog.ValidColumn,
 			user.Table:                          user.ValidColumn,

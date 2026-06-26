@@ -75,6 +75,11 @@ func NotifyMode(v string) predicate.Announcement {
 	return predicate.Announcement(sql.FieldEQ(FieldNotifyMode, v))
 }
 
+// CommentsEnabled applies equality check predicate on the "comments_enabled" field. It's identical to CommentsEnabledEQ.
+func CommentsEnabled(v bool) predicate.Announcement {
+	return predicate.Announcement(sql.FieldEQ(FieldCommentsEnabled, v))
+}
+
 // StartsAt applies equality check predicate on the "starts_at" field. It's identical to StartsAtEQ.
 func StartsAt(v time.Time) predicate.Announcement {
 	return predicate.Announcement(sql.FieldEQ(FieldStartsAt, v))
@@ -363,6 +368,16 @@ func NotifyModeEqualFold(v string) predicate.Announcement {
 // NotifyModeContainsFold applies the ContainsFold predicate on the "notify_mode" field.
 func NotifyModeContainsFold(v string) predicate.Announcement {
 	return predicate.Announcement(sql.FieldContainsFold(FieldNotifyMode, v))
+}
+
+// CommentsEnabledEQ applies the EQ predicate on the "comments_enabled" field.
+func CommentsEnabledEQ(v bool) predicate.Announcement {
+	return predicate.Announcement(sql.FieldEQ(FieldCommentsEnabled, v))
+}
+
+// CommentsEnabledNEQ applies the NEQ predicate on the "comments_enabled" field.
+func CommentsEnabledNEQ(v bool) predicate.Announcement {
+	return predicate.Announcement(sql.FieldNEQ(FieldCommentsEnabled, v))
 }
 
 // TargetingIsNil applies the IsNil predicate on the "targeting" field.
@@ -670,6 +685,29 @@ func HasReads() predicate.Announcement {
 func HasReadsWith(preds ...predicate.AnnouncementRead) predicate.Announcement {
 	return predicate.Announcement(func(s *sql.Selector) {
 		step := newReadsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasComments applies the HasEdge predicate on the "comments" edge.
+func HasComments() predicate.Announcement {
+	return predicate.Announcement(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, CommentsTable, CommentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasCommentsWith applies the HasEdge predicate on the "comments" edge with a given conditions (other predicates).
+func HasCommentsWith(preds ...predicate.AnnouncementComment) predicate.Announcement {
+	return predicate.Announcement(func(s *sql.Selector) {
+		step := newCommentsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

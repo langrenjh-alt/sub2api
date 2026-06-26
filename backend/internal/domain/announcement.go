@@ -200,18 +200,19 @@ func (c AnnouncementCondition) validate() error {
 }
 
 type Announcement struct {
-	ID         int64
-	Title      string
-	Content    string
-	Status     string
-	NotifyMode string
-	Targeting  AnnouncementTargeting
-	StartsAt   *time.Time
-	EndsAt     *time.Time
-	CreatedBy  *int64
-	UpdatedBy  *int64
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID              int64
+	Title           string
+	Content         string
+	Status          string
+	NotifyMode      string
+	CommentsEnabled bool
+	Targeting       AnnouncementTargeting
+	StartsAt        *time.Time
+	EndsAt          *time.Time
+	CreatedBy       *int64
+	UpdatedBy       *int64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func (a *Announcement) IsActiveAt(now time.Time) bool {
@@ -229,4 +230,17 @@ func (a *Announcement) IsActiveAt(now time.Time) bool {
 		return false
 	}
 	return true
+}
+
+type AnnouncementComment struct {
+	ID             int64
+	AnnouncementID int64
+	UserID         int64
+	ParentID       *int64
+	Content        string
+	AuthorEmail    string
+	AuthorName     string
+	AuthorRole     string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }

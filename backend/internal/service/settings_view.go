@@ -144,6 +144,7 @@ type SystemSettings struct {
 
 	DefaultConcurrency           int
 	DefaultBalance               float64
+	TicketSystemEnabled          bool
 	RiskControlEnabled           bool
 	CyberSessionBlockEnabled     bool
 	CyberSessionBlockTTLSeconds  int
@@ -295,6 +296,7 @@ type PublicSettings struct {
 
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
+	TicketSystemEnabled      bool `json:"ticket_system_enabled"`
 
 	// Affiliate (邀请返利) feature toggle
 	AffiliateEnabled bool `json:"affiliate_enabled"`

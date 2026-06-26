@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementcomment"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
@@ -82,6 +83,20 @@ func (_u *AnnouncementUpdate) SetNotifyMode(v string) *AnnouncementUpdate {
 func (_u *AnnouncementUpdate) SetNillableNotifyMode(v *string) *AnnouncementUpdate {
 	if v != nil {
 		_u.SetNotifyMode(*v)
+	}
+	return _u
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (_u *AnnouncementUpdate) SetCommentsEnabled(v bool) *AnnouncementUpdate {
+	_u.mutation.SetCommentsEnabled(v)
+	return _u
+}
+
+// SetNillableCommentsEnabled sets the "comments_enabled" field if the given value is not nil.
+func (_u *AnnouncementUpdate) SetNillableCommentsEnabled(v *bool) *AnnouncementUpdate {
+	if v != nil {
+		_u.SetCommentsEnabled(*v)
 	}
 	return _u
 }
@@ -221,6 +236,21 @@ func (_u *AnnouncementUpdate) AddReads(v ...*AnnouncementRead) *AnnouncementUpda
 	return _u.AddReadIDs(ids...)
 }
 
+// AddCommentIDs adds the "comments" edge to the AnnouncementComment entity by IDs.
+func (_u *AnnouncementUpdate) AddCommentIDs(ids ...int64) *AnnouncementUpdate {
+	_u.mutation.AddCommentIDs(ids...)
+	return _u
+}
+
+// AddComments adds the "comments" edges to the AnnouncementComment entity.
+func (_u *AnnouncementUpdate) AddComments(v ...*AnnouncementComment) *AnnouncementUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCommentIDs(ids...)
+}
+
 // Mutation returns the AnnouncementMutation object of the builder.
 func (_u *AnnouncementUpdate) Mutation() *AnnouncementMutation {
 	return _u.mutation
@@ -245,6 +275,27 @@ func (_u *AnnouncementUpdate) RemoveReads(v ...*AnnouncementRead) *AnnouncementU
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReadIDs(ids...)
+}
+
+// ClearComments clears all "comments" edges to the AnnouncementComment entity.
+func (_u *AnnouncementUpdate) ClearComments() *AnnouncementUpdate {
+	_u.mutation.ClearComments()
+	return _u
+}
+
+// RemoveCommentIDs removes the "comments" edge to AnnouncementComment entities by IDs.
+func (_u *AnnouncementUpdate) RemoveCommentIDs(ids ...int64) *AnnouncementUpdate {
+	_u.mutation.RemoveCommentIDs(ids...)
+	return _u
+}
+
+// RemoveComments removes "comments" edges to AnnouncementComment entities.
+func (_u *AnnouncementUpdate) RemoveComments(v ...*AnnouncementComment) *AnnouncementUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCommentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -332,6 +383,9 @@ func (_u *AnnouncementUpdate) sqlSave(ctx context.Context) (_node int, err error
 	if value, ok := _u.mutation.NotifyMode(); ok {
 		_spec.SetField(announcement.FieldNotifyMode, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.CommentsEnabled(); ok {
+		_spec.SetField(announcement.FieldCommentsEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.Targeting(); ok {
 		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
 	}
@@ -416,6 +470,51 @@ func (_u *AnnouncementUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !_u.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{announcement.Label}
@@ -488,6 +587,20 @@ func (_u *AnnouncementUpdateOne) SetNotifyMode(v string) *AnnouncementUpdateOne 
 func (_u *AnnouncementUpdateOne) SetNillableNotifyMode(v *string) *AnnouncementUpdateOne {
 	if v != nil {
 		_u.SetNotifyMode(*v)
+	}
+	return _u
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (_u *AnnouncementUpdateOne) SetCommentsEnabled(v bool) *AnnouncementUpdateOne {
+	_u.mutation.SetCommentsEnabled(v)
+	return _u
+}
+
+// SetNillableCommentsEnabled sets the "comments_enabled" field if the given value is not nil.
+func (_u *AnnouncementUpdateOne) SetNillableCommentsEnabled(v *bool) *AnnouncementUpdateOne {
+	if v != nil {
+		_u.SetCommentsEnabled(*v)
 	}
 	return _u
 }
@@ -627,6 +740,21 @@ func (_u *AnnouncementUpdateOne) AddReads(v ...*AnnouncementRead) *AnnouncementU
 	return _u.AddReadIDs(ids...)
 }
 
+// AddCommentIDs adds the "comments" edge to the AnnouncementComment entity by IDs.
+func (_u *AnnouncementUpdateOne) AddCommentIDs(ids ...int64) *AnnouncementUpdateOne {
+	_u.mutation.AddCommentIDs(ids...)
+	return _u
+}
+
+// AddComments adds the "comments" edges to the AnnouncementComment entity.
+func (_u *AnnouncementUpdateOne) AddComments(v ...*AnnouncementComment) *AnnouncementUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddCommentIDs(ids...)
+}
+
 // Mutation returns the AnnouncementMutation object of the builder.
 func (_u *AnnouncementUpdateOne) Mutation() *AnnouncementMutation {
 	return _u.mutation
@@ -651,6 +779,27 @@ func (_u *AnnouncementUpdateOne) RemoveReads(v ...*AnnouncementRead) *Announceme
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveReadIDs(ids...)
+}
+
+// ClearComments clears all "comments" edges to the AnnouncementComment entity.
+func (_u *AnnouncementUpdateOne) ClearComments() *AnnouncementUpdateOne {
+	_u.mutation.ClearComments()
+	return _u
+}
+
+// RemoveCommentIDs removes the "comments" edge to AnnouncementComment entities by IDs.
+func (_u *AnnouncementUpdateOne) RemoveCommentIDs(ids ...int64) *AnnouncementUpdateOne {
+	_u.mutation.RemoveCommentIDs(ids...)
+	return _u
+}
+
+// RemoveComments removes "comments" edges to AnnouncementComment entities.
+func (_u *AnnouncementUpdateOne) RemoveComments(v ...*AnnouncementComment) *AnnouncementUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveCommentIDs(ids...)
 }
 
 // Where appends a list predicates to the AnnouncementUpdate builder.
@@ -768,6 +917,9 @@ func (_u *AnnouncementUpdateOne) sqlSave(ctx context.Context) (_node *Announceme
 	if value, ok := _u.mutation.NotifyMode(); ok {
 		_spec.SetField(announcement.FieldNotifyMode, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.CommentsEnabled(); ok {
+		_spec.SetField(announcement.FieldCommentsEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.Targeting(); ok {
 		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
 	}
@@ -845,6 +997,51 @@ func (_u *AnnouncementUpdateOne) sqlSave(ctx context.Context) (_node *Announceme
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedCommentsIDs(); len(nodes) > 0 && !_u.mutation.CommentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

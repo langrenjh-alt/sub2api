@@ -227,6 +227,7 @@ func (h *SettingHandler) GetSettings(c *gin.Context) {
 		CustomEndpoints:                        dto.ParseCustomEndpoints(settings.CustomEndpoints),
 		DefaultConcurrency:                     settings.DefaultConcurrency,
 		DefaultBalance:                         settings.DefaultBalance,
+		TicketSystemEnabled:                    settings.TicketSystemEnabled,
 		RiskControlEnabled:                     settings.RiskControlEnabled,
 		CyberSessionBlockEnabled:               settings.CyberSessionBlockEnabled,
 		CyberSessionBlockTTLSeconds:            settings.CyberSessionBlockTTLSeconds,
@@ -652,7 +653,8 @@ type UpdateSettingsRequest struct {
 	AffiliateEnabled *bool `json:"affiliate_enabled"`
 
 	// 风控中心功能开关
-	RiskControlEnabled *bool `json:"risk_control_enabled"`
+	TicketSystemEnabled *bool `json:"ticket_system_enabled"`
+	RiskControlEnabled  *bool `json:"risk_control_enabled"`
 
 	// cyber 会话屏蔽开关 + TTL
 	CyberSessionBlockEnabled    *bool `json:"cyber_session_block_enabled"`
@@ -1799,6 +1801,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.AffiliateEnabled
 		}(),
+		TicketSystemEnabled: func() bool {
+			if req.TicketSystemEnabled != nil {
+				return *req.TicketSystemEnabled
+			}
+			return previousSettings.TicketSystemEnabled
+		}(),
 		RiskControlEnabled: func() bool {
 			if req.RiskControlEnabled != nil {
 				return *req.RiskControlEnabled
@@ -2141,6 +2149,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,
 
+		TicketSystemEnabled:         updatedSettings.TicketSystemEnabled,
 		RiskControlEnabled:          updatedSettings.RiskControlEnabled,
 		CyberSessionBlockEnabled:    updatedSettings.CyberSessionBlockEnabled,
 		CyberSessionBlockTTLSeconds: updatedSettings.CyberSessionBlockTTLSeconds,
@@ -2630,6 +2639,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	}
 	if before.AffiliateEnabled != after.AffiliateEnabled {
 		changed = append(changed, "affiliate_enabled")
+	}
+	if before.TicketSystemEnabled != after.TicketSystemEnabled {
+		changed = append(changed, "ticket_system_enabled")
 	}
 	if before.RiskControlEnabled != after.RiskControlEnabled {
 		changed = append(changed, "risk_control_enabled")

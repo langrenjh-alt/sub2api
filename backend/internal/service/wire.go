@@ -469,6 +469,18 @@ func ProvideOpsService(
 	return svc
 }
 
+func ProvideAnnouncementService(
+	announcementRepo AnnouncementRepository,
+	readRepo AnnouncementReadRepository,
+	commentRepo AnnouncementCommentRepository,
+	userRepo UserRepository,
+	userSubRepo UserSubscriptionRepository,
+) *AnnouncementService {
+	svc := NewAnnouncementService(announcementRepo, readRepo, userRepo, userSubRepo)
+	svc.SetCommentRepository(commentRepo)
+	return svc
+}
+
 // ProvideSettingService wires SettingService with group reader and proxy repo.
 func ProvideSettingService(settingRepo SettingRepository, groupRepo GroupRepository, proxyRepo ProxyRepository, cfg *config.Config) *SettingService {
 	svc := NewSettingService(settingRepo, cfg)
@@ -528,7 +540,8 @@ var ProviderSet = wire.NewSet(
 	ProvidePricingService,
 	NewBillingService,
 	ProvideBillingCacheService,
-	NewAnnouncementService,
+	ProvideAnnouncementService,
+	NewTicketService,
 	NewAdminService,
 	NewGatewayService,
 	NewOpenAIGatewayService,

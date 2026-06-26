@@ -45,6 +45,9 @@ func (Announcement) Fields() []ent.Field {
 			MaxLen(20).
 			Default(domain.AnnouncementNotifyModeSilent).
 			Comment("通知模式: silent(仅铃铛), popup(弹窗提醒)"),
+		field.Bool("comments_enabled").
+			Default(false).
+			Comment("是否开启公告评论"),
 		field.JSON("targeting", domain.AnnouncementTargeting{}).
 			Optional().
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
@@ -81,6 +84,8 @@ func (Announcement) Fields() []ent.Field {
 func (Announcement) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("reads", AnnouncementRead.Type),
+		edge.To("comments", AnnouncementComment.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }
 

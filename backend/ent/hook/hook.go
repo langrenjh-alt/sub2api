@@ -57,6 +57,18 @@ func (f AnnouncementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AnnouncementMutation", m)
 }
 
+// The AnnouncementCommentFunc type is an adapter to allow the use of ordinary
+// function as AnnouncementComment mutator.
+type AnnouncementCommentFunc func(context.Context, *ent.AnnouncementCommentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AnnouncementCommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AnnouncementCommentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AnnouncementCommentMutation", m)
+}
+
 // The AnnouncementReadFunc type is an adapter to allow the use of ordinary
 // function as AnnouncementRead mutator.
 type AnnouncementReadFunc func(context.Context, *ent.AnnouncementReadMutation) (ent.Value, error)
@@ -331,6 +343,30 @@ func (f TLSFingerprintProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TLSFingerprintProfileMutation", m)
+}
+
+// The TicketFunc type is an adapter to allow the use of ordinary
+// function as Ticket mutator.
+type TicketFunc func(context.Context, *ent.TicketMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TicketFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TicketMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TicketMutation", m)
+}
+
+// The TicketMessageFunc type is an adapter to allow the use of ordinary
+// function as TicketMessage mutator.
+type TicketMessageFunc func(context.Context, *ent.TicketMessageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TicketMessageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TicketMessageMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TicketMessageMutation", m)
 }
 
 // The UsageCleanupTaskFunc type is an adapter to allow the use of ordinary

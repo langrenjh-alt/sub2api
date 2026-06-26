@@ -17,6 +17,11 @@ type AnnouncementHandler struct {
 	announcementService *service.AnnouncementService
 }
 
+type AnnouncementCommentRequest struct {
+	Content  string `json:"content" binding:"required"`
+	ParentID *int64 `json:"parent_id"`
+}
+
 // NewAnnouncementHandler creates a new user announcement handler
 func NewAnnouncementHandler(announcementService *service.AnnouncementService) *AnnouncementHandler {
 	return &AnnouncementHandler{
@@ -68,6 +73,82 @@ func (h *AnnouncementHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
+	response.Success(c, gin.H{"message": "ok"})
+}
+
+// ListComments handles listing comments visible to the current user.
+// GET /api/v1/announcements/:id/comments
+func (h *AnnouncementHandler) ListComments(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+
+	items, err := h.announcementService.ListCommentsForUser(c.Request.Context(), subject.UserID, announcementID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AnnouncementCommentsFromService(items, subject.UserID, false))
+}
+
+// CreateComment handles user comments and replies.
+// POST /api/v1/announcements/:id/comments
+func (h *AnnouncementHandler) CreateComment(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+
+	var req AnnouncementCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	created, err := h.announcementService.CreateCommentForUser(c.Request.Context(), subject.UserID, announcementID, req.ParentID, req.Content)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AnnouncementCommentFromService(created, subject.UserID, false))
+}
+
+// DeleteComment handles deleting the current user's own comment.
+// DELETE /api/v1/announcements/:id/comments/:comment_id
+func (h *AnnouncementHandler) DeleteComment(c *gin.Context) {
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+	commentID, err := strconv.ParseInt(c.Param("comment_id"), 10, 64)
+	if err != nil || commentID <= 0 {
+		response.BadRequest(c, "Invalid comment ID")
+		return
+	}
+
+	if err := h.announcementService.DeleteCommentForUser(c.Request.Context(), subject.UserID, announcementID, commentID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 	response.Success(c, gin.H{"message": "ok"})
 }
 

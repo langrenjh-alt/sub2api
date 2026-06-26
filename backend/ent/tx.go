@@ -22,6 +22,8 @@ type Tx struct {
 	AccountGroup *AccountGroupClient
 	// Announcement is the client for interacting with the Announcement builders.
 	Announcement *AnnouncementClient
+	// AnnouncementComment is the client for interacting with the AnnouncementComment builders.
+	AnnouncementComment *AnnouncementCommentClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
 	AnnouncementRead *AnnouncementReadClient
 	// AuthIdentity is the client for interacting with the AuthIdentity builders.
@@ -68,6 +70,10 @@ type Tx struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// Ticket is the client for interacting with the Ticket builders.
+	Ticket *TicketClient
+	// TicketMessage is the client for interacting with the TicketMessage builders.
+	TicketMessage *TicketMessageClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -219,6 +225,7 @@ func (tx *Tx) init() {
 	tx.Account = NewAccountClient(tx.config)
 	tx.AccountGroup = NewAccountGroupClient(tx.config)
 	tx.Announcement = NewAnnouncementClient(tx.config)
+	tx.AnnouncementComment = NewAnnouncementCommentClient(tx.config)
 	tx.AnnouncementRead = NewAnnouncementReadClient(tx.config)
 	tx.AuthIdentity = NewAuthIdentityClient(tx.config)
 	tx.AuthIdentityChannel = NewAuthIdentityChannelClient(tx.config)
@@ -242,6 +249,8 @@ func (tx *Tx) init() {
 	tx.Setting = NewSettingClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
+	tx.Ticket = NewTicketClient(tx.config)
+	tx.TicketMessage = NewTicketMessageClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)
 	tx.UsageLog = NewUsageLogClient(tx.config)
 	tx.User = NewUserClient(tx.config)

@@ -22,6 +22,8 @@ const (
 	FieldStatus = "status"
 	// FieldNotifyMode holds the string denoting the notify_mode field in the database.
 	FieldNotifyMode = "notify_mode"
+	// FieldCommentsEnabled holds the string denoting the comments_enabled field in the database.
+	FieldCommentsEnabled = "comments_enabled"
 	// FieldTargeting holds the string denoting the targeting field in the database.
 	FieldTargeting = "targeting"
 	// FieldStartsAt holds the string denoting the starts_at field in the database.
@@ -38,6 +40,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeReads holds the string denoting the reads edge name in mutations.
 	EdgeReads = "reads"
+	// EdgeComments holds the string denoting the comments edge name in mutations.
+	EdgeComments = "comments"
 	// Table holds the table name of the announcement in the database.
 	Table = "announcements"
 	// ReadsTable is the table that holds the reads relation/edge.
@@ -47,6 +51,13 @@ const (
 	ReadsInverseTable = "announcement_reads"
 	// ReadsColumn is the table column denoting the reads relation/edge.
 	ReadsColumn = "announcement_id"
+	// CommentsTable is the table that holds the comments relation/edge.
+	CommentsTable = "announcement_comments"
+	// CommentsInverseTable is the table name for the AnnouncementComment entity.
+	// It exists in this package in order to avoid circular dependency with the "announcementcomment" package.
+	CommentsInverseTable = "announcement_comments"
+	// CommentsColumn is the table column denoting the comments relation/edge.
+	CommentsColumn = "announcement_id"
 )
 
 // Columns holds all SQL columns for announcement fields.
@@ -56,6 +67,7 @@ var Columns = []string{
 	FieldContent,
 	FieldStatus,
 	FieldNotifyMode,
+	FieldCommentsEnabled,
 	FieldTargeting,
 	FieldStartsAt,
 	FieldEndsAt,
@@ -88,6 +100,8 @@ var (
 	DefaultNotifyMode string
 	// NotifyModeValidator is a validator for the "notify_mode" field. It is called by the builders before save.
 	NotifyModeValidator func(string) error
+	// DefaultCommentsEnabled holds the default value on creation for the "comments_enabled" field.
+	DefaultCommentsEnabled bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -122,6 +136,11 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // ByNotifyMode orders the results by the notify_mode field.
 func ByNotifyMode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotifyMode, opts...).ToFunc()
+}
+
+// ByCommentsEnabled orders the results by the comments_enabled field.
+func ByCommentsEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCommentsEnabled, opts...).ToFunc()
 }
 
 // ByStartsAt orders the results by the starts_at field.
@@ -167,10 +186,31 @@ func ByReads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newReadsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByCommentsCount orders the results by comments count.
+func ByCommentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newCommentsStep(), opts...)
+	}
+}
+
+// ByComments orders the results by comments terms.
+func ByComments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newCommentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newReadsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ReadsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ReadsTable, ReadsColumn),
+	)
+}
+func newCommentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(CommentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, CommentsTable, CommentsColumn),
 	)
 }

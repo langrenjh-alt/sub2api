@@ -5,6 +5,7 @@
 import { apiClient } from '../client'
 import type {
   Announcement,
+  AnnouncementComment,
   AnnouncementUserReadStatus,
   BasePaginationResponse,
   CreateAnnouncementRequest,
@@ -74,13 +75,34 @@ export async function getReadStatus(
   return data
 }
 
+export async function listComments(id: number): Promise<AnnouncementComment[]> {
+  const { data } = await apiClient.get<AnnouncementComment[]>(`/admin/announcements/${id}/comments`)
+  return data
+}
+
+export async function createComment(
+  id: number,
+  request: { content: string; parent_id?: number },
+): Promise<AnnouncementComment> {
+  const { data } = await apiClient.post<AnnouncementComment>(`/admin/announcements/${id}/comments`, request)
+  return data
+}
+
+export async function deleteComment(id: number, commentId: number): Promise<{ message: string }> {
+  const { data } = await apiClient.delete<{ message: string }>(`/admin/announcements/${id}/comments/${commentId}`)
+  return data
+}
+
 const announcementsAPI = {
   list,
   getById,
   create,
   update,
   delete: deleteAnnouncement,
-  getReadStatus
+  getReadStatus,
+  listComments,
+  createComment,
+  deleteComment
 }
 
 export default announcementsAPI

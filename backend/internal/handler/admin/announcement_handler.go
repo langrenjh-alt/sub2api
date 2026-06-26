@@ -27,23 +27,30 @@ func NewAnnouncementHandler(announcementService *service.AnnouncementService) *A
 }
 
 type CreateAnnouncementRequest struct {
-	Title      string                        `json:"title" binding:"required"`
-	Content    string                        `json:"content" binding:"required"`
-	Status     string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
-	NotifyMode string                        `json:"notify_mode" binding:"omitempty,oneof=silent popup"`
-	Targeting  service.AnnouncementTargeting `json:"targeting"`
-	StartsAt   *int64                        `json:"starts_at"` // Unix seconds, 0/empty = immediate
-	EndsAt     *int64                        `json:"ends_at"`   // Unix seconds, 0/empty = never
+	Title           string                        `json:"title" binding:"required"`
+	Content         string                        `json:"content" binding:"required"`
+	Status          string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
+	NotifyMode      string                        `json:"notify_mode" binding:"omitempty,oneof=silent popup"`
+	CommentsEnabled bool                          `json:"comments_enabled"`
+	Targeting       service.AnnouncementTargeting `json:"targeting"`
+	StartsAt        *int64                        `json:"starts_at"` // Unix seconds, 0/empty = immediate
+	EndsAt          *int64                        `json:"ends_at"`   // Unix seconds, 0/empty = never
 }
 
 type UpdateAnnouncementRequest struct {
-	Title      *string                        `json:"title"`
-	Content    *string                        `json:"content"`
-	Status     *string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
-	NotifyMode *string                        `json:"notify_mode" binding:"omitempty,oneof=silent popup"`
-	Targeting  *service.AnnouncementTargeting `json:"targeting"`
-	StartsAt   *int64                         `json:"starts_at"` // Unix seconds, 0 = clear
-	EndsAt     *int64                         `json:"ends_at"`   // Unix seconds, 0 = clear
+	Title           *string                        `json:"title"`
+	Content         *string                        `json:"content"`
+	Status          *string                        `json:"status" binding:"omitempty,oneof=draft active archived"`
+	NotifyMode      *string                        `json:"notify_mode" binding:"omitempty,oneof=silent popup"`
+	CommentsEnabled *bool                          `json:"comments_enabled"`
+	Targeting       *service.AnnouncementTargeting `json:"targeting"`
+	StartsAt        *int64                         `json:"starts_at"` // Unix seconds, 0 = clear
+	EndsAt          *int64                         `json:"ends_at"`   // Unix seconds, 0 = clear
+}
+
+type AnnouncementCommentRequest struct {
+	Content  string `json:"content" binding:"required"`
+	ParentID *int64 `json:"parent_id"`
 }
 
 // List handles listing announcements with filters
@@ -116,12 +123,13 @@ func (h *AnnouncementHandler) Create(c *gin.Context) {
 	}
 
 	input := &service.CreateAnnouncementInput{
-		Title:      req.Title,
-		Content:    req.Content,
-		Status:     req.Status,
-		NotifyMode: req.NotifyMode,
-		Targeting:  req.Targeting,
-		ActorID:    &subject.UserID,
+		Title:           req.Title,
+		Content:         req.Content,
+		Status:          req.Status,
+		NotifyMode:      req.NotifyMode,
+		CommentsEnabled: req.CommentsEnabled,
+		Targeting:       req.Targeting,
+		ActorID:         &subject.UserID,
 	}
 
 	if req.StartsAt != nil && *req.StartsAt > 0 {
@@ -164,12 +172,13 @@ func (h *AnnouncementHandler) Update(c *gin.Context) {
 	}
 
 	input := &service.UpdateAnnouncementInput{
-		Title:      req.Title,
-		Content:    req.Content,
-		Status:     req.Status,
-		NotifyMode: req.NotifyMode,
-		Targeting:  req.Targeting,
-		ActorID:    &subject.UserID,
+		Title:           req.Title,
+		Content:         req.Content,
+		Status:          req.Status,
+		NotifyMode:      req.NotifyMode,
+		CommentsEnabled: req.CommentsEnabled,
+		Targeting:       req.Targeting,
+		ActorID:         &subject.UserID,
 	}
 
 	if req.StartsAt != nil {
@@ -253,4 +262,71 @@ func (h *AnnouncementHandler) ListReadStatus(c *gin.Context) {
 	}
 
 	response.Paginated(c, items, paginationResult.Total, page, pageSize)
+}
+
+// ListComments handles listing comments for an announcement.
+// GET /api/v1/admin/announcements/:id/comments
+func (h *AnnouncementHandler) ListComments(c *gin.Context) {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+
+	items, err := h.announcementService.ListCommentsAdmin(c.Request.Context(), announcementID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AnnouncementCommentsFromService(items, 0, true))
+}
+
+// CreateComment handles admin comments and replies.
+// POST /api/v1/admin/announcements/:id/comments
+func (h *AnnouncementHandler) CreateComment(c *gin.Context) {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+
+	var req AnnouncementCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	subject, ok := middleware2.GetAuthSubjectFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not found in context")
+		return
+	}
+
+	created, err := h.announcementService.CreateCommentAdmin(c.Request.Context(), subject.UserID, announcementID, req.ParentID, req.Content)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, dto.AnnouncementCommentFromService(created, subject.UserID, true))
+}
+
+// DeleteComment handles deleting any comment as admin.
+// DELETE /api/v1/admin/announcements/:id/comments/:comment_id
+func (h *AnnouncementHandler) DeleteComment(c *gin.Context) {
+	announcementID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || announcementID <= 0 {
+		response.BadRequest(c, "Invalid announcement ID")
+		return
+	}
+	commentID, err := strconv.ParseInt(c.Param("comment_id"), 10, 64)
+	if err != nil || commentID <= 0 {
+		response.BadRequest(c, "Invalid comment ID")
+		return
+	}
+
+	if err := h.announcementService.DeleteCommentAdmin(c.Request.Context(), announcementID, commentID); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, gin.H{"message": "ok"})
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementcomment"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
@@ -32,6 +33,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/ticket"
+	"github.com/Wei-Shaw/sub2api/ent/ticketmessage"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -298,16 +301,36 @@ func init() {
 	announcement.DefaultNotifyMode = announcementDescNotifyMode.Default.(string)
 	// announcement.NotifyModeValidator is a validator for the "notify_mode" field. It is called by the builders before save.
 	announcement.NotifyModeValidator = announcementDescNotifyMode.Validators[0].(func(string) error)
+	// announcementDescCommentsEnabled is the schema descriptor for comments_enabled field.
+	announcementDescCommentsEnabled := announcementFields[4].Descriptor()
+	// announcement.DefaultCommentsEnabled holds the default value on creation for the comments_enabled field.
+	announcement.DefaultCommentsEnabled = announcementDescCommentsEnabled.Default.(bool)
 	// announcementDescCreatedAt is the schema descriptor for created_at field.
-	announcementDescCreatedAt := announcementFields[9].Descriptor()
+	announcementDescCreatedAt := announcementFields[10].Descriptor()
 	// announcement.DefaultCreatedAt holds the default value on creation for the created_at field.
 	announcement.DefaultCreatedAt = announcementDescCreatedAt.Default.(func() time.Time)
 	// announcementDescUpdatedAt is the schema descriptor for updated_at field.
-	announcementDescUpdatedAt := announcementFields[10].Descriptor()
+	announcementDescUpdatedAt := announcementFields[11].Descriptor()
 	// announcement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	announcement.DefaultUpdatedAt = announcementDescUpdatedAt.Default.(func() time.Time)
 	// announcement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	announcement.UpdateDefaultUpdatedAt = announcementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	announcementcommentFields := schema.AnnouncementComment{}.Fields()
+	_ = announcementcommentFields
+	// announcementcommentDescContent is the schema descriptor for content field.
+	announcementcommentDescContent := announcementcommentFields[3].Descriptor()
+	// announcementcomment.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	announcementcomment.ContentValidator = announcementcommentDescContent.Validators[0].(func(string) error)
+	// announcementcommentDescCreatedAt is the schema descriptor for created_at field.
+	announcementcommentDescCreatedAt := announcementcommentFields[4].Descriptor()
+	// announcementcomment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	announcementcomment.DefaultCreatedAt = announcementcommentDescCreatedAt.Default.(func() time.Time)
+	// announcementcommentDescUpdatedAt is the schema descriptor for updated_at field.
+	announcementcommentDescUpdatedAt := announcementcommentFields[5].Descriptor()
+	// announcementcomment.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	announcementcomment.DefaultUpdatedAt = announcementcommentDescUpdatedAt.Default.(func() time.Time)
+	// announcementcomment.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	announcementcomment.UpdateDefaultUpdatedAt = announcementcommentDescUpdatedAt.UpdateDefault.(func() time.Time)
 	announcementreadFields := schema.AnnouncementRead{}.Fields()
 	_ = announcementreadFields
 	// announcementreadDescReadAt is the schema descriptor for read_at field.
@@ -1584,6 +1607,56 @@ func init() {
 	tlsfingerprintprofileDescEnableGrease := tlsfingerprintprofileFields[2].Descriptor()
 	// tlsfingerprintprofile.DefaultEnableGrease holds the default value on creation for the enable_grease field.
 	tlsfingerprintprofile.DefaultEnableGrease = tlsfingerprintprofileDescEnableGrease.Default.(bool)
+	ticketFields := schema.Ticket{}.Fields()
+	_ = ticketFields
+	// ticketDescTitle is the schema descriptor for title field.
+	ticketDescTitle := ticketFields[1].Descriptor()
+	// ticket.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	ticket.TitleValidator = func() func(string) error {
+		validators := ticketDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// ticketDescStatus is the schema descriptor for status field.
+	ticketDescStatus := ticketFields[2].Descriptor()
+	// ticket.DefaultStatus holds the default value on creation for the status field.
+	ticket.DefaultStatus = ticketDescStatus.Default.(string)
+	// ticket.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	ticket.StatusValidator = ticketDescStatus.Validators[0].(func(string) error)
+	// ticketDescCreatedAt is the schema descriptor for created_at field.
+	ticketDescCreatedAt := ticketFields[7].Descriptor()
+	// ticket.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ticket.DefaultCreatedAt = ticketDescCreatedAt.Default.(func() time.Time)
+	// ticketDescUpdatedAt is the schema descriptor for updated_at field.
+	ticketDescUpdatedAt := ticketFields[8].Descriptor()
+	// ticket.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	ticket.DefaultUpdatedAt = ticketDescUpdatedAt.Default.(func() time.Time)
+	// ticket.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	ticket.UpdateDefaultUpdatedAt = ticketDescUpdatedAt.UpdateDefault.(func() time.Time)
+	ticketmessageFields := schema.TicketMessage{}.Fields()
+	_ = ticketmessageFields
+	// ticketmessageDescSenderRole is the schema descriptor for sender_role field.
+	ticketmessageDescSenderRole := ticketmessageFields[2].Descriptor()
+	// ticketmessage.SenderRoleValidator is a validator for the "sender_role" field. It is called by the builders before save.
+	ticketmessage.SenderRoleValidator = ticketmessageDescSenderRole.Validators[0].(func(string) error)
+	// ticketmessageDescContent is the schema descriptor for content field.
+	ticketmessageDescContent := ticketmessageFields[3].Descriptor()
+	// ticketmessage.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	ticketmessage.ContentValidator = ticketmessageDescContent.Validators[0].(func(string) error)
+	// ticketmessageDescCreatedAt is the schema descriptor for created_at field.
+	ticketmessageDescCreatedAt := ticketmessageFields[4].Descriptor()
+	// ticketmessage.DefaultCreatedAt holds the default value on creation for the created_at field.
+	ticketmessage.DefaultCreatedAt = ticketmessageDescCreatedAt.Default.(func() time.Time)
 	usagecleanuptaskMixin := schema.UsageCleanupTask{}.Mixin()
 	usagecleanuptaskMixinFields0 := usagecleanuptaskMixin[0].Fields()
 	_ = usagecleanuptaskMixinFields0

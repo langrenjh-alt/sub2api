@@ -651,6 +651,7 @@ const flagPayment = makeSidebarFlag(FeatureFlags.payment)
 const flagAvailableChannels = makeSidebarFlag(FeatureFlags.availableChannels)
 const flagAffiliate = makeSidebarFlag(FeatureFlags.affiliate)
 const flagRiskControl = makeSidebarFlag(FeatureFlags.riskControl)
+const flagTicketSystem = makeSidebarFlag(FeatureFlags.ticketSystem)
 const flagOpsMonitoring = () => adminSettingsStore.opsMonitoringEnabled
 const flagAdminPayment = () => adminSettingsStore.paymentEnabled
 
@@ -672,6 +673,7 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     { path: '/subscriptions', label: t('nav.mySubscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/purchase', label: t('nav.buySubscription'), icon: RechargeSubscriptionIcon, hideInSimpleMode: true, featureFlag: flagPayment },
     { path: '/orders', label: t('nav.myOrders'), icon: OrderListIcon, hideInSimpleMode: true, featureFlag: flagPayment },
+    { path: '/tickets', label: t('nav.tickets'), icon: TicketIcon, hideInSimpleMode: true, featureFlag: flagTicketSystem },
     { path: '/redeem', label: t('nav.redeem'), icon: GiftIcon, hideInSimpleMode: true },
     { path: '/affiliate', label: t('nav.affiliate'), icon: UsersIcon, hideInSimpleMode: true, featureFlag: flagAffiliate },
     { path: '/profile', label: t('nav.profile'), icon: UserIcon },
@@ -734,6 +736,7 @@ const adminNavItems = computed((): NavItem[] => {
     { path: '/admin/subscriptions', label: t('nav.subscriptions'), icon: CreditCardIcon, hideInSimpleMode: true },
     { path: '/admin/accounts', label: t('nav.accounts'), icon: GlobeIcon },
     { path: '/admin/announcements', label: t('nav.announcements'), icon: BellIcon },
+    { path: '/admin/tickets', label: t('nav.ticketAdmin'), icon: TicketIcon, hideInSimpleMode: true, featureFlag: flagTicketSystem },
     { path: '/admin/proxies', label: t('nav.proxies'), icon: ServerIcon },
     { path: '/admin/risk-control', label: t('nav.riskControl'), icon: ShieldIcon, hideInSimpleMode: true, featureFlag: flagRiskControl },
     { path: '/admin/redeem', label: t('nav.redeemCodes'), icon: TicketIcon, hideInSimpleMode: true },

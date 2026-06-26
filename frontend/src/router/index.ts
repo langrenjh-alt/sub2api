@@ -303,6 +303,19 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/tickets',
+    name: 'Tickets',
+    component: () => import('@/views/user/TicketsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Tickets',
+      titleKey: 'tickets.title',
+      descriptionKey: 'tickets.description',
+      requiresTicketSystem: true
+    }
+  },
+  {
     path: '/payment/qrcode',
     name: 'PaymentQRCode',
     component: () => import('@/views/user/PaymentQRCodeView.vue'),
@@ -499,6 +512,19 @@ const routes: RouteRecordRaw[] = [
       title: 'Announcements',
       titleKey: 'admin.announcements.title',
       descriptionKey: 'admin.announcements.description'
+    }
+  },
+  {
+    path: '/admin/tickets',
+    name: 'AdminTickets',
+    component: () => import('@/views/admin/TicketsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Ticket Management',
+      titleKey: 'admin.tickets.title',
+      descriptionKey: 'admin.tickets.description',
+      requiresTicketSystem: true
     }
   },
   {
@@ -825,6 +851,14 @@ router.beforeEach(async (to, _from, next) => {
   if (to.meta.requiresRiskControl) {
     const riskControlEnabled = appStore.cachedPublicSettings?.risk_control_enabled === true
     if (!riskControlEnabled) {
+      next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
+      return
+    }
+  }
+
+  if (to.meta.requiresTicketSystem) {
+    const ticketSystemEnabled = appStore.cachedPublicSettings?.ticket_system_enabled === true
+    if (!ticketSystemEnabled) {
       next(authStore.isAdmin ? '/admin/settings' : '/dashboard')
       return
     }

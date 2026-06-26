@@ -52,6 +52,22 @@ var (
 		"ANNOUNCEMENT_TIME_RANGE_INVALID",
 		"starts_at must be before ends_at",
 	)
+	ErrAnnouncementCommentsDisabled = infraerrors.Forbidden(
+		"ANNOUNCEMENT_COMMENTS_DISABLED",
+		"announcement comments are disabled",
+	)
+	ErrAnnouncementCommentNotFound = infraerrors.NotFound(
+		"ANNOUNCEMENT_COMMENT_NOT_FOUND",
+		"announcement comment not found",
+	)
+	ErrAnnouncementCommentContentRequired = infraerrors.BadRequest(
+		"ANNOUNCEMENT_COMMENT_CONTENT_REQUIRED",
+		"announcement comment content is required",
+	)
+	ErrAnnouncementCommentForbidden = infraerrors.Forbidden(
+		"ANNOUNCEMENT_COMMENT_FORBIDDEN",
+		"announcement comment operation is not allowed",
+	)
 )
 
 type AnnouncementTargeting = domain.AnnouncementTargeting
@@ -61,6 +77,8 @@ type AnnouncementConditionGroup = domain.AnnouncementConditionGroup
 type AnnouncementCondition = domain.AnnouncementCondition
 
 type Announcement = domain.Announcement
+
+type AnnouncementComment = domain.AnnouncementComment
 
 type AnnouncementListFilters struct {
 	Status string
@@ -82,4 +100,11 @@ type AnnouncementReadRepository interface {
 	GetReadMapByUser(ctx context.Context, userID int64, announcementIDs []int64) (map[int64]time.Time, error)
 	GetReadMapByUsers(ctx context.Context, announcementID int64, userIDs []int64) (map[int64]time.Time, error)
 	CountByAnnouncementID(ctx context.Context, announcementID int64) (int64, error)
+}
+
+type AnnouncementCommentRepository interface {
+	Create(ctx context.Context, comment *AnnouncementComment) error
+	GetByID(ctx context.Context, id int64) (*AnnouncementComment, error)
+	ListByAnnouncement(ctx context.Context, announcementID int64) ([]AnnouncementComment, error)
+	Delete(ctx context.Context, id int64) error
 }

@@ -27,6 +27,8 @@ type Announcement struct {
 	Status string `json:"status,omitempty"`
 	// 通知模式: silent(仅铃铛), popup(弹窗提醒)
 	NotifyMode string `json:"notify_mode,omitempty"`
+	// 是否开启公告评论
+	CommentsEnabled bool `json:"comments_enabled,omitempty"`
 	// 展示条件（JSON 规则）
 	Targeting domain.AnnouncementTargeting `json:"targeting,omitempty"`
 	// 开始展示时间（为空表示立即生效）
@@ -51,9 +53,11 @@ type Announcement struct {
 type AnnouncementEdges struct {
 	// Reads holds the value of the reads edge.
 	Reads []*AnnouncementRead `json:"reads,omitempty"`
+	// Comments holds the value of the comments edge.
+	Comments []*AnnouncementComment `json:"comments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // ReadsOrErr returns the Reads value or an error if the edge
@@ -65,6 +69,15 @@ func (e AnnouncementEdges) ReadsOrErr() ([]*AnnouncementRead, error) {
 	return nil, &NotLoadedError{edge: "reads"}
 }
 
+// CommentsOrErr returns the Comments value or an error if the edge
+// was not loaded in eager-loading.
+func (e AnnouncementEdges) CommentsOrErr() ([]*AnnouncementComment, error) {
+	if e.loadedTypes[1] {
+		return e.Comments, nil
+	}
+	return nil, &NotLoadedError{edge: "comments"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Announcement) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -72,6 +85,8 @@ func (*Announcement) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case announcement.FieldTargeting:
 			values[i] = new([]byte)
+		case announcement.FieldCommentsEnabled:
+			values[i] = new(sql.NullBool)
 		case announcement.FieldID, announcement.FieldCreatedBy, announcement.FieldUpdatedBy:
 			values[i] = new(sql.NullInt64)
 		case announcement.FieldTitle, announcement.FieldContent, announcement.FieldStatus, announcement.FieldNotifyMode:
@@ -122,6 +137,12 @@ func (_m *Announcement) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field notify_mode", values[i])
 			} else if value.Valid {
 				_m.NotifyMode = value.String
+			}
+		case announcement.FieldCommentsEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field comments_enabled", values[i])
+			} else if value.Valid {
+				_m.CommentsEnabled = value.Bool
 			}
 		case announcement.FieldTargeting:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -189,6 +210,11 @@ func (_m *Announcement) QueryReads() *AnnouncementReadQuery {
 	return NewAnnouncementClient(_m.config).QueryReads(_m)
 }
 
+// QueryComments queries the "comments" edge of the Announcement entity.
+func (_m *Announcement) QueryComments() *AnnouncementCommentQuery {
+	return NewAnnouncementClient(_m.config).QueryComments(_m)
+}
+
 // Update returns a builder for updating this Announcement.
 // Note that you need to call Announcement.Unwrap() before calling this method if this Announcement
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -223,6 +249,9 @@ func (_m *Announcement) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("notify_mode=")
 	builder.WriteString(_m.NotifyMode)
+	builder.WriteString(", ")
+	builder.WriteString("comments_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CommentsEnabled))
 	builder.WriteString(", ")
 	builder.WriteString("targeting=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Targeting))

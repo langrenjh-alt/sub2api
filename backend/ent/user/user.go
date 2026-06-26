@@ -71,6 +71,12 @@ const (
 	EdgeAssignedSubscriptions = "assigned_subscriptions"
 	// EdgeAnnouncementReads holds the string denoting the announcement_reads edge name in mutations.
 	EdgeAnnouncementReads = "announcement_reads"
+	// EdgeAnnouncementComments holds the string denoting the announcement_comments edge name in mutations.
+	EdgeAnnouncementComments = "announcement_comments"
+	// EdgeTickets holds the string denoting the tickets edge name in mutations.
+	EdgeTickets = "tickets"
+	// EdgeTicketMessages holds the string denoting the ticket_messages edge name in mutations.
+	EdgeTicketMessages = "ticket_messages"
 	// EdgeAllowedGroups holds the string denoting the allowed_groups edge name in mutations.
 	EdgeAllowedGroups = "allowed_groups"
 	// EdgeUsageLogs holds the string denoting the usage_logs edge name in mutations.
@@ -126,6 +132,27 @@ const (
 	AnnouncementReadsInverseTable = "announcement_reads"
 	// AnnouncementReadsColumn is the table column denoting the announcement_reads relation/edge.
 	AnnouncementReadsColumn = "user_id"
+	// AnnouncementCommentsTable is the table that holds the announcement_comments relation/edge.
+	AnnouncementCommentsTable = "announcement_comments"
+	// AnnouncementCommentsInverseTable is the table name for the AnnouncementComment entity.
+	// It exists in this package in order to avoid circular dependency with the "announcementcomment" package.
+	AnnouncementCommentsInverseTable = "announcement_comments"
+	// AnnouncementCommentsColumn is the table column denoting the announcement_comments relation/edge.
+	AnnouncementCommentsColumn = "user_id"
+	// TicketsTable is the table that holds the tickets relation/edge.
+	TicketsTable = "tickets"
+	// TicketsInverseTable is the table name for the Ticket entity.
+	// It exists in this package in order to avoid circular dependency with the "ticket" package.
+	TicketsInverseTable = "tickets"
+	// TicketsColumn is the table column denoting the tickets relation/edge.
+	TicketsColumn = "user_id"
+	// TicketMessagesTable is the table that holds the ticket_messages relation/edge.
+	TicketMessagesTable = "ticket_messages"
+	// TicketMessagesInverseTable is the table name for the TicketMessage entity.
+	// It exists in this package in order to avoid circular dependency with the "ticketmessage" package.
+	TicketMessagesInverseTable = "ticket_messages"
+	// TicketMessagesColumn is the table column denoting the ticket_messages relation/edge.
+	TicketMessagesColumn = "user_id"
 	// AllowedGroupsTable is the table that holds the allowed_groups relation/edge. The primary key declared below.
 	AllowedGroupsTable = "user_allowed_groups"
 	// AllowedGroupsInverseTable is the table name for the Group entity.
@@ -480,6 +507,48 @@ func ByAnnouncementReads(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 	}
 }
 
+// ByAnnouncementCommentsCount orders the results by announcement_comments count.
+func ByAnnouncementCommentsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAnnouncementCommentsStep(), opts...)
+	}
+}
+
+// ByAnnouncementComments orders the results by announcement_comments terms.
+func ByAnnouncementComments(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAnnouncementCommentsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByTicketsCount orders the results by tickets count.
+func ByTicketsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTicketsStep(), opts...)
+	}
+}
+
+// ByTickets orders the results by tickets terms.
+func ByTickets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTicketsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByTicketMessagesCount orders the results by ticket_messages count.
+func ByTicketMessagesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newTicketMessagesStep(), opts...)
+	}
+}
+
+// ByTicketMessages orders the results by ticket_messages terms.
+func ByTicketMessages(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newTicketMessagesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAllowedGroupsCount orders the results by allowed_groups count.
 func ByAllowedGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -638,6 +707,27 @@ func newAnnouncementReadsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AnnouncementReadsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AnnouncementReadsTable, AnnouncementReadsColumn),
+	)
+}
+func newAnnouncementCommentsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AnnouncementCommentsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AnnouncementCommentsTable, AnnouncementCommentsColumn),
+	)
+}
+func newTicketsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TicketsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TicketsTable, TicketsColumn),
+	)
+}
+func newTicketMessagesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(TicketMessagesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, TicketMessagesTable, TicketMessagesColumn),
 	)
 }
 func newAllowedGroupsStep() *sqlgraph.Step {

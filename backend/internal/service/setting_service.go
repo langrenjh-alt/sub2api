@@ -833,6 +833,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyChannelMonitorEnabled,
 		SettingKeyChannelMonitorDefaultIntervalSeconds,
 		SettingKeyAvailableChannelsEnabled,
+		SettingKeyTicketSystemEnabled,
 		SettingKeyAffiliateEnabled,
 		SettingKeyRiskControlEnabled,
 		SettingKeyAllowUserViewErrorRequests,
@@ -944,6 +945,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ChannelMonitorDefaultIntervalSeconds: parseChannelMonitorInterval(settings[SettingKeyChannelMonitorDefaultIntervalSeconds]),
 
 		AvailableChannelsEnabled: settings[SettingKeyAvailableChannelsEnabled] == "true",
+		TicketSystemEnabled:      settings[SettingKeyTicketSystemEnabled] == "true",
 
 		AffiliateEnabled: settings[SettingKeyAffiliateEnabled] == "true",
 
@@ -1025,6 +1027,17 @@ func (s *SettingService) GetAvailableChannelsRuntime(ctx context.Context) Availa
 	return AvailableChannelsRuntime{
 		Enabled: vals[SettingKeyAvailableChannelsEnabled] == "true",
 	}
+}
+
+func (s *SettingService) IsTicketSystemEnabled(ctx context.Context) bool {
+	if s == nil || s.settingRepo == nil {
+		return false
+	}
+	vals, err := s.settingRepo.GetMultiple(ctx, []string{SettingKeyTicketSystemEnabled})
+	if err != nil {
+		return false
+	}
+	return vals[SettingKeyTicketSystemEnabled] == "true"
 }
 
 // IsUserErrorViewAllowed reads the user-facing error-requests visibility switch
@@ -1261,6 +1274,7 @@ type PublicSettingsInjectionPayload struct {
 	ChannelMonitorEnabled                bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`
 	AvailableChannelsEnabled             bool `json:"available_channels_enabled"`
+	TicketSystemEnabled                  bool `json:"ticket_system_enabled"`
 	AffiliateEnabled                     bool `json:"affiliate_enabled"`
 	RiskControlEnabled                   bool `json:"risk_control_enabled"`
 	AllowUserViewErrorRequests           bool `json:"allow_user_view_error_requests"`
@@ -1324,6 +1338,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ChannelMonitorEnabled:                settings.ChannelMonitorEnabled,
 		ChannelMonitorDefaultIntervalSeconds: settings.ChannelMonitorDefaultIntervalSeconds,
 		AvailableChannelsEnabled:             settings.AvailableChannelsEnabled,
+		TicketSystemEnabled:                  settings.TicketSystemEnabled,
 		AffiliateEnabled:                     settings.AffiliateEnabled,
 		RiskControlEnabled:                   settings.RiskControlEnabled,
 		AllowUserViewErrorRequests:           settings.AllowUserViewErrorRequests,
@@ -1964,6 +1979,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyAvailableChannelsEnabled] = strconv.FormatBool(settings.AvailableChannelsEnabled)
 
 	// Affiliate (邀请返利) feature switch
+	updates[SettingKeyTicketSystemEnabled] = strconv.FormatBool(settings.TicketSystemEnabled)
 	updates[SettingKeyAffiliateEnabled] = strconv.FormatBool(settings.AffiliateEnabled)
 
 	// 风控中心功能开关
@@ -2937,7 +2953,8 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAffiliateEnabled: "false",
 
 		// 风控中心功能（默认关闭，显式启用）
-		SettingKeyRiskControlEnabled: "false",
+		SettingKeyRiskControlEnabled:  "false",
+		SettingKeyTicketSystemEnabled: "false",
 
 		// cyber 会话屏蔽（默认关闭，TTL 默认 3600s）
 		SettingKeyCyberSessionBlockEnabled:    "false",
@@ -3451,6 +3468,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// 风控中心功能（默认关闭，严格 true 才启用）
 	result.RiskControlEnabled = settings[SettingKeyRiskControlEnabled] == "true"
+	result.TicketSystemEnabled = settings[SettingKeyTicketSystemEnabled] == "true"
 
 	// cyber 会话屏蔽（默认关闭，TTL 默认 3600s）
 	result.CyberSessionBlockEnabled = settings[SettingKeyCyberSessionBlockEnabled] == "true"

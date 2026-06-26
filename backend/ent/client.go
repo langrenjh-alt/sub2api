@@ -18,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/accountgroup"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementcomment"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/ent/apikey"
 	"github.com/Wei-Shaw/sub2api/ent/authidentity"
@@ -41,6 +42,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/ticket"
+	"github.com/Wei-Shaw/sub2api/ent/ticketmessage"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -67,6 +70,8 @@ type Client struct {
 	AccountGroup *AccountGroupClient
 	// Announcement is the client for interacting with the Announcement builders.
 	Announcement *AnnouncementClient
+	// AnnouncementComment is the client for interacting with the AnnouncementComment builders.
+	AnnouncementComment *AnnouncementCommentClient
 	// AnnouncementRead is the client for interacting with the AnnouncementRead builders.
 	AnnouncementRead *AnnouncementReadClient
 	// AuthIdentity is the client for interacting with the AuthIdentity builders.
@@ -113,6 +118,10 @@ type Client struct {
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
 	TLSFingerprintProfile *TLSFingerprintProfileClient
+	// Ticket is the client for interacting with the Ticket builders.
+	Ticket *TicketClient
+	// TicketMessage is the client for interacting with the TicketMessage builders.
+	TicketMessage *TicketMessageClient
 	// UsageCleanupTask is the client for interacting with the UsageCleanupTask builders.
 	UsageCleanupTask *UsageCleanupTaskClient
 	// UsageLog is the client for interacting with the UsageLog builders.
@@ -144,6 +153,7 @@ func (c *Client) init() {
 	c.Account = NewAccountClient(c.config)
 	c.AccountGroup = NewAccountGroupClient(c.config)
 	c.Announcement = NewAnnouncementClient(c.config)
+	c.AnnouncementComment = NewAnnouncementCommentClient(c.config)
 	c.AnnouncementRead = NewAnnouncementReadClient(c.config)
 	c.AuthIdentity = NewAuthIdentityClient(c.config)
 	c.AuthIdentityChannel = NewAuthIdentityChannelClient(c.config)
@@ -167,6 +177,8 @@ func (c *Client) init() {
 	c.Setting = NewSettingClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
+	c.Ticket = NewTicketClient(c.config)
+	c.TicketMessage = NewTicketMessageClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
 	c.UsageLog = NewUsageLogClient(c.config)
 	c.User = NewUserClient(c.config)
@@ -271,6 +283,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
+		AnnouncementComment:           NewAnnouncementCommentClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
@@ -294,6 +307,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		Ticket:                        NewTicketClient(cfg),
+		TicketMessage:                 NewTicketMessageClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -325,6 +340,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Account:                       NewAccountClient(cfg),
 		AccountGroup:                  NewAccountGroupClient(cfg),
 		Announcement:                  NewAnnouncementClient(cfg),
+		AnnouncementComment:           NewAnnouncementCommentClient(cfg),
 		AnnouncementRead:              NewAnnouncementReadClient(cfg),
 		AuthIdentity:                  NewAuthIdentityClient(cfg),
 		AuthIdentityChannel:           NewAuthIdentityChannelClient(cfg),
@@ -348,6 +364,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Setting:                       NewSettingClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
+		Ticket:                        NewTicketClient(cfg),
+		TicketMessage:                 NewTicketMessageClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
 		UsageLog:                      NewUsageLogClient(cfg),
 		User:                          NewUserClient(cfg),
@@ -385,16 +403,17 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
+		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementComment,
+		c.AnnouncementRead, c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
-		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.Ticket, c.TicketMessage,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -404,16 +423,17 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementRead,
-		c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
+		c.APIKey, c.Account, c.AccountGroup, c.Announcement, c.AnnouncementComment,
+		c.AnnouncementRead, c.AuthIdentity, c.AuthIdentityChannel, c.ChannelMonitor,
 		c.ChannelMonitorDailyRollup, c.ChannelMonitorHistory,
 		c.ChannelMonitorRequestTemplate, c.ErrorPassthroughRule, c.Group,
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
-		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
-		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.SubscriptionPlan, c.TLSFingerprintProfile, c.Ticket, c.TicketMessage,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -430,6 +450,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.AccountGroup.mutate(ctx, m)
 	case *AnnouncementMutation:
 		return c.Announcement.mutate(ctx, m)
+	case *AnnouncementCommentMutation:
+		return c.AnnouncementComment.mutate(ctx, m)
 	case *AnnouncementReadMutation:
 		return c.AnnouncementRead.mutate(ctx, m)
 	case *AuthIdentityMutation:
@@ -476,6 +498,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
 		return c.TLSFingerprintProfile.mutate(ctx, m)
+	case *TicketMutation:
+		return c.Ticket.mutate(ctx, m)
+	case *TicketMessageMutation:
+		return c.TicketMessage.mutate(ctx, m)
 	case *UsageCleanupTaskMutation:
 		return c.UsageCleanupTask.mutate(ctx, m)
 	case *UsageLogMutation:
@@ -1119,6 +1145,22 @@ func (c *AnnouncementClient) QueryReads(_m *Announcement) *AnnouncementReadQuery
 	return query
 }
 
+// QueryComments queries the comments edge of a Announcement.
+func (c *AnnouncementClient) QueryComments(_m *Announcement) *AnnouncementCommentQuery {
+	query := (&AnnouncementCommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcement.Table, announcement.FieldID, id),
+			sqlgraph.To(announcementcomment.Table, announcementcomment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, announcement.CommentsTable, announcement.CommentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *AnnouncementClient) Hooks() []Hook {
 	return c.hooks.Announcement
@@ -1141,6 +1183,203 @@ func (c *AnnouncementClient) mutate(ctx context.Context, m *AnnouncementMutation
 		return (&AnnouncementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Announcement mutation op: %q", m.Op())
+	}
+}
+
+// AnnouncementCommentClient is a client for the AnnouncementComment schema.
+type AnnouncementCommentClient struct {
+	config
+}
+
+// NewAnnouncementCommentClient returns a client for the AnnouncementComment from the given config.
+func NewAnnouncementCommentClient(c config) *AnnouncementCommentClient {
+	return &AnnouncementCommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `announcementcomment.Hooks(f(g(h())))`.
+func (c *AnnouncementCommentClient) Use(hooks ...Hook) {
+	c.hooks.AnnouncementComment = append(c.hooks.AnnouncementComment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `announcementcomment.Intercept(f(g(h())))`.
+func (c *AnnouncementCommentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.AnnouncementComment = append(c.inters.AnnouncementComment, interceptors...)
+}
+
+// Create returns a builder for creating a AnnouncementComment entity.
+func (c *AnnouncementCommentClient) Create() *AnnouncementCommentCreate {
+	mutation := newAnnouncementCommentMutation(c.config, OpCreate)
+	return &AnnouncementCommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of AnnouncementComment entities.
+func (c *AnnouncementCommentClient) CreateBulk(builders ...*AnnouncementCommentCreate) *AnnouncementCommentCreateBulk {
+	return &AnnouncementCommentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *AnnouncementCommentClient) MapCreateBulk(slice any, setFunc func(*AnnouncementCommentCreate, int)) *AnnouncementCommentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &AnnouncementCommentCreateBulk{err: fmt.Errorf("calling to AnnouncementCommentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*AnnouncementCommentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &AnnouncementCommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for AnnouncementComment.
+func (c *AnnouncementCommentClient) Update() *AnnouncementCommentUpdate {
+	mutation := newAnnouncementCommentMutation(c.config, OpUpdate)
+	return &AnnouncementCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *AnnouncementCommentClient) UpdateOne(_m *AnnouncementComment) *AnnouncementCommentUpdateOne {
+	mutation := newAnnouncementCommentMutation(c.config, OpUpdateOne, withAnnouncementComment(_m))
+	return &AnnouncementCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *AnnouncementCommentClient) UpdateOneID(id int64) *AnnouncementCommentUpdateOne {
+	mutation := newAnnouncementCommentMutation(c.config, OpUpdateOne, withAnnouncementCommentID(id))
+	return &AnnouncementCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for AnnouncementComment.
+func (c *AnnouncementCommentClient) Delete() *AnnouncementCommentDelete {
+	mutation := newAnnouncementCommentMutation(c.config, OpDelete)
+	return &AnnouncementCommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *AnnouncementCommentClient) DeleteOne(_m *AnnouncementComment) *AnnouncementCommentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *AnnouncementCommentClient) DeleteOneID(id int64) *AnnouncementCommentDeleteOne {
+	builder := c.Delete().Where(announcementcomment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &AnnouncementCommentDeleteOne{builder}
+}
+
+// Query returns a query builder for AnnouncementComment.
+func (c *AnnouncementCommentClient) Query() *AnnouncementCommentQuery {
+	return &AnnouncementCommentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeAnnouncementComment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a AnnouncementComment entity by its id.
+func (c *AnnouncementCommentClient) Get(ctx context.Context, id int64) (*AnnouncementComment, error) {
+	return c.Query().Where(announcementcomment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *AnnouncementCommentClient) GetX(ctx context.Context, id int64) *AnnouncementComment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAnnouncement queries the announcement edge of a AnnouncementComment.
+func (c *AnnouncementCommentClient) QueryAnnouncement(_m *AnnouncementComment) *AnnouncementQuery {
+	query := (&AnnouncementClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcementcomment.Table, announcementcomment.FieldID, id),
+			sqlgraph.To(announcement.Table, announcement.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, announcementcomment.AnnouncementTable, announcementcomment.AnnouncementColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a AnnouncementComment.
+func (c *AnnouncementCommentClient) QueryUser(_m *AnnouncementComment) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcementcomment.Table, announcementcomment.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, announcementcomment.UserTable, announcementcomment.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryParent queries the parent edge of a AnnouncementComment.
+func (c *AnnouncementCommentClient) QueryParent(_m *AnnouncementComment) *AnnouncementCommentQuery {
+	query := (&AnnouncementCommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcementcomment.Table, announcementcomment.FieldID, id),
+			sqlgraph.To(announcementcomment.Table, announcementcomment.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, announcementcomment.ParentTable, announcementcomment.ParentColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryReplies queries the replies edge of a AnnouncementComment.
+func (c *AnnouncementCommentClient) QueryReplies(_m *AnnouncementComment) *AnnouncementCommentQuery {
+	query := (&AnnouncementCommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(announcementcomment.Table, announcementcomment.FieldID, id),
+			sqlgraph.To(announcementcomment.Table, announcementcomment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, announcementcomment.RepliesTable, announcementcomment.RepliesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *AnnouncementCommentClient) Hooks() []Hook {
+	return c.hooks.AnnouncementComment
+}
+
+// Interceptors returns the client interceptors.
+func (c *AnnouncementCommentClient) Interceptors() []Interceptor {
+	return c.inters.AnnouncementComment
+}
+
+func (c *AnnouncementCommentClient) mutate(ctx context.Context, m *AnnouncementCommentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&AnnouncementCommentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&AnnouncementCommentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&AnnouncementCommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&AnnouncementCommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown AnnouncementComment mutation op: %q", m.Op())
 	}
 }
 
@@ -4719,6 +4958,336 @@ func (c *TLSFingerprintProfileClient) mutate(ctx context.Context, m *TLSFingerpr
 	}
 }
 
+// TicketClient is a client for the Ticket schema.
+type TicketClient struct {
+	config
+}
+
+// NewTicketClient returns a client for the Ticket from the given config.
+func NewTicketClient(c config) *TicketClient {
+	return &TicketClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ticket.Hooks(f(g(h())))`.
+func (c *TicketClient) Use(hooks ...Hook) {
+	c.hooks.Ticket = append(c.hooks.Ticket, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ticket.Intercept(f(g(h())))`.
+func (c *TicketClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Ticket = append(c.inters.Ticket, interceptors...)
+}
+
+// Create returns a builder for creating a Ticket entity.
+func (c *TicketClient) Create() *TicketCreate {
+	mutation := newTicketMutation(c.config, OpCreate)
+	return &TicketCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Ticket entities.
+func (c *TicketClient) CreateBulk(builders ...*TicketCreate) *TicketCreateBulk {
+	return &TicketCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TicketClient) MapCreateBulk(slice any, setFunc func(*TicketCreate, int)) *TicketCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TicketCreateBulk{err: fmt.Errorf("calling to TicketClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TicketCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TicketCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Ticket.
+func (c *TicketClient) Update() *TicketUpdate {
+	mutation := newTicketMutation(c.config, OpUpdate)
+	return &TicketUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TicketClient) UpdateOne(_m *Ticket) *TicketUpdateOne {
+	mutation := newTicketMutation(c.config, OpUpdateOne, withTicket(_m))
+	return &TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TicketClient) UpdateOneID(id int64) *TicketUpdateOne {
+	mutation := newTicketMutation(c.config, OpUpdateOne, withTicketID(id))
+	return &TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Ticket.
+func (c *TicketClient) Delete() *TicketDelete {
+	mutation := newTicketMutation(c.config, OpDelete)
+	return &TicketDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TicketClient) DeleteOne(_m *Ticket) *TicketDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TicketClient) DeleteOneID(id int64) *TicketDeleteOne {
+	builder := c.Delete().Where(ticket.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TicketDeleteOne{builder}
+}
+
+// Query returns a query builder for Ticket.
+func (c *TicketClient) Query() *TicketQuery {
+	return &TicketQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTicket},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Ticket entity by its id.
+func (c *TicketClient) Get(ctx context.Context, id int64) (*Ticket, error) {
+	return c.Query().Where(ticket.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TicketClient) GetX(ctx context.Context, id int64) *Ticket {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Ticket.
+func (c *TicketClient) QueryUser(_m *Ticket) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ticket.Table, ticket.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ticket.UserTable, ticket.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryMessages queries the messages edge of a Ticket.
+func (c *TicketClient) QueryMessages(_m *Ticket) *TicketMessageQuery {
+	query := (&TicketMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ticket.Table, ticket.FieldID, id),
+			sqlgraph.To(ticketmessage.Table, ticketmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ticket.MessagesTable, ticket.MessagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TicketClient) Hooks() []Hook {
+	return c.hooks.Ticket
+}
+
+// Interceptors returns the client interceptors.
+func (c *TicketClient) Interceptors() []Interceptor {
+	return c.inters.Ticket
+}
+
+func (c *TicketClient) mutate(ctx context.Context, m *TicketMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TicketCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TicketUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TicketUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TicketDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Ticket mutation op: %q", m.Op())
+	}
+}
+
+// TicketMessageClient is a client for the TicketMessage schema.
+type TicketMessageClient struct {
+	config
+}
+
+// NewTicketMessageClient returns a client for the TicketMessage from the given config.
+func NewTicketMessageClient(c config) *TicketMessageClient {
+	return &TicketMessageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `ticketmessage.Hooks(f(g(h())))`.
+func (c *TicketMessageClient) Use(hooks ...Hook) {
+	c.hooks.TicketMessage = append(c.hooks.TicketMessage, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `ticketmessage.Intercept(f(g(h())))`.
+func (c *TicketMessageClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TicketMessage = append(c.inters.TicketMessage, interceptors...)
+}
+
+// Create returns a builder for creating a TicketMessage entity.
+func (c *TicketMessageClient) Create() *TicketMessageCreate {
+	mutation := newTicketMessageMutation(c.config, OpCreate)
+	return &TicketMessageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TicketMessage entities.
+func (c *TicketMessageClient) CreateBulk(builders ...*TicketMessageCreate) *TicketMessageCreateBulk {
+	return &TicketMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TicketMessageClient) MapCreateBulk(slice any, setFunc func(*TicketMessageCreate, int)) *TicketMessageCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TicketMessageCreateBulk{err: fmt.Errorf("calling to TicketMessageClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TicketMessageCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TicketMessageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TicketMessage.
+func (c *TicketMessageClient) Update() *TicketMessageUpdate {
+	mutation := newTicketMessageMutation(c.config, OpUpdate)
+	return &TicketMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TicketMessageClient) UpdateOne(_m *TicketMessage) *TicketMessageUpdateOne {
+	mutation := newTicketMessageMutation(c.config, OpUpdateOne, withTicketMessage(_m))
+	return &TicketMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TicketMessageClient) UpdateOneID(id int64) *TicketMessageUpdateOne {
+	mutation := newTicketMessageMutation(c.config, OpUpdateOne, withTicketMessageID(id))
+	return &TicketMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TicketMessage.
+func (c *TicketMessageClient) Delete() *TicketMessageDelete {
+	mutation := newTicketMessageMutation(c.config, OpDelete)
+	return &TicketMessageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TicketMessageClient) DeleteOne(_m *TicketMessage) *TicketMessageDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TicketMessageClient) DeleteOneID(id int64) *TicketMessageDeleteOne {
+	builder := c.Delete().Where(ticketmessage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TicketMessageDeleteOne{builder}
+}
+
+// Query returns a query builder for TicketMessage.
+func (c *TicketMessageClient) Query() *TicketMessageQuery {
+	return &TicketMessageQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTicketMessage},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TicketMessage entity by its id.
+func (c *TicketMessageClient) Get(ctx context.Context, id int64) (*TicketMessage, error) {
+	return c.Query().Where(ticketmessage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TicketMessageClient) GetX(ctx context.Context, id int64) *TicketMessage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTicket queries the ticket edge of a TicketMessage.
+func (c *TicketMessageClient) QueryTicket(_m *TicketMessage) *TicketQuery {
+	query := (&TicketClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ticketmessage.Table, ticketmessage.FieldID, id),
+			sqlgraph.To(ticket.Table, ticket.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ticketmessage.TicketTable, ticketmessage.TicketColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a TicketMessage.
+func (c *TicketMessageClient) QueryUser(_m *TicketMessage) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(ticketmessage.Table, ticketmessage.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ticketmessage.UserTable, ticketmessage.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TicketMessageClient) Hooks() []Hook {
+	return c.hooks.TicketMessage
+}
+
+// Interceptors returns the client interceptors.
+func (c *TicketMessageClient) Interceptors() []Interceptor {
+	return c.inters.TicketMessage
+}
+
+func (c *TicketMessageClient) mutate(ctx context.Context, m *TicketMessageMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TicketMessageCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TicketMessageUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TicketMessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TicketMessageDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TicketMessage mutation op: %q", m.Op())
+	}
+}
+
 // UsageCleanupTaskClient is a client for the UsageCleanupTask schema.
 type UsageCleanupTaskClient struct {
 	config
@@ -5246,6 +5815,54 @@ func (c *UserClient) QueryAnnouncementReads(_m *User) *AnnouncementReadQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(announcementread.Table, announcementread.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.AnnouncementReadsTable, user.AnnouncementReadsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAnnouncementComments queries the announcement_comments edge of a User.
+func (c *UserClient) QueryAnnouncementComments(_m *User) *AnnouncementCommentQuery {
+	query := (&AnnouncementCommentClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(announcementcomment.Table, announcementcomment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.AnnouncementCommentsTable, user.AnnouncementCommentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTickets queries the tickets edge of a User.
+func (c *UserClient) QueryTickets(_m *User) *TicketQuery {
+	query := (&TicketClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(ticket.Table, ticket.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.TicketsTable, user.TicketsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTicketMessages queries the ticket_messages edge of a User.
+func (c *UserClient) QueryTicketMessages(_m *User) *TicketMessageQuery {
+	query := (&TicketMessageClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(ticketmessage.Table, ticketmessage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.TicketMessagesTable, user.TicketMessagesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -6209,24 +6826,26 @@ func (c *UserSubscriptionClient) mutate(ctx context.Context, m *UserSubscription
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		APIKey, Account, AccountGroup, Announcement, AnnouncementComment,
+		AnnouncementRead, AuthIdentity, AuthIdentityChannel, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		Ticket, TicketMessage, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
 		UserSubscription []ent.Hook
 	}
 	inters struct {
-		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
-		AuthIdentityChannel, ChannelMonitor, ChannelMonitorDailyRollup,
-		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
-		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
-		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
+		APIKey, Account, AccountGroup, Announcement, AnnouncementComment,
+		AnnouncementRead, AuthIdentity, AuthIdentityChannel, ChannelMonitor,
+		ChannelMonitorDailyRollup, ChannelMonitorHistory,
+		ChannelMonitorRequestTemplate, ErrorPassthroughRule, Group, IdempotencyRecord,
+		IdentityAdoptionDecision, PaymentAuditLog, PaymentOrder,
+		PaymentProviderInstance, PendingAuthSession, PromoCode, PromoCodeUsage, Proxy,
+		RedeemCode, SecuritySecret, Setting, SubscriptionPlan, TLSFingerprintProfile,
+		Ticket, TicketMessage, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
 		UserSubscription []ent.Interceptor
 	}

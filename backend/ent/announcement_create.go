@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/announcement"
+	"github.com/Wei-Shaw/sub2api/ent/announcementcomment"
 	"github.com/Wei-Shaw/sub2api/ent/announcementread"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 )
@@ -60,6 +61,20 @@ func (_c *AnnouncementCreate) SetNotifyMode(v string) *AnnouncementCreate {
 func (_c *AnnouncementCreate) SetNillableNotifyMode(v *string) *AnnouncementCreate {
 	if v != nil {
 		_c.SetNotifyMode(*v)
+	}
+	return _c
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (_c *AnnouncementCreate) SetCommentsEnabled(v bool) *AnnouncementCreate {
+	_c.mutation.SetCommentsEnabled(v)
+	return _c
+}
+
+// SetNillableCommentsEnabled sets the "comments_enabled" field if the given value is not nil.
+func (_c *AnnouncementCreate) SetNillableCommentsEnabled(v *bool) *AnnouncementCreate {
+	if v != nil {
+		_c.SetCommentsEnabled(*v)
 	}
 	return _c
 }
@@ -177,6 +192,21 @@ func (_c *AnnouncementCreate) AddReads(v ...*AnnouncementRead) *AnnouncementCrea
 	return _c.AddReadIDs(ids...)
 }
 
+// AddCommentIDs adds the "comments" edge to the AnnouncementComment entity by IDs.
+func (_c *AnnouncementCreate) AddCommentIDs(ids ...int64) *AnnouncementCreate {
+	_c.mutation.AddCommentIDs(ids...)
+	return _c
+}
+
+// AddComments adds the "comments" edges to the AnnouncementComment entity.
+func (_c *AnnouncementCreate) AddComments(v ...*AnnouncementComment) *AnnouncementCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddCommentIDs(ids...)
+}
+
 // Mutation returns the AnnouncementMutation object of the builder.
 func (_c *AnnouncementCreate) Mutation() *AnnouncementMutation {
 	return _c.mutation
@@ -219,6 +249,10 @@ func (_c *AnnouncementCreate) defaults() {
 	if _, ok := _c.mutation.NotifyMode(); !ok {
 		v := announcement.DefaultNotifyMode
 		_c.mutation.SetNotifyMode(v)
+	}
+	if _, ok := _c.mutation.CommentsEnabled(); !ok {
+		v := announcement.DefaultCommentsEnabled
+		_c.mutation.SetCommentsEnabled(v)
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := announcement.DefaultCreatedAt()
@@ -263,6 +297,9 @@ func (_c *AnnouncementCreate) check() error {
 		if err := announcement.NotifyModeValidator(v); err != nil {
 			return &ValidationError{Name: "notify_mode", err: fmt.Errorf(`ent: validator failed for field "Announcement.notify_mode": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.CommentsEnabled(); !ok {
+		return &ValidationError{Name: "comments_enabled", err: errors.New(`ent: missing required field "Announcement.comments_enabled"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Announcement.created_at"`)}
@@ -313,6 +350,10 @@ func (_c *AnnouncementCreate) createSpec() (*Announcement, *sqlgraph.CreateSpec)
 		_spec.SetField(announcement.FieldNotifyMode, field.TypeString, value)
 		_node.NotifyMode = value
 	}
+	if value, ok := _c.mutation.CommentsEnabled(); ok {
+		_spec.SetField(announcement.FieldCommentsEnabled, field.TypeBool, value)
+		_node.CommentsEnabled = value
+	}
 	if value, ok := _c.mutation.Targeting(); ok {
 		_spec.SetField(announcement.FieldTargeting, field.TypeJSON, value)
 		_node.Targeting = value
@@ -350,6 +391,22 @@ func (_c *AnnouncementCreate) createSpec() (*Announcement, *sqlgraph.CreateSpec)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(announcementread.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.CommentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   announcement.CommentsTable,
+			Columns: []string{announcement.CommentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(announcementcomment.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -454,6 +511,18 @@ func (u *AnnouncementUpsert) SetNotifyMode(v string) *AnnouncementUpsert {
 // UpdateNotifyMode sets the "notify_mode" field to the value that was provided on create.
 func (u *AnnouncementUpsert) UpdateNotifyMode() *AnnouncementUpsert {
 	u.SetExcluded(announcement.FieldNotifyMode)
+	return u
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (u *AnnouncementUpsert) SetCommentsEnabled(v bool) *AnnouncementUpsert {
+	u.Set(announcement.FieldCommentsEnabled, v)
+	return u
+}
+
+// UpdateCommentsEnabled sets the "comments_enabled" field to the value that was provided on create.
+func (u *AnnouncementUpsert) UpdateCommentsEnabled() *AnnouncementUpsert {
+	u.SetExcluded(announcement.FieldCommentsEnabled)
 	return u
 }
 
@@ -669,6 +738,20 @@ func (u *AnnouncementUpsertOne) SetNotifyMode(v string) *AnnouncementUpsertOne {
 func (u *AnnouncementUpsertOne) UpdateNotifyMode() *AnnouncementUpsertOne {
 	return u.Update(func(s *AnnouncementUpsert) {
 		s.UpdateNotifyMode()
+	})
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (u *AnnouncementUpsertOne) SetCommentsEnabled(v bool) *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetCommentsEnabled(v)
+	})
+}
+
+// UpdateCommentsEnabled sets the "comments_enabled" field to the value that was provided on create.
+func (u *AnnouncementUpsertOne) UpdateCommentsEnabled() *AnnouncementUpsertOne {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateCommentsEnabled()
 	})
 }
 
@@ -1069,6 +1152,20 @@ func (u *AnnouncementUpsertBulk) SetNotifyMode(v string) *AnnouncementUpsertBulk
 func (u *AnnouncementUpsertBulk) UpdateNotifyMode() *AnnouncementUpsertBulk {
 	return u.Update(func(s *AnnouncementUpsert) {
 		s.UpdateNotifyMode()
+	})
+}
+
+// SetCommentsEnabled sets the "comments_enabled" field.
+func (u *AnnouncementUpsertBulk) SetCommentsEnabled(v bool) *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.SetCommentsEnabled(v)
+	})
+}
+
+// UpdateCommentsEnabled sets the "comments_enabled" field to the value that was provided on create.
+func (u *AnnouncementUpsertBulk) UpdateCommentsEnabled() *AnnouncementUpsertBulk {
+	return u.Update(func(s *AnnouncementUpsert) {
+		s.UpdateCommentsEnabled()
 	})
 }
 

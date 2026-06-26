@@ -439,6 +439,8 @@ export default {
   nav: {
     dashboard: 'Dashboard',
     announcements: 'Announcements',
+    tickets: 'Tickets',
+    ticketAdmin: 'Tickets',
     apiKeys: 'API Keys',
     usage: 'Usage',
     redeem: 'Redeem',
@@ -4551,12 +4553,18 @@ export default {
         silent: 'Silent',
         popup: 'Popup'
       },
+      comments: {
+        enabled: 'Comments on',
+        disabled: 'Comments off'
+      },
       form: {
         title: 'Title',
         content: 'Content (Markdown supported)',
         status: 'Status',
         notifyMode: 'Notify Mode',
         notifyModeHint: 'Popup mode will show a popup notification to users',
+        commentsEnabled: 'Enable comments',
+        commentsEnabledHint: 'Allow users and admins to comment and reply on this announcement',
         startsAt: 'Starts At',
         endsAt: 'Ends At',
         startsAtHint: 'Leave empty to start immediately',
@@ -4595,6 +4603,43 @@ export default {
       failedToDelete: 'Failed to delete announcement',
       failedToLoadReadStatus: 'Failed to load read status',
       deleteConfirm: 'Are you sure you want to delete this announcement? This action cannot be undone.'
+    },
+
+    tickets: {
+      title: 'Ticket Management',
+      description: 'Reply to user tickets and close resolved issues',
+      searchPlaceholder: 'Search title...',
+      view: 'View',
+      close: 'Close Ticket',
+      closeConfirm: 'Are you sure you want to close this ticket?',
+      detailTitle: 'Ticket Detail',
+      selectHint: 'Select a ticket from the list',
+      emptyDetail: 'No ticket selected',
+      replyPlaceholder: 'Write an admin reply...',
+      sendReply: 'Send Reply',
+      sending: 'Sending...',
+      userId: 'User #{id}',
+      closed: 'Ticket closed',
+      loadFailed: 'Failed to load tickets',
+      detailLoadFailed: 'Failed to load ticket detail',
+      replyFailed: 'Failed to send reply',
+      closeFailed: 'Failed to close ticket',
+      status: {
+        all: 'All Status',
+        open: 'Open',
+        closed: 'Closed'
+      },
+      sender: {
+        user: 'User',
+        admin: 'Admin'
+      },
+      columns: {
+        title: 'Title',
+        user: 'User',
+        status: 'Status',
+        lastReply: 'Last Reply',
+        actions: 'Actions'
+      }
     },
 
     // Promo Codes
@@ -5517,6 +5562,13 @@ export default {
           configureLink: 'Configure model pricing in Channel Management > Channel Pricing',
           enabled: 'Enable Available Channels',
           enabledHint: 'When off, the sidebar entry is hidden and the endpoint returns an empty list.',
+        },
+        tickets: {
+          title: 'Ticket System',
+          description: 'Allow users to submit support tickets and let administrators reply or close them. Disabled by default.',
+          configureLink: 'Open ticket backend',
+          enabled: 'Enable Ticket System',
+          enabledHint: 'When off, ticket menus are hidden and ticket APIs reject requests.',
         },
         riskControl: {
           title: 'Risk Control',
@@ -6772,7 +6824,63 @@ export default {
     total: 'announcements',
     emptyDescription: 'There are no system announcements at this time',
     readStatus: 'You have read this announcement',
-    markReadHint: 'Click "Mark as read" to mark this announcement'
+    markReadHint: 'Click "Mark as read" to mark this announcement',
+    comments: {
+      title: 'Comments',
+      empty: 'No comments yet',
+      placeholder: 'Write a comment...',
+      send: 'Send',
+      sending: 'Sending...',
+      reply: 'Reply',
+      replyingTo: 'Replying to {name}',
+      admin: 'Admin',
+      user: 'User',
+      deleted: 'Comment deleted',
+      loadFailed: 'Failed to load comments',
+      sendFailed: 'Failed to send comment',
+      deleteFailed: 'Failed to delete comment'
+    }
+  },
+
+  tickets: {
+    title: 'Tickets',
+    description: 'Submit and track support tickets',
+    create: 'New Ticket',
+    view: 'View',
+    close: 'Close Ticket',
+    closeConfirm: 'Are you sure you want to close this ticket?',
+    detailTitle: 'Ticket Detail',
+    selectHint: 'Select a ticket from the list',
+    emptyDetail: 'No ticket selected',
+    replyPlaceholder: 'Write a reply...',
+    sendReply: 'Send Reply',
+    sending: 'Sending...',
+    created: 'Ticket created',
+    closed: 'Ticket closed',
+    loadFailed: 'Failed to load tickets',
+    detailLoadFailed: 'Failed to load ticket detail',
+    createFailed: 'Failed to create ticket',
+    replyFailed: 'Failed to send reply',
+    closeFailed: 'Failed to close ticket',
+    form: {
+      title: 'Title',
+      content: 'Content'
+    },
+    status: {
+      all: 'All Status',
+      open: 'Open',
+      closed: 'Closed'
+    },
+    sender: {
+      user: 'You',
+      admin: 'Admin'
+    },
+    columns: {
+      title: 'Title',
+      status: 'Status',
+      lastReply: 'Last Reply',
+      actions: 'Actions'
+    }
   },
 
   // User Subscriptions Page

@@ -114,6 +114,11 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Risk Control',
   }),
+  ticketSystem: defineFlag({
+    key: 'ticket_system_enabled',
+    mode: 'opt-in',
+    label: 'Ticket System',
+  }),
   affiliate: defineFlag({
     key: 'affiliate_enabled',
     mode: 'opt-in',

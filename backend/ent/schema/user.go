@@ -122,6 +122,12 @@ func (User) Edges() []ent.Edge {
 		edge.To("subscriptions", UserSubscription.Type),
 		edge.To("assigned_subscriptions", UserSubscription.Type),
 		edge.To("announcement_reads", AnnouncementRead.Type),
+		edge.To("announcement_comments", AnnouncementComment.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("tickets", Ticket.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("ticket_messages", TicketMessage.Type).
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("allowed_groups", Group.Type).
 			Through("user_allowed_groups", UserAllowedGroup.Type),
 		edge.To("usage_logs", UsageLog.Type),

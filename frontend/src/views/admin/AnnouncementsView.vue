@@ -77,16 +77,21 @@
           </template>
 
           <template #cell-notify_mode="{ row }">
-            <span
-              :class="[
-                'badge',
-                row.notify_mode === 'popup'
-                  ? 'badge-warning'
-                  : 'badge-gray'
-              ]"
-            >
-              {{ row.notify_mode === 'popup' ? t('admin.announcements.notifyModeLabels.popup') : t('admin.announcements.notifyModeLabels.silent') }}
-            </span>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span
+                :class="[
+                  'badge',
+                  row.notify_mode === 'popup'
+                    ? 'badge-warning'
+                    : 'badge-gray'
+                ]"
+              >
+                {{ row.notify_mode === 'popup' ? t('admin.announcements.notifyModeLabels.popup') : t('admin.announcements.notifyModeLabels.silent') }}
+              </span>
+              <span :class="['badge', row.comments_enabled ? 'badge-success' : 'badge-gray']">
+                {{ row.comments_enabled ? t('admin.announcements.comments.enabled') : t('admin.announcements.comments.disabled') }}
+              </span>
+            </div>
           </template>
 
           <template #cell-targeting="{ row }">
@@ -191,6 +196,18 @@
           </div>
         </div>
 
+        <div class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/50">
+          <div>
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ t('admin.announcements.form.commentsEnabled') }}
+            </label>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.announcements.form.commentsEnabledHint') }}
+            </p>
+          </div>
+          <Toggle v-model="form.comments_enabled" />
+        </div>
+
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.announcements.form.startsAt') }}</label>
@@ -261,6 +278,7 @@ import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Select from '@/components/common/Select.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
+import Toggle from '@/components/common/Toggle.vue'
 import Icon from '@/components/icons/Icon.vue'
 
 import AnnouncementTargetingEditor from '@/components/admin/announcements/AnnouncementTargetingEditor.vue'
@@ -418,6 +436,7 @@ const form = reactive({
   content: '',
   status: 'draft',
   notify_mode: 'silent',
+  comments_enabled: false,
   starts_at_str: '',
   ends_at_str: '',
   targeting: { any_of: [] } as AnnouncementTargeting
@@ -440,6 +459,7 @@ function resetForm() {
   form.content = ''
   form.status = 'draft'
   form.notify_mode = 'silent'
+  form.comments_enabled = false
   form.starts_at_str = ''
   form.ends_at_str = ''
   form.targeting = { any_of: [] }
@@ -450,6 +470,7 @@ function fillFormFromAnnouncement(a: Announcement) {
   form.content = a.content
   form.status = a.status
   form.notify_mode = a.notify_mode || 'silent'
+  form.comments_enabled = a.comments_enabled === true
 
   // Backend returns RFC3339 strings
   form.starts_at_str = a.starts_at ? formatDateTimeLocalInput(Math.floor(new Date(a.starts_at).getTime() / 1000)) : ''
@@ -484,6 +505,7 @@ function buildCreatePayload() {
     content: form.content,
     status: form.status as any,
     notify_mode: form.notify_mode as any,
+    comments_enabled: form.comments_enabled,
     targeting: form.targeting,
     starts_at: startsAt ?? undefined,
     ends_at: endsAt ?? undefined
@@ -497,6 +519,7 @@ function buildUpdatePayload(original: Announcement) {
   if (form.content !== original.content) payload.content = form.content
   if (form.status !== original.status) payload.status = form.status
   if (form.notify_mode !== (original.notify_mode || 'silent')) payload.notify_mode = form.notify_mode
+  if (form.comments_enabled !== original.comments_enabled) payload.comments_enabled = form.comments_enabled
 
   // starts_at / ends_at: distinguish unchanged vs clear(0) vs set
   const originalStarts = original.starts_at ? Math.floor(new Date(original.starts_at).getTime() / 1000) : null

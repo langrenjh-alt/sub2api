@@ -439,6 +439,8 @@ export default {
   nav: {
     dashboard: '儀表盤',
     announcements: '公告',
+    tickets: '工單',
+    ticketAdmin: '工單後台',
     apiKeys: 'API 金鑰',
     usage: '使用記錄',
     redeem: '兌換',
@@ -4704,12 +4706,18 @@ export default {
         silent: '靜默',
         popup: '彈窗'
       },
+      comments: {
+        enabled: '評論已開啟',
+        disabled: '評論已關閉'
+      },
       form: {
         title: '標題',
         content: '內容（支援 Markdown）',
         status: '狀態',
         notifyMode: '通知方式',
         notifyModeHint: '彈窗模式會自動彈出通知給使用者',
+        commentsEnabled: '開啟評論',
+        commentsEnabledHint: '允許使用者和管理員對此公告評論與回覆',
         startsAt: '開始時間',
         endsAt: '結束時間',
         startsAtHint: '留空表示立即生效',
@@ -4748,6 +4756,43 @@ export default {
       failedToDelete: '刪除公告失敗',
       failedToLoadReadStatus: '載入已讀情況失敗',
       deleteConfirm: '確定要刪除該公告嗎？此操作無法撤銷。'
+    },
+
+    tickets: {
+      title: '工單管理',
+      description: '回覆使用者工單並關閉已解決問題',
+      searchPlaceholder: '搜尋標題...',
+      view: '查看',
+      close: '關閉工單',
+      closeConfirm: '確定要關閉此工單嗎？',
+      detailTitle: '工單詳情',
+      selectHint: '從列表中選擇一張工單',
+      emptyDetail: '尚未選擇工單',
+      replyPlaceholder: '輸入管理員回覆...',
+      sendReply: '發送回覆',
+      sending: '發送中...',
+      userId: '使用者 #{id}',
+      closed: '工單已關閉',
+      loadFailed: '載入工單失敗',
+      detailLoadFailed: '載入工單詳情失敗',
+      replyFailed: '發送回覆失敗',
+      closeFailed: '關閉工單失敗',
+      status: {
+        all: '全部狀態',
+        open: '開啟',
+        closed: '已關閉'
+      },
+      sender: {
+        user: '使用者',
+        admin: '管理員'
+      },
+      columns: {
+        title: '標題',
+        user: '使用者',
+        status: '狀態',
+        lastReply: '最後回覆',
+        actions: '操作'
+      }
     },
 
     // Promo Codes
@@ -5677,6 +5722,13 @@ export default {
           configureLink: '前往 渠道管理 > 渠道定價 配置模型價格',
           enabled: '啟用可用渠道',
           enabledHint: '關閉後使用者端側邊欄入口隱藏，介面返回空陣列。',
+        },
+        tickets: {
+          title: '工單系統',
+          description: '允許使用者提交支援工單，管理員可回覆或關閉工單。預設關閉。',
+          configureLink: '前往工單後台',
+          enabled: '啟用工單系統',
+          enabledHint: '關閉後工單選單會隱藏，工單 API 會拒絕請求。',
         },
         riskControl: {
           title: '風控中心',
@@ -6926,7 +6978,63 @@ export default {
     total: '條公告',
     emptyDescription: '暫時沒有任何系統公告',
     readStatus: '您已閱讀此公告',
-    markReadHint: '點選"已讀"標記此公告'
+    markReadHint: '點選"已讀"標記此公告',
+    comments: {
+      title: '評論',
+      empty: '暫無評論',
+      placeholder: '寫下評論...',
+      send: '發送',
+      sending: '發送中...',
+      reply: '回覆',
+      replyingTo: '回覆 {name}',
+      admin: '管理員',
+      user: '使用者',
+      deleted: '評論已刪除',
+      loadFailed: '載入評論失敗',
+      sendFailed: '發送評論失敗',
+      deleteFailed: '刪除評論失敗'
+    }
+  },
+
+  tickets: {
+    title: '工單',
+    description: '提交並追蹤支援工單',
+    create: '新建工單',
+    view: '查看',
+    close: '關閉工單',
+    closeConfirm: '確定要關閉此工單嗎？',
+    detailTitle: '工單詳情',
+    selectHint: '從列表中選擇一張工單',
+    emptyDetail: '尚未選擇工單',
+    replyPlaceholder: '輸入回覆...',
+    sendReply: '發送回覆',
+    sending: '發送中...',
+    created: '工單已建立',
+    closed: '工單已關閉',
+    loadFailed: '載入工單失敗',
+    detailLoadFailed: '載入工單詳情失敗',
+    createFailed: '建立工單失敗',
+    replyFailed: '發送回覆失敗',
+    closeFailed: '關閉工單失敗',
+    form: {
+      title: '標題',
+      content: '內容'
+    },
+    status: {
+      all: '全部狀態',
+      open: '開啟',
+      closed: '已關閉'
+    },
+    sender: {
+      user: '我',
+      admin: '管理員'
+    },
+    columns: {
+      title: '標題',
+      status: '狀態',
+      lastReply: '最後回覆',
+      actions: '操作'
+    }
   },
 
   // User Subscriptions Page
