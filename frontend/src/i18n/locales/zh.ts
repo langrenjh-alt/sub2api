@@ -3695,8 +3695,8 @@ export default {
         responsesStatusForcedChatCompletions: '已強制 Chat Completions',
         codexCLIOnly: '僅允許 Codex 官方客戶端',
         codexCLIOnlyDesc: '僅對 OpenAI OAuth 生效。開啟後僅允許 Codex 官方客戶端家族訪問；關閉後完全繞過並保持原邏輯。',
-        codexCLIOnlyAllowClaudeCode: '額外放行 Claude Code 的 Codex 外掛',
-        codexCLIOnlyAllowClaudeCodeDesc: '僅在上方開關開啟時生效。額外放行通過 Claude Code 的 Codex 外掛發起的請求（精確匹配 originator=Claude Code），不影響對其他非官方客戶端的攔截。',
+        codexCLIOnlyAppServer: '允許 Codex app-server 客戶端',
+        codexCLIOnlyAppServerDesc: '僅在上方開關開啟時生效。開啟後本帳號額外放行內嵌 Codex 引擎、經 app-server 協議接入的第三方客戶端（如 Claude Code 的 codex 外掛）；仍需通過全域性引擎指紋門，與全域性 app-server 開關取 OR。',
         codexImageGenerationBridge: 'Codex 圖片生成橋接',
         codexImageGenerationBridgeDesc:
           '帳號級策略優先於渠道和全域性配置。僅控制 Codex 走 /responses 文本端點時是否注入 image_generation 工具；不影響獨立圖片生成介面。',
@@ -6099,9 +6099,41 @@ export default {
         openaiCodexUserAgent: 'OpenAI Codex UA',
         openaiCodexUserAgentPlaceholder: 'codex-tui/0.125.0 (Ubuntu 22.4.0; x86_64) xterm-256color (codex-tui; 0.125.0)',
         openaiCodexUserAgentHint: '用於規避 OpenAI 上游 Cloudflare 對瀏覽器 UA 的訪問質詢。僅在檢測到客戶端 User-Agent 為瀏覽器（Mozilla/...）時生效，其他客戶端原樣透傳。留空使用內建預設值。',
-        openaiAllowClaudeCodeCodexPlugin: '允許在 Claude Code 中使用 Codex 外掛',
-        openaiAllowClaudeCodeCodexPluginDesc:
-          '全域性開關，僅對已開啟「僅允許 Codex 官方客戶端」的 OpenAI OAuth 帳號生效。開啟後，所有此類帳號都額外放行通過 Claude Code 的 Codex 外掛發起的請求（精確匹配 originator=Claude Code），無需逐帳號配置；上游請求仍保持透傳。',
+        codexHardeningTitle: 'Codex 設定',
+        codexClientRestrictionTitle: 'Codex 客戶端限制',
+        codexHardeningDesc:
+          '僅對已開啟「僅允許 Codex 官方客戶端」的 OpenAI OAuth 帳號生效（全域性）。在 User-Agent/Originator 之外，再用版本區間、引擎指紋門與黑白名單加固判定。',
+        minCodexVersion: '最低 Codex 版本',
+        minCodexVersionPlaceholder: '例如 0.142.0',
+        maxCodexVersion: '最高 Codex 版本',
+        maxCodexVersionPlaceholder: '例如 0.200.0',
+        codexVersionHint:
+          '僅對官方客戶端生效，校驗其版本是否落在 [最低, 最高] 區間。任一側留空表示不限制。',
+        codexFingerprintSignals: 'Codex 引擎指紋信號',
+        codexFingerprintSignalsDesc:
+          '定義引擎指紋信號：勾選「必須」的信號需全部命中（AND），每條內部用 / 分隔的變體取 OR；全部不勾等於不校驗。預設只檢查 x-codex- 前綴。類型：標頭精確 / 標頭前綴 / body 路徑。',
+        codexFpTypeHeaderExact: '標頭精確',
+        codexFpTypeHeaderPrefix: '標頭前綴',
+        codexFpTypeBodyPath: 'body 路徑',
+        codexFpMatchPlaceholder: '匹配值；變體用 / 分隔（如 session-id / session_id 或 x-codex-）',
+        codexFpRequired: '必須',
+        codexFingerprintNoRequiredWarn: '目前沒有任何信號被標記為必須，引擎指紋門未生效，等同放行所有通過身份/版本的候選。至少勾選一條才能啟用。',
+        codexAllowAppServer: 'Codex app-server',
+        codexAllowAppServerDesc:
+          '放行內嵌 Codex 引擎並通過 app-server 協議接入的第三方客戶端（如 Claude Code 的 codex 外掛）。預設關閉；開啟後，這類客戶端通過引擎指紋門即可放行；關閉時僅允許官方客戶端與白名單。',
+        codexBlacklist: 'User-Agent/Originator 黑名單',
+        codexBlacklistDesc:
+          '任一欄位命中即拒絕，優先級高於所有放行規則。originator 為精確匹配；User-Agent 為包含匹配（逗號分隔）。',
+        codexWhitelist: 'User-Agent/Originator 白名單',
+        codexWhitelistDesc:
+          '放行官方集合外的客戶端：要求 originator 精確匹配，且每個 User-Agent 標記都命中。預設仍需通過引擎指紋門；勾選「跳過引擎指紋」可略過。',
+        codexWhitelistSkipFingerprint: '跳過引擎指紋',
+        codexWhitelistSkipFingerprintTooltip:
+          '風險：勾選後，此條規則僅憑 originator + User-Agent 放行，兩者都可偽造，不再要求引擎指紋兜底。僅用於可信但確實不發送 codex 引擎指紋的第三方客戶端。',
+        codexOriginatorPlaceholder: 'originator（精確，例如 opencode）',
+        codexUaContainsPlaceholder: 'User-Agent 包含標記，逗號分隔（例如 opencode/）',
+        codexAddRow: '新增一條',
+        codexRemoveRow: '刪除',
       },
       webSearchEmulation: {
         title: 'Web Search 模擬',
