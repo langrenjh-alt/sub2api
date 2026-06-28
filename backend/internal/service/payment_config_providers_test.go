@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,6 +50,13 @@ func TestValidateProviderRequest(t *testing.T) {
 			providerKey:    payment.TypeAirwallex,
 			providerName:   "Airwallex Provider",
 			supportedTypes: payment.TypeAirwallex,
+			wantErr:        false,
+		},
+		{
+			name:           "valid webmoney provider",
+			providerKey:    payment.TypeWebMoney,
+			providerName:   "WebMoney Provider",
+			supportedTypes: payment.TypeWebMoney,
 			wantErr:        false,
 		},
 		{
@@ -157,6 +165,14 @@ func TestIsSensitiveProviderConfigField(t *testing.T) {
 		{payment.TypeAirwallex, "apiBase", false},
 		{payment.TypeAirwallex, "accountId", false},
 		{payment.TypeAirwallex, "currency", false},
+
+		// WebMoney
+		{payment.TypeWebMoney, "secretKey", true},
+		{payment.TypeWebMoney, "secretKeyX20", true},
+		{payment.TypeWebMoney, "payeePurse", false},
+		{payment.TypeWebMoney, "allowSdp", false},
+		{payment.TypeWebMoney, "hold", false},
+		{payment.TypeWebMoney, "currency", false},
 
 		// Unknown provider: never sensitive
 		{"unknown", "secretKey", false},
@@ -447,6 +463,60 @@ func TestUpdateProviderInstanceRejectsProtectedConfigChangesWhilePendingOrders(t
 			fieldName:     "webhookSecret",
 			wantValue:     "whsec-test",
 		},
+		{
+			name:          "webmoney payeePurse",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"payeePurse": "Z999999999999"},
+			fieldName:     "payeePurse",
+			wantValue:     "Z123456789012",
+		},
+		{
+			name:          "webmoney secretKey",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"secretKey": "webmoney-secret-updated"},
+			fieldName:     "secretKey",
+			wantValue:     "webmoney-secret-test",
+		},
+		{
+			name:          "webmoney secretKeyX20",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"secretKeyX20": strings.Repeat("y", 50)},
+			fieldName:     "secretKeyX20",
+			wantValue:     strings.Repeat("x", 50),
+		},
+		{
+			name:          "webmoney allowSdp",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"allowSdp": "28"},
+			fieldName:     "allowSdp",
+			wantValue:     "31",
+		},
+		{
+			name:          "webmoney hold",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"hold": "14"},
+			fieldName:     "hold",
+			wantValue:     "7",
+		},
+		{
+			name:          "webmoney currency",
+			providerKey:   payment.TypeWebMoney,
+			createConfig:  validWebMoneyProviderConfig,
+			supportedType: []string{payment.TypeWebMoney},
+			updateConfig:  map[string]string{"currency": "EUR"},
+			fieldName:     "currency",
+			wantValue:     "USD",
+		},
 	}
 
 	for _, tc := range tests {
@@ -687,6 +757,21 @@ func validAirwallexProviderConfig(t *testing.T) map[string]string {
 		"apiBase":       "https://api-demo.airwallex.com/api/v1",
 		"accountId":     "acct-test",
 		"currency":      "CNY",
+	}
+}
+
+func validWebMoneyProviderConfig(t *testing.T) map[string]string {
+	t.Helper()
+
+	return map[string]string{
+		"payeePurse":   "Z123456789012",
+		"secretKey":    "webmoney-secret-test",
+		"secretKeyX20": strings.Repeat("x", 50),
+		"paymentUrl":   "https://merchant.wmtransfer.com/lmi/payment_utf.asp",
+		"allowSdp":     "31",
+		"hold":         "7",
+		"simMode":      "0",
+		"currency":     "USD",
 	}
 }
 

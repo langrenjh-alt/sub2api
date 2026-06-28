@@ -220,6 +220,28 @@ func validateProviderSnapshotMetadata(order *dbent.PaymentOrder, providerKey str
 		if actual := strings.TrimSpace(metadata["status"]); actual != "" && !strings.EqualFold(actual, "SUCCEEDED") {
 			return fmt.Errorf("airwallex status mismatch: expected SUCCEEDED, got %s", actual)
 		}
+	case payment.TypeWebMoney:
+		if expected := strings.TrimSpace(snapshot.MerchantID); expected != "" {
+			actual := strings.TrimSpace(metadata["payee_purse"])
+			if actual == "" {
+				return fmt.Errorf("webmoney payee_purse missing")
+			}
+			if !strings.EqualFold(expected, actual) {
+				return fmt.Errorf("webmoney payee_purse mismatch: expected %s, got %s", expected, actual)
+			}
+		}
+		if expected := strings.TrimSpace(snapshot.Currency); expected != "" {
+			actual := strings.ToUpper(strings.TrimSpace(metadata["currency"]))
+			if actual == "" {
+				return fmt.Errorf("webmoney notification missing currency")
+			}
+			if !strings.EqualFold(expected, actual) {
+				return fmt.Errorf("webmoney currency mismatch: expected %s, got %s", expected, actual)
+			}
+		}
+		if actual := strings.TrimSpace(metadata["lmi_mode"]); actual != "" && actual != "0" {
+			return fmt.Errorf("webmoney lmi_mode mismatch: expected 0, got %s", actual)
+		}
 	}
 
 	return nil

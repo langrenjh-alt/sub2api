@@ -36,13 +36,14 @@ export const PROVIDER_SUPPORTED_TYPES: Record<string, string[]> = {
   wxpay: ['wxpay'],
   stripe: ['card', 'alipay', 'wxpay', 'link'],
   airwallex: ['airwallex'],
+  webmoney: ['webmoney'],
 }
 
 /** Available payment modes for EasyPay providers. */
 export const EASYPAY_PAYMENT_MODES = ['qrcode', 'popup'] as const
 
 /** Fixed display order for user-facing payment methods */
-export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex'] as const
+export const METHOD_ORDER = ['alipay', 'alipay_direct', 'wxpay', 'wxpay_direct', 'stripe', 'airwallex', 'webmoney'] as const
 
 /** Payment mode constants */
 export const PAYMENT_MODE_QRCODE = 'qrcode'
@@ -96,6 +97,7 @@ export const WEBHOOK_PATHS: Record<string, string> = {
   wxpay: '/api/v1/payment/webhook/wxpay',
   stripe: '/api/v1/payment/webhook/stripe',
   airwallex: '/api/v1/payment/webhook/airwallex',
+  webmoney: '/api/v1/payment/webhook/webmoney',
 }
 
 export const RETURN_PATH = '/payment/result'
@@ -105,6 +107,7 @@ export const PROVIDER_CALLBACK_PATHS: Record<string, CallbackPaths> = {
   easypay: { notifyUrl: WEBHOOK_PATHS.easypay, returnUrl: RETURN_PATH },
   alipay: { notifyUrl: WEBHOOK_PATHS.alipay, returnUrl: RETURN_PATH },
   wxpay: { notifyUrl: WEBHOOK_PATHS.wxpay },
+  webmoney: { notifyUrl: WEBHOOK_PATHS.webmoney, returnUrl: RETURN_PATH },
   // stripe: 不需要回撥 URL 配置，Webhook 單獨配置。
   // airwallex: 不需要回撥 URL 配置，Webhook 在空中雲匯後臺配置。
 }
@@ -146,6 +149,16 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
     { key: 'countryCode', label: '', sensitive: false, defaultValue: 'CN' },
     { key: 'currency', label: '', sensitive: false, defaultValue: 'CNY', hintKey: 'admin.settings.payment.field_paymentCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
     { key: 'accountId', label: '', sensitive: false, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_accountIdHint' },
+  ],
+  webmoney: [
+    { key: 'payeePurse', label: '', sensitive: false, hintKey: 'admin.settings.payment.field_payeePurseHint' },
+    { key: 'secretKey', label: '', sensitive: true, hintKey: 'admin.settings.payment.field_webmoneySecretKeyHint' },
+    { key: 'secretKeyX20', label: '', sensitive: true, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_webmoneySecretKeyX20Hint' },
+    { key: 'paymentUrl', label: '', sensitive: false, defaultValue: 'https://merchant.wmtransfer.com/lmi/payment_utf.asp', hintKey: 'admin.settings.payment.field_paymentUrlHint' },
+    { key: 'allowSdp', label: '', sensitive: false, defaultValue: '31', hintKey: 'admin.settings.payment.field_allowSdpHint' },
+    { key: 'hold', label: '', sensitive: false, optional: true, clearable: true, hintKey: 'admin.settings.payment.field_webmoneyHoldHint' },
+    { key: 'simMode', label: '', sensitive: false, optional: true, defaultValue: '0', hintKey: 'admin.settings.payment.field_simModeHint' },
+    { key: 'currency', label: '', sensitive: false, defaultValue: 'USD', hintKey: 'admin.settings.payment.field_webmoneyCurrencyHint', options: PAYMENT_CURRENCY_OPTIONS },
   ],
 }
 

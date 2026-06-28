@@ -1,7 +1,11 @@
 package handler
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"html"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +26,82 @@ type PaymentHandler struct {
 	channelService *service.ChannelService
 	paymentService *service.PaymentService
 	configService  *service.PaymentConfigService
+}
+
+type webMoneyCheckoutPayload struct {
+	Action string            `json:"action"`
+	Method string            `json:"method"`
+	Fields map[string]string `json:"fields"`
+}
+
+// WebMoneyCheckout renders a tiny auto-submit HTML form for WebMoney Merchant.
+// GET /api/v1/payment/public/webmoney/checkout?p=...
+func (h *PaymentHandler) WebMoneyCheckout(c *gin.Context) {
+	rawPayload := strings.TrimSpace(c.Query("p"))
+	if rawPayload == "" {
+		c.String(400, "missing payload")
+		return
+	}
+	data, err := base64.RawURLEncoding.DecodeString(rawPayload)
+	if err != nil {
+		c.String(400, "invalid payload")
+		return
+	}
+	var payload webMoneyCheckoutPayload
+	if err := json.Unmarshal(data, &payload); err != nil {
+		c.String(400, "invalid payload")
+		return
+	}
+	if strings.TrimSpace(payload.Action) == "" || len(payload.Fields) == 0 {
+		c.String(400, "invalid payload")
+		return
+	}
+	if !isAllowedWebMoneyAction(payload.Action) {
+		c.String(400, "invalid action")
+		return
+	}
+
+	c.Header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action https://merchant.wmtransfer.com https://merchant.webmoney.com https://merchant.webmoney.ru; base-uri 'none'")
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(200, renderWebMoneyCheckoutHTML(payload))
+}
+
+func renderWebMoneyCheckoutHTML(payload webMoneyCheckoutPayload) string {
+	method := strings.ToUpper(strings.TrimSpace(payload.Method))
+	if method == "" {
+		method = "POST"
+	}
+	var b strings.Builder
+	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>WebMoney</title></head><body>`)
+	b.WriteString(`<form id="webmoney-payment-form" accept-charset="UTF-8" method="`)
+	b.WriteString(html.EscapeString(method))
+	b.WriteString(`" action="`)
+	b.WriteString(html.EscapeString(strings.TrimSpace(payload.Action)))
+	b.WriteString(`">`)
+	for key, value := range payload.Fields {
+		b.WriteString(`<input type="hidden" name="`)
+		b.WriteString(html.EscapeString(key))
+		b.WriteString(`" value="`)
+		b.WriteString(html.EscapeString(value))
+		b.WriteString(`">`)
+	}
+	b.WriteString(`</form><p>Redirecting to WebMoney...</p><script>document.getElementById("webmoney-payment-form").submit();</script>`)
+	b.WriteString(`</body></html>`)
+	return b.String()
+}
+
+func isAllowedWebMoneyAction(action string) bool {
+	parsed, err := url.Parse(strings.TrimSpace(action))
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+	switch host {
+	case "merchant.wmtransfer.com", "merchant.webmoney.com", "merchant.webmoney.ru":
+		return parsed.Scheme == "https"
+	default:
+		return false
+	}
 }
 
 // NewPaymentHandler creates a new PaymentHandler.

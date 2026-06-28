@@ -9968,6 +9968,7 @@ const allPaymentTypes = computed(() => [
   { value: "wxpay", label: t("payment.methods.wxpay") },
   { value: "stripe", label: t("payment.methods.stripe") },
   { value: "airwallex", label: t("payment.methods.airwallex") },
+  { value: "webmoney", label: t("payment.methods.webmoney") },
 ]);
 
 function isPaymentTypeEnabled(type: string): boolean {
@@ -10025,6 +10026,7 @@ const providerKeyOptions = computed(() => [
   { value: "wxpay", label: t("admin.settings.payment.providerWxpay") },
   { value: "stripe", label: t("admin.settings.payment.providerStripe") },
   { value: "airwallex", label: t("admin.settings.payment.providerAirwallex") },
+  { value: "webmoney", label: t("admin.settings.payment.providerWebMoney") },
 ]);
 
 const enabledProviderKeyOptions = computed(() => {
@@ -10070,7 +10072,7 @@ type ProviderEnablementCandidate = Pick<
 
 function getProviderVisibleMethods(
   provider: ProviderEnablementCandidate,
-): Array<"alipay" | "wxpay"> {
+): Array<"alipay" | "wxpay" | "webmoney"> {
   if (!provider.enabled) {
     return [];
   }
@@ -10078,10 +10080,10 @@ function getProviderVisibleMethods(
   const supportedTypes = Array.isArray(provider.supported_types)
     ? provider.supported_types
     : [];
-  const methods = new Set<"alipay" | "wxpay">();
+  const methods = new Set<"alipay" | "wxpay" | "webmoney">();
   const addMethod = (type: string) => {
     const method = normalizeVisibleMethod(type);
-    if (method === "alipay" || method === "wxpay") {
+    if (method === "alipay" || method === "wxpay" || method === "webmoney") {
       methods.add(method);
     }
   };
@@ -10108,6 +10110,16 @@ function getProviderVisibleMethods(
     }
   } else if (provider.provider_key === "easypay") {
     supportedTypes.forEach(addMethod);
+  } else if (provider.provider_key === "webmoney") {
+    if (supportedTypes.length === 0) {
+      methods.add("webmoney");
+    } else {
+      supportedTypes.forEach((type) => {
+        if (normalizeVisibleMethod(type) === "webmoney") {
+          methods.add("webmoney");
+        }
+      });
+    }
   }
 
   return Array.from(methods);
@@ -10115,7 +10127,7 @@ function getProviderVisibleMethods(
 
 function findProviderEnablementConflict(
   candidate: ProviderEnablementCandidate,
-): { method: "alipay" | "wxpay"; conflicting: ProviderInstance } | null {
+): { method: "alipay" | "wxpay" | "webmoney"; conflicting: ProviderInstance } | null {
   const claimedMethods = getProviderVisibleMethods(candidate);
   if (claimedMethods.length === 0) {
     return null;
@@ -10142,7 +10154,7 @@ function findProviderEnablementConflict(
 }
 
 function showProviderEnablementConflict(
-  conflict: { method: "alipay" | "wxpay"; conflicting: ProviderInstance },
+  conflict: { method: "alipay" | "wxpay" | "webmoney"; conflicting: ProviderInstance },
 ) {
   appStore.showError(
     t("admin.settings.payment.enableConflict", {

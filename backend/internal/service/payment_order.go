@@ -303,6 +303,12 @@ func buildPaymentOrderProviderSnapshot(sel *payment.InstanceSelection, req Creat
 		}
 		snapshot["currency"] = paymentProviderConfigCurrency(providerKey, sel.Config)
 	}
+	if providerKey == payment.TypeWebMoney {
+		if payeePurse := strings.TrimSpace(sel.Config["payeePurse"]); payeePurse != "" {
+			snapshot["merchant_id"] = payeePurse
+		}
+		snapshot["currency"] = paymentProviderConfigCurrency(providerKey, sel.Config)
+	}
 
 	if len(snapshot) == 1 {
 		return nil
@@ -443,7 +449,7 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		ClientIP:    req.ClientIP,
 		IsMobile:    req.IsMobile,
 		ReturnURL:   providerReturnURL,
-	}, sel, outTradeNo, payAmountStr, subject)
+	}, sel, order.ID, outTradeNo, payAmountStr, subject)
 	pr, err := prov.CreatePayment(ctx, providerReq)
 	if err != nil {
 		slog.Error("[PaymentService] CreatePayment failed", "provider", sel.ProviderKey, "instance", sel.InstanceID, "error", err)
@@ -479,9 +485,10 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 	return resp, nil
 }
 
-func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.InstanceSelection, orderID, amount, subject string) payment.CreatePaymentRequest {
+func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.InstanceSelection, internalOrderID int64, orderID, amount, subject string) payment.CreatePaymentRequest {
 	return payment.CreatePaymentRequest{
-		OrderID:            orderID,
+		OrderID:            providerPaymentOrderID(sel, internalOrderID, orderID),
+		OutTradeNo:         orderID,
 		Amount:             amount,
 		PaymentType:        req.PaymentType,
 		Subject:            subject,
@@ -491,6 +498,13 @@ func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.Inst
 		IsMobile:           req.IsMobile,
 		InstanceSubMethods: selectedInstanceSupportedTypes(sel),
 	}
+}
+
+func providerPaymentOrderID(sel *payment.InstanceSelection, internalOrderID int64, outTradeNo string) string {
+	if sel != nil && strings.TrimSpace(sel.ProviderKey) == payment.TypeWebMoney && internalOrderID > 0 {
+		return strconv.FormatInt(internalOrderID, 10)
+	}
+	return outTradeNo
 }
 
 func selectedInstanceSupportedTypes(sel *payment.InstanceSelection) string {
