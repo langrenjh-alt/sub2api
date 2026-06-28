@@ -51,6 +51,7 @@ func RegisterPaymentRoutes(
 	{
 		public.POST("/orders/verify", paymentHandler.VerifyOrderPublic)
 		public.POST("/orders/resolve", paymentHandler.ResolveOrderPublicByResumeToken)
+		public.GET("/webmoney/checkout", paymentHandler.WebMoneyCheckout)
 	}
 
 	// --- Webhook endpoints (no auth) ---
@@ -63,6 +64,7 @@ func RegisterPaymentRoutes(
 		webhook.POST("/wxpay", webhookHandler.WxpayNotify)
 		webhook.POST("/stripe", webhookHandler.StripeWebhook)
 		webhook.POST("/airwallex", webhookHandler.AirwallexWebhook)
+		webhook.POST("/webmoney", webhookHandler.WebMoneyWebhook)
 	}
 
 	// --- Admin payment endpoints (admin auth) ---

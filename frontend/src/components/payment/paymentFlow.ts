@@ -16,9 +16,10 @@ const VISIBLE_METHOD_ALIASES = {
   wxpay_direct: 'wxpay',
   stripe: 'stripe',
   airwallex: 'airwallex',
+  webmoney: 'webmoney',
 } as const
 
-export type VisiblePaymentMethod = 'alipay' | 'wxpay' | 'stripe' | 'airwallex'
+export type VisiblePaymentMethod = 'alipay' | 'wxpay' | 'stripe' | 'airwallex' | 'webmoney'
 export type StripeVisibleMethod = 'alipay' | 'wechat_pay'
 export type PaymentLaunchKind =
   | 'qr_waiting'
@@ -170,6 +171,13 @@ export function decidePaymentLaunch(
     }
     const paymentState = { ...baseState, payUrl: context.airwallexRouteUrl || '' }
     return { kind: 'airwallex_route', paymentState, recovery: paymentState }
+  }
+
+  if (visibleMethod === 'webmoney') {
+    if (baseState.payUrl) {
+      return { kind: 'redirect_waiting', paymentState: baseState, recovery: baseState }
+    }
+    return { kind: 'unhandled', paymentState: baseState, recovery: baseState }
   }
 
   if (baseState.clientSecret) {
