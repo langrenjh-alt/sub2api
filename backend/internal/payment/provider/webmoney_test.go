@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 func mustTestWebMoneyProvider(t *testing.T, overrides map[string]string) *WebMoney {
@@ -137,7 +138,7 @@ func TestWebMoneyCreatePaymentIncludesHoldAndPaymentFormSign(t *testing.T) {
 	if got := payload.Fields[webMoneyHoldField]; got != "7" {
 		t.Fatalf("%s = %q, want 7", webMoneyHoldField, got)
 	}
-	wantSign := webMoneySHA256Hex("Z123456789012;12.34;7;12345;" + x20)
+	wantSign := webMoneySHA256Hex("Z123456789012;12.34;7;12345;" + x20 + ";")
 	if got := payload.Fields[webMoneyPaymentFormSign]; got != wantSign {
 		t.Fatalf("%s = %q, want %q", webMoneyPaymentFormSign, got, wantSign)
 	}
@@ -156,6 +157,25 @@ func TestWebMoneyRejectsInsecurePaymentURL(t *testing.T) {
 	}
 	if got := err.Error(); !strings.Contains(got, "https") {
 		t.Fatalf("error = %q, want https validation detail", got)
+	}
+}
+
+func TestWebMoneyRejectsInvalidSecretKeyX20LengthAsBadRequest(t *testing.T) {
+	t.Parallel()
+
+	_, err := NewWebMoney("wm-test", map[string]string{
+		"payeePurse":   "Z123456789012",
+		"secretKey":    "secret",
+		"secretKeyX20": strings.Repeat("x", 49),
+	})
+	if err == nil {
+		t.Fatal("NewWebMoney returned nil error, want invalid secretKeyX20 error")
+	}
+	if !infraerrors.IsBadRequest(err) {
+		t.Fatalf("NewWebMoney error = %v, want bad request", err)
+	}
+	if got := err.Error(); got == "" || !strings.Contains(got, "secretKeyX20") {
+		t.Fatalf("error = %q, want secretKeyX20 detail", got)
 	}
 }
 

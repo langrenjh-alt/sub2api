@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
+	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 )
 
 const (
@@ -63,13 +64,16 @@ func NewWebMoney(instanceID string, config map[string]string) (*WebMoney, error)
 	cfg := cloneStringMap(config)
 	cfg["payeePurse"] = strings.ToUpper(strings.TrimSpace(cfg["payeePurse"]))
 	if cfg["payeePurse"] == "" {
-		return nil, fmt.Errorf("webmoney config missing required key: payeePurse")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_MISSING_KEY", "missing_required_key").
+			WithMetadata(map[string]string{"key": "payeePurse"})
 	}
 	if !webMoneyPursePattern.MatchString(cfg["payeePurse"]) {
-		return nil, fmt.Errorf("webmoney config payeePurse must be a purse letter followed by 12 digits")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_INVALID_PURSE", "invalid_purse").
+			WithMetadata(map[string]string{"key": "payeePurse"})
 	}
 	if strings.TrimSpace(cfg["secretKey"]) == "" {
-		return nil, fmt.Errorf("webmoney config missing required key: secretKey")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_MISSING_KEY", "missing_required_key").
+			WithMetadata(map[string]string{"key": "secretKey"})
 	}
 	if strings.TrimSpace(cfg["paymentUrl"]) == "" {
 		cfg["paymentUrl"] = webMoneyDefaultPaymentURL
@@ -83,17 +87,21 @@ func NewWebMoney(instanceID string, config map[string]string) (*WebMoney, error)
 		cfg["allowSdp"] = webMoneyDefaultAllowSDP
 	}
 	if simMode := strings.TrimSpace(cfg["simMode"]); simMode != "" && simMode != "0" && simMode != "1" && simMode != "2" {
-		return nil, fmt.Errorf("webmoney config simMode must be 0, 1, or 2")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_INVALID_SIM_MODE", "invalid_sim_mode").
+			WithMetadata(map[string]string{"key": "simMode"})
 	}
 	if x20 := strings.TrimSpace(cfg["secretKeyX20"]); x20 != "" && len([]rune(x20)) != 50 {
-		return nil, fmt.Errorf("webmoney config secretKeyX20 must be 50 characters when configured")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_INVALID_X20", "invalid_x20_key").
+			WithMetadata(map[string]string{"key": "secretKeyX20", "expected": "50"})
 	}
 	if hold := strings.TrimSpace(cfg["hold"]); hold != "" && !webMoneyHoldPattern.MatchString(hold) {
-		return nil, fmt.Errorf("webmoney config hold must be a positive integer when configured")
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_INVALID_HOLD", "invalid_hold").
+			WithMetadata(map[string]string{"key": "hold"})
 	}
 	currency, err := normalizeWebMoneyCurrency(cfg["currency"])
 	if err != nil {
-		return nil, fmt.Errorf("webmoney config currency: %w", err)
+		return nil, infraerrors.BadRequest("WEBMONEY_CONFIG_INVALID_CURRENCY", "invalid_currency").
+			WithCause(err).WithMetadata(map[string]string{"key": "currency"})
 	}
 	cfg["currency"] = currency
 	return &WebMoney{instanceID: instanceID, config: cfg}, nil
@@ -416,7 +424,7 @@ func webMoneyPaymentFormSignValue(fields map[string]string, secretKeyX20 string)
 		strings.TrimSpace(fields["LMI_PAYMENT_NO"]),
 		secretKeyX20,
 	)
-	return webMoneySHA256Hex(strings.Join(parts, ";"))
+	return webMoneySHA256Hex(strings.Join(parts, ";") + ";")
 }
 
 func webMoneySHA256Hex(s string) string {
