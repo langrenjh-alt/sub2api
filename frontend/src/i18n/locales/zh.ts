@@ -166,6 +166,27 @@ export default {
       providerStatus: {
         ready: '可用',
         soon: '即將推出'
+      },
+      sections: {
+        overview: '概覽',
+        quickActions: '快速操作',
+        status: '狀態',
+        compatibility: '相容性',
+        accessSteps: '接入步驟'
+      },
+      accessSteps: {
+        connect: {
+          title: '完成儲值',
+          description: '先透過儲值入口補足餘額，再開始呼叫閘道。'
+        },
+        key: {
+          title: '建立 API Key',
+          description: '在控制台建立專案專用金鑰，維持最小權限範圍。'
+        },
+        client: {
+          title: '設定客戶端',
+          description: '將 Base URL 指向 https://z30.top/v1，沿用原本的 SDK 流程。'
+        }
       }
     },
     footer: {

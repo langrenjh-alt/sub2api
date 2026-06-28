@@ -166,6 +166,27 @@ export default {
       providerStatus: {
         ready: 'ready',
         soon: 'soon'
+      },
+      sections: {
+        overview: 'Overview',
+        quickActions: 'Quick Actions',
+        status: 'Status',
+        compatibility: 'Compatibility',
+        accessSteps: 'Access Steps'
+      },
+      accessSteps: {
+        connect: {
+          title: 'Recharge the account',
+          description: 'Use the recharge entry to top up your balance before calling the gateway.'
+        },
+        key: {
+          title: 'Create an API key',
+          description: 'Generate a project-specific key in the console and keep it scoped to the workflow.'
+        },
+        client: {
+          title: 'Point your client',
+          description: 'Set the Base URL to https://z30.top/v1 and keep using your existing SDK flow.'
+        }
       }
     },
     footer: {
