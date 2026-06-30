@@ -32,12 +32,12 @@ describe('admin settings payment visible method helpers', () => {
       },
       {
         value: 'official_alipay',
-        labelZh: '支付宝官方',
+        labelZh: '支付寶官方',
         labelEn: 'Official Alipay',
       },
       {
         value: 'easypay_alipay',
-        labelZh: '易支付支付宝',
+        labelZh: '易支付支付寶',
         labelEn: 'EasyPay Alipay',
       },
     ])

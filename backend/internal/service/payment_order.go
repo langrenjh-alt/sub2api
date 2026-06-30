@@ -67,7 +67,8 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 			return nil, err
 		}
 	}
-	payAmountStr, payAmount, err := calculateCreateOrderPayAmountForOrder(req.OrderType, limitAmount, feeRate, cfg.BalanceRechargeMultiplier, methodCurrency)
+	// 订阅套餐 price 是直付价，余额充值倍率只影响余额充值到账，不参与订阅 pay_amount 计算。
+	payAmountStr, payAmount, err := calculateCreateOrderPayAmount(limitAmount, feeRate, methodCurrency)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func (s *PaymentService) CreateOrder(ctx context.Context, req CreateOrderRequest
 		selectedCurrency = paymentProviderConfigCurrency(sel.ProviderKey, sel.Config)
 	}
 	if selectedCurrency != methodCurrency {
-		payAmountStr, payAmount, err = calculateCreateOrderPayAmountForOrder(req.OrderType, limitAmount, feeRate, cfg.BalanceRechargeMultiplier, selectedCurrency)
+		payAmountStr, payAmount, err = calculateCreateOrderPayAmount(limitAmount, feeRate, selectedCurrency)
 		if err != nil {
 			return nil, err
 		}
@@ -303,12 +304,6 @@ func buildPaymentOrderProviderSnapshot(sel *payment.InstanceSelection, req Creat
 		}
 		snapshot["currency"] = paymentProviderConfigCurrency(providerKey, sel.Config)
 	}
-	if providerKey == payment.TypeWebMoney {
-		if payeePurse := strings.TrimSpace(sel.Config["payeePurse"]); payeePurse != "" {
-			snapshot["merchant_id"] = payeePurse
-		}
-		snapshot["currency"] = paymentProviderConfigCurrency(providerKey, sel.Config)
-	}
 
 	if len(snapshot) == 1 {
 		return nil
@@ -449,7 +444,7 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		ClientIP:    req.ClientIP,
 		IsMobile:    req.IsMobile,
 		ReturnURL:   providerReturnURL,
-	}, sel, order.ID, outTradeNo, payAmountStr, subject)
+	}, sel, outTradeNo, payAmountStr, subject)
 	pr, err := prov.CreatePayment(ctx, providerReq)
 	if err != nil {
 		slog.Error("[PaymentService] CreatePayment failed", "provider", sel.ProviderKey, "instance", sel.InstanceID, "error", err)
@@ -485,10 +480,9 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 	return resp, nil
 }
 
-func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.InstanceSelection, internalOrderID int64, orderID, amount, subject string) payment.CreatePaymentRequest {
+func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.InstanceSelection, orderID, amount, subject string) payment.CreatePaymentRequest {
 	return payment.CreatePaymentRequest{
-		OrderID:            providerPaymentOrderID(sel, internalOrderID, orderID),
-		OutTradeNo:         orderID,
+		OrderID:            orderID,
 		Amount:             amount,
 		PaymentType:        req.PaymentType,
 		Subject:            subject,
@@ -498,13 +492,6 @@ func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.Inst
 		IsMobile:           req.IsMobile,
 		InstanceSubMethods: selectedInstanceSupportedTypes(sel),
 	}
-}
-
-func providerPaymentOrderID(sel *payment.InstanceSelection, internalOrderID int64, outTradeNo string) string {
-	if sel != nil && strings.TrimSpace(sel.ProviderKey) == payment.TypeWebMoney && internalOrderID > 0 {
-		return strconv.FormatInt(internalOrderID, 10)
-	}
-	return outTradeNo
 }
 
 func selectedInstanceSupportedTypes(sel *payment.InstanceSelection) string {
@@ -624,19 +611,6 @@ func calculateCreateOrderPayAmount(limitAmount, feeRate float64, currency string
 			WithMetadata(map[string]string{"currency": currency})
 	}
 	return payAmountStr, payAmount, nil
-}
-
-func calculateCreateOrderPayAmountForOrder(orderType string, limitAmount, feeRate, multiplier float64, currency string) (string, float64, error) {
-	paymentAmount := calculateCreateOrderPaymentAmount(orderType, limitAmount, multiplier, currency)
-	return calculateCreateOrderPayAmount(paymentAmount, feeRate, currency)
-}
-
-func calculateCreateOrderPaymentAmount(orderType string, limitAmount, multiplier float64, currency string) float64 {
-	normalizedCurrency, err := payment.NormalizePaymentCurrency(currency)
-	if err != nil || normalizedCurrency != payment.DefaultPaymentCurrency || orderType != payment.OrderTypeSubscription {
-		return limitAmount
-	}
-	return calculateGatewayPaymentAmount(limitAmount, multiplier, normalizedCurrency)
 }
 
 func validateCreateOrderAmountCurrency(amount float64, currency string) error {

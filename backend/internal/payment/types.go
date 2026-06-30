@@ -18,7 +18,6 @@ const (
 	TypeLink         PaymentType = "link"
 	TypeEasyPay      PaymentType = "easypay"
 	TypeAirwallex    PaymentType = "airwallex"
-	TypeWebMoney     PaymentType = "webmoney"
 )
 
 // Order status constants shared across payment and service layers.
@@ -32,6 +31,7 @@ const (
 	OrderStatusFailed            = "FAILED"
 	OrderStatusRefundRequested   = "REFUND_REQUESTED"
 	OrderStatusRefunding         = "REFUNDING"
+	OrderStatusRefundPending     = "REFUND_PENDING"
 	OrderStatusPartiallyRefunded = "PARTIALLY_REFUNDED"
 	OrderStatusRefunded          = "REFUNDED"
 	OrderStatusRefundFailed      = "REFUND_FAILED"
@@ -86,8 +86,6 @@ func GetBasePaymentType(t string) string {
 		return TypeEasyPay
 	case t == TypeAirwallex:
 		return TypeAirwallex
-	case t == TypeWebMoney:
-		return TypeWebMoney
 	case t == TypeStripe || t == TypeCard || t == TypeLink:
 		return TypeStripe
 	case len(t) >= len(TypeAlipay) && t[:len(TypeAlipay)] == TypeAlipay:
@@ -102,7 +100,6 @@ func GetBasePaymentType(t string) string {
 // CreatePaymentRequest holds the parameters for creating a new payment.
 type CreatePaymentRequest struct {
 	OrderID            string // Internal order ID
-	OutTradeNo         string // System out_trade_no when provider-specific order ID must differ
 	Amount             string // 支付金额，按服务商实例配置的币种解释
 	PaymentType        string // e.g. "alipay", "wxpay", "stripe"
 	Subject            string // Product description
@@ -185,6 +182,15 @@ type RefundRequest struct {
 	Reason  string
 }
 
+// RefundQueryRequest contains identifiers needed to query a previously
+// requested refund.
+type RefundQueryRequest struct {
+	TradeNo  string
+	OrderID  string
+	RefundID string
+	Amount   string
+}
+
 // RefundResponse is returned after a refund request.
 type RefundResponse struct {
 	RefundID string
@@ -217,6 +223,12 @@ type Provider interface {
 	VerifyNotification(ctx context.Context, rawBody string, headers map[string]string) (*PaymentNotification, error)
 	// Refund requests a refund from the upstream provider.
 	Refund(ctx context.Context, req RefundRequest) (*RefundResponse, error)
+}
+
+// RefundQueryProvider extends Provider with refund status querying.
+type RefundQueryProvider interface {
+	Provider
+	QueryRefund(ctx context.Context, req RefundQueryRequest) (*RefundResponse, error)
 }
 
 // CancelableProvider extends Provider with the ability to cancel pending payments.

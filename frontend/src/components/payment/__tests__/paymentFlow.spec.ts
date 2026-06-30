@@ -39,7 +39,6 @@ describe('getVisibleMethods', () => {
       wxpay: methodLimit({ single_max: 100 }),
       stripe: methodLimit({ fee_rate: 3 }),
       airwallex: methodLimit({ single_min: 10 }),
-      webmoney: methodLimit({ single_min: 20 }),
     })
 
     expect(visible).toEqual({
@@ -47,7 +46,6 @@ describe('getVisibleMethods', () => {
       wxpay: methodLimit({ single_max: 100 }),
       stripe: methodLimit({ fee_rate: 3 }),
       airwallex: methodLimit({ single_min: 10 }),
-      webmoney: methodLimit({ single_min: 20 }),
     })
   })
 
@@ -129,24 +127,6 @@ describe('decidePaymentLaunch', () => {
     expect(decision.paymentState.currency).toBe('CNY')
     expect(decision.paymentState.countryCode).toBe('CN')
     expect(decision.paymentState.paymentEnv).toBe('demo')
-  })
-
-  it('uses hosted redirect waiting flow for WebMoney pay_url sessions', () => {
-    const decision = decidePaymentLaunch(createOrderResult({
-      pay_url: '/api/v1/payment/public/webmoney/checkout?p=payload',
-      payment_type: 'webmoney',
-      out_trade_no: 'sub2_wm_101',
-      currency: 'USD',
-    }), {
-      visibleMethod: 'webmoney',
-      orderType: 'balance',
-      isMobile: false,
-    })
-
-    expect(decision.kind).toBe('redirect_waiting')
-    expect(decision.paymentState.paymentType).toBe('webmoney')
-    expect(decision.paymentState.payUrl).toContain('/api/v1/payment/public/webmoney/checkout')
-    expect(decision.paymentState.currency).toBe('USD')
   })
 
   it('keeps hosted redirect metadata for recovery flows', () => {
@@ -336,21 +316,6 @@ describe('buildCreateOrderPayload', () => {
       forceQRCode: true,
     })).toMatchObject({
       is_mobile: true,
-    })
-  })
-
-  it('preserves WebMoney as the canonical payment_type', () => {
-    expect(buildCreateOrderPayload({
-      amount: 66,
-      paymentType: 'webmoney',
-      orderType: 'balance',
-      origin: 'https://app.example.com',
-      isMobile: false,
-      isWechatBrowser: false,
-    })).toMatchObject({
-      payment_type: 'webmoney',
-      return_url: 'https://app.example.com/payment/result',
-      payment_source: 'hosted_redirect',
     })
   })
 })

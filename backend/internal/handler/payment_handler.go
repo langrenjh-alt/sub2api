@@ -1,11 +1,7 @@
 package handler
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"html"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -26,82 +22,6 @@ type PaymentHandler struct {
 	channelService *service.ChannelService
 	paymentService *service.PaymentService
 	configService  *service.PaymentConfigService
-}
-
-type webMoneyCheckoutPayload struct {
-	Action string            `json:"action"`
-	Method string            `json:"method"`
-	Fields map[string]string `json:"fields"`
-}
-
-// WebMoneyCheckout renders a tiny auto-submit HTML form for WebMoney Merchant.
-// GET /api/v1/payment/public/webmoney/checkout?p=...
-func (h *PaymentHandler) WebMoneyCheckout(c *gin.Context) {
-	rawPayload := strings.TrimSpace(c.Query("p"))
-	if rawPayload == "" {
-		c.String(400, "missing payload")
-		return
-	}
-	data, err := base64.RawURLEncoding.DecodeString(rawPayload)
-	if err != nil {
-		c.String(400, "invalid payload")
-		return
-	}
-	var payload webMoneyCheckoutPayload
-	if err := json.Unmarshal(data, &payload); err != nil {
-		c.String(400, "invalid payload")
-		return
-	}
-	if strings.TrimSpace(payload.Action) == "" || len(payload.Fields) == 0 {
-		c.String(400, "invalid payload")
-		return
-	}
-	if !isAllowedWebMoneyAction(payload.Action) {
-		c.String(400, "invalid action")
-		return
-	}
-
-	c.Header("Content-Security-Policy", "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action https://merchant.wmtransfer.com https://merchant.webmoney.com https://merchant.webmoney.ru; base-uri 'none'")
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	c.String(200, renderWebMoneyCheckoutHTML(payload))
-}
-
-func renderWebMoneyCheckoutHTML(payload webMoneyCheckoutPayload) string {
-	method := strings.ToUpper(strings.TrimSpace(payload.Method))
-	if method == "" {
-		method = "POST"
-	}
-	var b strings.Builder
-	b.WriteString(`<!doctype html><html><head><meta charset="utf-8"><title>WebMoney</title></head><body>`)
-	b.WriteString(`<form id="webmoney-payment-form" accept-charset="UTF-8" method="`)
-	b.WriteString(html.EscapeString(method))
-	b.WriteString(`" action="`)
-	b.WriteString(html.EscapeString(strings.TrimSpace(payload.Action)))
-	b.WriteString(`">`)
-	for key, value := range payload.Fields {
-		b.WriteString(`<input type="hidden" name="`)
-		b.WriteString(html.EscapeString(key))
-		b.WriteString(`" value="`)
-		b.WriteString(html.EscapeString(value))
-		b.WriteString(`">`)
-	}
-	b.WriteString(`</form><p>Redirecting to WebMoney...</p><script>document.getElementById("webmoney-payment-form").submit();</script>`)
-	b.WriteString(`</body></html>`)
-	return b.String()
-}
-
-func isAllowedWebMoneyAction(action string) bool {
-	parsed, err := url.Parse(strings.TrimSpace(action))
-	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return false
-	}
-	host := strings.ToLower(parsed.Hostname())
-	switch host {
-	case "merchant.wmtransfer.com", "merchant.webmoney.com", "merchant.webmoney.ru":
-		return parsed.Scheme == "https"
-	default:
-		return false
-	}
 }
 
 // NewPaymentHandler creates a new PaymentHandler.
@@ -534,8 +454,9 @@ func (h *PaymentHandler) VerifyOrder(c *gin.Context) {
 	response.Success(c, sanitizePaymentOrderForResponse(order))
 }
 
-// PublicOrderResult is the limited order info returned by the public verify endpoint.
-// No user details are exposed — only payment status information.
+// PublicOrderResult is returned after a signed resume-token lookup. The token
+// proves possession of the checkout session, so the result keeps the legacy
+// frontend contract needed by payment result pages.
 type PublicOrderResult struct {
 	ID                  int64      `json:"id"`
 	OutTradeNo          string     `json:"out_trade_no"`
@@ -556,6 +477,18 @@ type PublicOrderResult struct {
 	RefundRequestedBy   *string    `json:"refund_requested_by,omitempty"`
 	RefundRequestReason *string    `json:"refund_request_reason,omitempty"`
 	PlanID              *int64     `json:"plan_id,omitempty"`
+}
+
+// PublicOrderVerifyResult is returned by the legacy anonymous out_trade_no
+// lookup. Keep this intentionally minimal because out_trade_no is not secret.
+type PublicOrderVerifyResult struct {
+	OutTradeNo  string     `json:"out_trade_no"`
+	Status      string     `json:"status"`
+	Paid        bool       `json:"paid"`
+	CreatedAt   time.Time  `json:"created_at"`
+	ExpiresAt   time.Time  `json:"expires_at"`
+	PaidAt      *time.Time `json:"paid_at,omitempty"`
+	CompletedAt *time.Time `json:"completed_at,omitempty"`
 }
 
 func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
@@ -582,6 +515,34 @@ func buildPublicOrderResult(order *dbent.PaymentOrder) PublicOrderResult {
 	}
 }
 
+func buildPublicOrderVerifyResult(order *dbent.PaymentOrder) PublicOrderVerifyResult {
+	return PublicOrderVerifyResult{
+		OutTradeNo:  order.OutTradeNo,
+		Status:      order.Status,
+		Paid:        publicOrderStatusPaid(order.Status),
+		CreatedAt:   order.CreatedAt,
+		ExpiresAt:   order.ExpiresAt,
+		PaidAt:      order.PaidAt,
+		CompletedAt: order.CompletedAt,
+	}
+}
+
+func publicOrderStatusPaid(status string) bool {
+	switch status {
+	case service.OrderStatusPaid,
+		service.OrderStatusCompleted,
+		service.OrderStatusRefundRequested,
+		service.OrderStatusRefunding,
+		service.OrderStatusRefundPending,
+		service.OrderStatusPartiallyRefunded,
+		service.OrderStatusRefunded,
+		service.OrderStatusRefundFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // VerifyOrderPublic keeps the legacy anonymous out_trade_no lookup available as
 // a compatibility path for older result pages and staggered deploys.
 // POST /api/v1/payment/public/orders/verify
@@ -597,7 +558,7 @@ func (h *PaymentHandler) VerifyOrderPublic(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
-	response.Success(c, buildPublicOrderResult(order))
+	response.Success(c, buildPublicOrderVerifyResult(order))
 }
 
 // ResolveOrderPublicByResumeToken resolves a payment order from a signed resume token.

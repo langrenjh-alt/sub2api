@@ -125,13 +125,6 @@
     @apply dark:hover:bg-[#62d9ad];
   }
 
-  .btn-webmoney {
-    @apply bg-[#0F4C81] text-white shadow-md shadow-sky-500/20;
-    @apply hover:bg-[#0d406d] hover:shadow-lg hover:shadow-sky-500/25;
-    @apply dark:bg-[#6FA8FF] dark:text-gray-950 dark:shadow-sky-500/20;
-    @apply dark:hover:bg-[#5498ff];
-  }
-
   .btn-alipay {
     @apply bg-[#00AEEF] text-white shadow-md shadow-[#00AEEF]/25;
     @apply hover:bg-[#009dd6] hover:shadow-lg hover:shadow-[#00AEEF]/30;

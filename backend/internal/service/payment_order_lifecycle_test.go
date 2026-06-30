@@ -796,20 +796,6 @@ func TestPaymentOrderQueryReferenceUsesOutTradeNoForOfficialProviders(t *testing
 	}))
 }
 
-func TestPaymentOrderQueryReferenceUsesWebMoneyTradeNoWhenPresent(t *testing.T) {
-	t.Parallel()
-
-	order := &dbent.PaymentOrder{
-		PaymentType:    payment.TypeWebMoney,
-		OutTradeNo:     "sub2_out_trade_no",
-		PaymentTradeNo: "7001",
-	}
-
-	require.Equal(t, "7001", paymentOrderQueryReference(order, paymentFulfillmentTestProvider{
-		key: payment.TypeWebMoney,
-	}))
-}
-
 func newPaymentOrderLifecycleTestClient(t *testing.T) *dbent.Client {
 	t.Helper()
 

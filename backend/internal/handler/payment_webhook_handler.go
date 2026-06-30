@@ -67,12 +67,6 @@ func (h *PaymentWebhookHandler) AirwallexWebhook(c *gin.Context) {
 	h.handleNotify(c, payment.TypeAirwallex)
 }
 
-// WebMoneyWebhook handles WebMoney Merchant Result URL callbacks.
-// POST /api/v1/payment/webhook/webmoney
-func (h *PaymentWebhookHandler) WebMoneyWebhook(c *gin.Context) {
-	h.handleNotify(c, payment.TypeWebMoney)
-}
-
 // handleNotify is the shared logic for all provider webhook handlers.
 func (h *PaymentWebhookHandler) handleNotify(c *gin.Context, providerKey string) {
 	var rawBody string
@@ -87,11 +81,6 @@ func (h *PaymentWebhookHandler) handleNotify(c *gin.Context, providerKey string)
 			return
 		}
 		rawBody = string(body)
-	}
-
-	if providerKey == payment.TypeWebMoney && isWebMoneyPreRequest(rawBody) {
-		c.String(http.StatusOK, "YES")
-		return
 	}
 
 	// Extract out_trade_no to look up the order's specific provider instance.
@@ -164,16 +153,6 @@ func extractOutTradeNo(rawBody, providerKey string) string {
 		if err == nil {
 			return values.Get("out_trade_no")
 		}
-	case payment.TypeWebMoney:
-		values, err := url.ParseQuery(rawBody)
-		if err == nil {
-			if outTradeNo := strings.TrimSpace(values.Get("SUB2_OUT_TRADE_NO")); outTradeNo != "" {
-				return outTradeNo
-			}
-			if paymentNo := strings.TrimSpace(values.Get("LMI_PAYMENT_NO")); paymentNo != "" {
-				return "sub2_" + paymentNo
-			}
-		}
 	case payment.TypeAirwallex:
 		var payload struct {
 			Data struct {
@@ -189,11 +168,6 @@ func extractOutTradeNo(rawBody, providerKey string) string {
 	// For other providers (Stripe, Alipay direct, WxPay direct), the registry
 	// typically has only one instance, so no instance lookup is needed.
 	return ""
-}
-
-func isWebMoneyPreRequest(rawBody string) bool {
-	values, err := url.ParseQuery(rawBody)
-	return err == nil && values.Get("LMI_PREREQUEST") == "1"
 }
 
 func verifyNotificationWithProviders(ctx context.Context, providers []payment.Provider, rawBody string, headers map[string]string) (string, *payment.PaymentNotification, error) {

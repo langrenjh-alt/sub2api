@@ -14,11 +14,12 @@ export type OrderStatus =
   | 'FAILED'
   | 'REFUND_REQUESTED'
   | 'REFUNDING'
+  | 'REFUND_PENDING'
   | 'PARTIALLY_REFUNDED'
   | 'REFUNDED'
   | 'REFUND_FAILED'
 
-export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex' | 'webmoney'
+export type PaymentType = 'alipay' | 'wxpay' | 'alipay_direct' | 'wxpay_direct' | 'stripe' | 'easypay' | 'airwallex'
 
 export type OrderType = 'balance' | 'subscription'
 
