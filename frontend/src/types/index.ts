@@ -590,6 +590,10 @@ export interface Group {
   image_price_1k: number | null
   image_price_2k: number | null
   image_price_4k: number | null
+  peak_rate_enabled: boolean
+  peak_start: string
+  peak_end: string
+  peak_rate_multiplier: number
   // Claude Code 客戶端限制
   claude_code_only: boolean
   fallback_group_id: number | null
@@ -932,6 +936,13 @@ export interface Account {
   proxy?: Proxy
   group_ids?: number[] // Groups this account belongs to
   groups?: Group[] // Preloaded group objects
+  parent_account_id?: number | null
+  quota_dimension?: string
+  parent_email?: string
+  parent_plan_type?: string
+  parent_privacy_mode?: string
+  parent_subscription_expires_at?: string
+  parent_chatgpt_account_id?: string
 
   // Rate limit & scheduling fields
   schedulable: boolean

@@ -41,6 +41,10 @@ interface Props {
   rateMultiplier?: number
   userRateMultiplier?: number | null // 使用者專屬倍率
   showRate?: boolean
+  peakRateEnabled?: boolean
+  peakStart?: string
+  peakEnd?: string
+  peakRateMultiplier?: number
   daysRemaining?: number | null // 剩餘天數（訂閱型別時使用）
   /**
    * 訂閱分組預設在右側 label 展示"訂閱"或剩餘天數；
@@ -56,10 +60,14 @@ const props = withDefaults(defineProps<Props>(), {
   daysRemaining: null,
   userRateMultiplier: null,
   peakRateEnabled: false,
+  peakStart: '',
+  peakEnd: '',
+  peakRateMultiplier: 1,
   alwaysShowRate: false
 })
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 const isSubscription = computed(() => props.subscriptionType === 'subscription')
 
@@ -142,6 +150,22 @@ const labelClass = computed(() => {
 const peakRateClass = computed(() => {
   return 'px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
 })
+
+const hasPeakRate = computed(() => Boolean(props.peakRateEnabled && props.peakStart && props.peakEnd))
+
+const peakRateText = computed(() => `${props.peakRateMultiplier ?? 1}x`)
+
+const peakRateTitle = computed(() =>
+  formatPeakRateWindow(
+    {
+      peak_rate_enabled: props.peakRateEnabled,
+      peak_start: props.peakStart,
+      peak_end: props.peakEnd,
+      peak_rate_multiplier: props.peakRateMultiplier
+    },
+    serverTimezoneLabel(appStore.cachedPublicSettings?.server_utc_offset)
+  )
+)
 
 // Badge color based on platform and subscription type
 const badgeClass = computed(() => {

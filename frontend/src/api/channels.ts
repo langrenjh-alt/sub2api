@@ -14,6 +14,10 @@ export interface UserAvailableGroup {
   subscription_type: string
   /** 分組預設倍率。使用者專屬倍率（若有）通過 /groups/rates 獲取後在前端 join。 */
   rate_multiplier: number
+  peak_rate_enabled?: boolean
+  peak_start?: string
+  peak_end?: string
+  peak_rate_multiplier?: number
   /** true = 專屬分組（小範圍授權）；false = 公開分組。 */
   is_exclusive: boolean
 }

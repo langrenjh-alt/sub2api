@@ -144,20 +144,7 @@ export function validateIntervals(
   return checkIntervalOverlap(sorted, t)
 }
 
-function intervalValidationMessage(
-  t: TranslateFn,
-  key: string,
-  params: Record<string, unknown>,
-): string {
-  return t(`admin.channels.intervalValidation.${key}`, params)
-}
-
-function intervalPriceLabel(t: TranslateFn, key: string): string {
-  return t(`admin.channels.intervalValidation.price.${key}`)
-}
-
 function validateSingleInterval(iv: IntervalFormEntry, idx: number, t: TranslateFn): string | null {
-  const index = idx + 1
   if (iv.min_tokens < 0) {
     return `區間 #${idx + 1}: 最小 token 數 (${iv.min_tokens}) 不能為負數`
   }
@@ -172,8 +159,7 @@ function validateSingleInterval(iv: IntervalFormEntry, idx: number, t: Translate
   return validateIntervalPrices(iv, idx, t)
 }
 
-function validateIntervalPrices(iv: IntervalFormEntry, idx: number, t: TranslateFn): string | null {
-  const index = idx + 1
+function validateIntervalPrices(iv: IntervalFormEntry, idx: number, _t: TranslateFn): string | null {
   const prices: [string, number | string | null][] = [
     ['輸入價格', iv.input_price],
     ['輸出價格', iv.output_price],
@@ -183,13 +169,13 @@ function validateIntervalPrices(iv: IntervalFormEntry, idx: number, t: Translate
   ]
   for (const [key, val] of prices) {
     if (val != null && val !== '' && Number(val) < 0) {
-      return `區間 #${idx + 1}: ${name}不能為負數`
+      return `區間 #${idx + 1}: ${key}不能為負數`
     }
   }
   return null
 }
 
-function checkIntervalOverlap(sorted: IntervalFormEntry[], t: TranslateFn): string | null {
+function checkIntervalOverlap(sorted: IntervalFormEntry[], _t: TranslateFn): string | null {
   for (let i = 0; i < sorted.length; i++) {
     // 無上限區間必須是最後一個
     if (sorted[i].max_tokens == null && i < sorted.length - 1) {

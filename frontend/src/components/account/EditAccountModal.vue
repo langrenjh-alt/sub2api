@@ -2956,28 +2956,6 @@ const loadModelRestrictionFromMapping = (rawMapping?: Record<string, unknown>) =
 const buildModelRestrictionMapping = () =>
   buildModelMappingObject('combined', allowedModels.value, modelMappings.value)
 
-const applyOpenAIModelMappingCredentials = (credentials: Record<string, unknown>) => {
-  const shouldApplyModelMapping = !openaiPassthroughEnabled.value
-
-  if (shouldApplyModelMapping) {
-    const modelMapping = buildModelRestrictionMapping()
-    if (modelMapping) {
-      credentials.model_mapping = modelMapping
-    } else {
-      delete credentials.model_mapping
-    }
-  } else if (!credentials.model_mapping) {
-    delete credentials.model_mapping
-  }
-
-  const compactModelMapping = buildModelMappingObject('mapping', [], openAICompactModelMappings.value)
-  if (compactModelMapping) {
-    credentials.compact_model_mapping = compactModelMapping
-  } else {
-    delete credentials.compact_model_mapping
-  }
-}
-
 const syncFormFromAccount = (newAccount: Account | null) => {
   if (!newAccount) {
     return
