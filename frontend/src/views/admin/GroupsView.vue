@@ -60,6 +60,38 @@
                 :class="loading ? 'animate-spin' : ''"
               />
             </button>
+            <div class="relative" ref="columnDropdownRef">
+              <button
+                @click="showColumnDropdown = !showColumnDropdown"
+                class="btn btn-secondary"
+                :title="t('admin.groups.columnSettings')"
+              >
+                <Icon name="grid" size="md" class="mr-2" />
+                <span class="hidden md:inline">{{
+                  t("admin.groups.columnSettings")
+                }}</span>
+              </button>
+              <div
+                v-if="showColumnDropdown"
+                class="absolute right-0 top-full z-50 mt-1 max-h-80 w-48 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-600 dark:bg-dark-800"
+              >
+                <button
+                  v-for="col in toggleableColumns"
+                  :key="col.key"
+                  @click="toggleColumn(col.key)"
+                  class="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
+                >
+                  <span>{{ col.label }}</span>
+                  <Icon
+                    v-if="isColumnVisible(col.key)"
+                    name="check"
+                    size="sm"
+                    class="text-primary-500"
+                    :stroke-width="2"
+                  />
+                </button>
+              </div>
+            </div>
             <button
               @click="openSortModal"
               class="btn btn-secondary"
@@ -106,7 +138,9 @@
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                     : value === 'antigravity'
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                      : value === 'grok'
+                        ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
             >
               <PlatformIcon :platform="value" size="xs" />
@@ -2966,7 +3000,9 @@
                         ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                         : group.platform === 'antigravity'
                           ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                          : group.platform === 'grok'
+                            ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+                            : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
                   ]"
                 >
                   {{ t("admin.groups.platforms." + group.platform) }}
@@ -3083,7 +3119,10 @@ const { t } = useI18n();
 const appStore = useAppStore();
 const onboardingStore = useOnboardingStore();
 
-const columns = computed<Column[]>(() => [
+const ALWAYS_VISIBLE_COLUMNS = new Set(["name", "actions"]);
+const HIDDEN_COLUMNS_KEY = "group-hidden-columns";
+
+const allColumns = computed<Column[]>(() => [
   { key: "name", label: t("admin.groups.columns.name"), sortable: true },
   {
     key: "platform",
@@ -3119,6 +3158,77 @@ const columns = computed<Column[]>(() => [
   { key: "status", label: t("admin.groups.columns.status"), sortable: true },
   { key: "actions", label: t("admin.groups.columns.actions"), sortable: false },
 ]);
+
+const toggleableColumns = computed(() =>
+  allColumns.value.filter((col) => !ALWAYS_VISIBLE_COLUMNS.has(col.key)),
+);
+const hiddenColumns = reactive<Set<string>>(new Set());
+const showColumnDropdown = ref(false);
+const columnDropdownRef = ref<HTMLElement | null>(null);
+
+const getValidHiddenColumnKeys = () =>
+  new Set(toggleableColumns.value.map((col) => col.key));
+
+const loadSavedColumns = () => {
+  hiddenColumns.clear();
+  try {
+    const saved = localStorage.getItem(HIDDEN_COLUMNS_KEY);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return;
+
+    const validKeys = getValidHiddenColumnKeys();
+    parsed
+      .filter((key): key is string => typeof key === "string" && validKeys.has(key))
+      .forEach((key) => hiddenColumns.add(key));
+  } catch (error) {
+    console.error("Failed to load group column settings:", error);
+  }
+};
+
+const saveColumnsToStorage = () => {
+  try {
+    const validKeys = getValidHiddenColumnKeys();
+    const keys = [...hiddenColumns].filter((key) => validKeys.has(key));
+    localStorage.setItem(HIDDEN_COLUMNS_KEY, JSON.stringify(keys));
+  } catch (error) {
+    console.error("Failed to save group column settings:", error);
+  }
+};
+
+const isColumnVisible = (key: string) => !hiddenColumns.has(key);
+const hasVisibleUsageColumn = computed(() => isColumnVisible("usage"));
+const hasVisibleCapacityColumn = computed(() => isColumnVisible("capacity"));
+
+const toggleColumn = (key: string) => {
+  const validKeys = getValidHiddenColumnKeys();
+  if (!validKeys.has(key)) return;
+
+  const wasHidden = hiddenColumns.has(key);
+  if (wasHidden) {
+    hiddenColumns.delete(key);
+  } else {
+    hiddenColumns.add(key);
+  }
+  saveColumnsToStorage();
+
+  if (wasHidden && key === "usage") {
+    loadUsageSummary();
+  }
+  if (wasHidden && key === "capacity") {
+    loadCapacitySummary();
+  }
+};
+
+const columns = computed<Column[]>(() =>
+  allColumns.value.filter(
+    (col) => ALWAYS_VISIBLE_COLUMNS.has(col.key) || !hiddenColumns.has(col.key),
+  ),
+);
+
+if (typeof window !== "undefined") {
+  loadSavedColumns();
+}
 
 // Filter options
 const statusOptions = computed(() => [
@@ -3342,6 +3452,10 @@ const createForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  peak_rate_enabled: false,
+  peak_start: "",
+  peak_end: "",
+  peak_rate_multiplier: 1.0,
   // Claude Code 客戶端限制（僅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3673,6 +3787,10 @@ const editForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  peak_rate_enabled: false,
+  peak_start: "",
+  peak_end: "",
+  peak_rate_multiplier: 1.0,
   // Claude Code 客戶端限制（僅 anthropic 平台使用）
   claude_code_only: false,
   fallback_group_id: null as number | null,
@@ -3706,6 +3824,10 @@ type ImagePricingFormState = {
   image_price_1k: number | string | null;
   image_price_2k: number | string | null;
   image_price_4k: number | string | null;
+  peak_rate_enabled: boolean;
+  peak_start: string;
+  peak_end: string;
+  peak_rate_multiplier: number;
 };
 
 const imagePricingTiers = [
@@ -3796,8 +3918,14 @@ const loadGroups = async () => {
     groups.value = response.items;
     pagination.total = response.total;
     pagination.pages = response.pages;
-    loadUsageSummary();
-    loadCapacitySummary();
+    if (hasVisibleUsageColumn.value) {
+      loadUsageSummary();
+    } else {
+      usageLoading.value = false;
+    }
+    if (hasVisibleCapacityColumn.value) {
+      loadCapacitySummary();
+    }
   } catch (error: any) {
     if (
       signal.aborted ||
@@ -3822,6 +3950,10 @@ const formatCost = (cost: number): string => {
 };
 
 const loadUsageSummary = async () => {
+  if (!hasVisibleUsageColumn.value) {
+    usageLoading.value = false;
+    return;
+  }
   usageLoading.value = true;
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -3842,6 +3974,9 @@ const loadUsageSummary = async () => {
 };
 
 const loadCapacitySummary = async () => {
+  if (!hasVisibleCapacityColumn.value) {
+    return;
+  }
   try {
     const data = await adminAPI.groups.getCapacitySummary();
     const map = new Map<
@@ -3924,6 +4059,10 @@ const closeCreateModal = () => {
   createForm.image_price_1k = null;
   createForm.image_price_2k = null;
   createForm.image_price_4k = null;
+  createForm.peak_rate_enabled = false;
+  createForm.peak_start = "";
+  createForm.peak_end = "";
+  createForm.peak_rate_multiplier = 1.0;
   createForm.claude_code_only = false;
   createForm.fallback_group_id = null;
   createForm.fallback_group_id_on_invalid_request = null;
@@ -3957,7 +4096,7 @@ const normalizeOptionalLimit = (
   return Number.isFinite(value) && value > 0 ? value : null;
 };
 
-const normalizeImageRateMultiplier = (
+const normalizeRateMultiplier = (
   value: number | string | null | undefined,
 ): number => {
   if (value === null || value === undefined || value === "") {
@@ -4010,8 +4149,14 @@ const handleCreateGroup = async () => {
     requestData.daily_limit_usd = emptyToNull(requestData.daily_limit_usd);
     requestData.weekly_limit_usd = emptyToNull(requestData.weekly_limit_usd);
     requestData.monthly_limit_usd = emptyToNull(requestData.monthly_limit_usd);
-    requestData.image_rate_multiplier = normalizeImageRateMultiplier(
+    requestData.image_rate_multiplier = normalizeRateMultiplier(
       requestData.image_rate_multiplier,
+    );
+    requestData.peak_rate_enabled = createForm.peak_rate_enabled;
+    requestData.peak_start = createForm.peak_start;
+    requestData.peak_end = createForm.peak_end;
+    requestData.peak_rate_multiplier = normalizeRateMultiplier(
+      createForm.peak_rate_multiplier,
     );
     await adminAPI.groups.create(requestData);
     appStore.showSuccess(t("admin.groups.groupCreated"));
@@ -4050,6 +4195,10 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.image_price_1k = group.image_price_1k;
   editForm.image_price_2k = group.image_price_2k;
   editForm.image_price_4k = group.image_price_4k;
+  editForm.peak_rate_enabled = group.peak_rate_enabled ?? false;
+  editForm.peak_start = group.peak_start ?? "";
+  editForm.peak_end = group.peak_end ?? "";
+  editForm.peak_rate_multiplier = group.peak_rate_multiplier ?? 1.0;
   editForm.claude_code_only = group.claude_code_only || false;
   editForm.fallback_group_id = group.fallback_group_id;
   editForm.fallback_group_id_on_invalid_request =
@@ -4094,6 +4243,10 @@ const closeEditModal = () => {
   editingGroup.value = null;
   editModelRoutingRules.value = [];
   editForm.copy_accounts_from_group_ids = [];
+  editForm.peak_rate_enabled = false;
+  editForm.peak_start = "";
+  editForm.peak_end = "";
+  editForm.peak_rate_multiplier = 1.0;
   resetMessagesDispatchFormState(editForm);
   resetModelsListState(editModelsListState);
 };
@@ -4149,8 +4302,14 @@ const handleUpdateGroup = async () => {
     payload.daily_limit_usd = emptyToNull(payload.daily_limit_usd);
     payload.weekly_limit_usd = emptyToNull(payload.weekly_limit_usd);
     payload.monthly_limit_usd = emptyToNull(payload.monthly_limit_usd);
-    payload.image_rate_multiplier = normalizeImageRateMultiplier(
+    payload.image_rate_multiplier = normalizeRateMultiplier(
       payload.image_rate_multiplier,
+    );
+    payload.peak_rate_enabled = editForm.peak_rate_enabled;
+    payload.peak_start = editForm.peak_start;
+    payload.peak_end = editForm.peak_end;
+    payload.peak_rate_multiplier = normalizeRateMultiplier(
+      editForm.peak_rate_multiplier,
     );
     await adminAPI.groups.update(editingGroup.value.id, payload);
     appStore.showSuccess(t("admin.groups.groupUpdated"));
@@ -4229,6 +4388,24 @@ watch(
     if (newVal === "subscription") {
       createForm.is_exclusive = true;
       createForm.fallback_group_id_on_invalid_request = null;
+    } else {
+      createForm.peak_rate_enabled = false;
+      createForm.peak_start = "";
+      createForm.peak_end = "";
+      createForm.peak_rate_multiplier = 1.0;
+    }
+  },
+);
+
+// 编辑表单：切回标准模式时清空高峰配置，避免残留随更新请求提交被后端拒绝
+watch(
+  () => editForm.subscription_type,
+  (newVal) => {
+    if (newVal !== "subscription") {
+      editForm.peak_rate_enabled = false;
+      editForm.peak_start = "";
+      editForm.peak_end = "";
+      editForm.peak_rate_multiplier = 1.0;
     }
   },
 );
@@ -4292,6 +4469,9 @@ const handleClickOutside = (event: MouseEvent) => {
     Object.keys(showAccountDropdown.value).forEach((key) => {
       showAccountDropdown.value[key] = false;
     });
+  }
+  if (columnDropdownRef.value && !columnDropdownRef.value.contains(target)) {
+    showColumnDropdown.value = false;
   }
 };
 

@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { opsAPI, type OpsRuntimeLogConfig, type OpsSystemLog, type OpsSystemLogSinkHealth } from '@/api/admin/ops'
 import Pagination from '@/components/common/Pagination.vue'
 import Select from '@/components/common/Select.vue'
 import { useAppStore } from '@/stores'
 
 const appStore = useAppStore()
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   platformFilter?: string
@@ -81,13 +83,13 @@ const timeRangeOptions = [
   { value: '30d', label: '30d' }
 ]
 
-const filterLevelOptions = [
-  { value: '', label: '全部' },
+const filterLevelOptions = computed(() => [
+  { value: '', label: t('admin.ops.systemLogs.all') },
   { value: 'debug', label: 'debug' },
   { value: 'info', label: 'info' },
   { value: 'warn', label: 'warn' },
   { value: 'error', label: 'error' }
-]
+])
 
 const levelBadgeClass = (level: string) => {
   const v = String(level || '').toLowerCase()
@@ -410,11 +412,11 @@ onMounted(async () => {
             <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
               <label class="inline-flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <input v-model="runtimeConfig.caller" type="checkbox" />
-                caller
+                {{ t('admin.ops.systemLogs.caller') }}
               </label>
               <label class="inline-flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
                 <input v-model="runtimeConfig.enable_sampling" type="checkbox" />
-                sampling
+                {{ t('admin.ops.systemLogs.sampling') }}
               </label>
             </div>
             <div class="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -465,7 +467,7 @@ onMounted(async () => {
         <input v-model="filters.user_id" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        KEY ID
+        {{ t('admin.ops.systemLogs.keyId') }}
         <input v-model="filters.api_key_id" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
@@ -473,11 +475,11 @@ onMounted(async () => {
         <input v-model="filters.account_id" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        平台
+        {{ t('admin.ops.systemLogs.platform') }}
         <input v-model="filters.platform" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">
-        模型
+        {{ t('admin.ops.systemLogs.model') }}
         <input v-model="filters.model" type="text" class="input mt-1" />
       </label>
       <label class="text-xs text-gray-600 dark:text-gray-300">

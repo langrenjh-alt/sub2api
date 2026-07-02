@@ -20,6 +20,9 @@
         {{ labelText }}
       </template>
     </span>
+    <span v-if="hasPeakRate" :class="peakRateClass" :title="peakRateTitle">
+      {{ peakRateText }}
+    </span>
   </span>
 </template>
 
@@ -27,6 +30,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SubscriptionType, GroupPlatform } from '@/types'
+import { useAppStore } from '@/stores/app'
+import { formatPeakRateWindow, serverTimezoneLabel } from '@/utils/peak-rate'
 import PlatformIcon from './PlatformIcon.vue'
 
 interface Props {
@@ -36,6 +41,10 @@ interface Props {
   rateMultiplier?: number
   userRateMultiplier?: number | null // 使用者專屬倍率
   showRate?: boolean
+  peakRateEnabled?: boolean
+  peakStart?: string
+  peakEnd?: string
+  peakRateMultiplier?: number
   daysRemaining?: number | null // 剩餘天數（訂閱型別時使用）
   /**
    * 訂閱分組預設在右側 label 展示"訂閱"或剩餘天數；
@@ -50,10 +59,15 @@ const props = withDefaults(defineProps<Props>(), {
   showRate: true,
   daysRemaining: null,
   userRateMultiplier: null,
+  peakRateEnabled: false,
+  peakStart: '',
+  peakEnd: '',
+  peakRateMultiplier: 1,
   alwaysShowRate: false
 })
 
 const { t } = useI18n()
+const appStore = useAppStore()
 
 const isSubscription = computed(() => props.subscriptionType === 'subscription')
 
@@ -124,8 +138,34 @@ const labelClass = computed(() => {
   if (props.platform === 'gemini') {
     return `${base} bg-blue-200/60 text-blue-800 dark:bg-blue-800/40 dark:text-blue-300`
   }
+  if (props.platform === 'antigravity') {
+    return `${base} bg-purple-200/60 text-purple-800 dark:bg-purple-800/40 dark:text-purple-300`
+  }
+  if (props.platform === 'grok') {
+    return `${base} bg-zinc-300/70 text-zinc-800 dark:bg-zinc-700/60 dark:text-zinc-200`
+  }
   return `${base} bg-violet-200/60 text-violet-800 dark:bg-violet-800/40 dark:text-violet-300`
 })
+
+const peakRateClass = computed(() => {
+  return 'px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+})
+
+const hasPeakRate = computed(() => Boolean(props.peakRateEnabled && props.peakStart && props.peakEnd))
+
+const peakRateText = computed(() => `${props.peakRateMultiplier ?? 1}x`)
+
+const peakRateTitle = computed(() =>
+  formatPeakRateWindow(
+    {
+      peak_rate_enabled: props.peakRateEnabled,
+      peak_start: props.peakStart,
+      peak_end: props.peakEnd,
+      peak_rate_multiplier: props.peakRateMultiplier
+    },
+    serverTimezoneLabel(appStore.cachedPublicSettings?.server_utc_offset)
+  )
+)
 
 // Badge color based on platform and subscription type
 const badgeClass = computed(() => {
@@ -144,6 +184,16 @@ const badgeClass = computed(() => {
     return isSubscription.value
       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
       : 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400'
+  }
+  if (props.platform === 'antigravity') {
+    return isSubscription.value
+      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+      : 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400'
+  }
+  if (props.platform === 'grok') {
+    return isSubscription.value
+      ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
+      : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200'
   }
   // Fallback: original colors
   return isSubscription.value
