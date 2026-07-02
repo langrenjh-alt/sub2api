@@ -230,7 +230,7 @@
 
             <!-- Platform Management -->
             <div class="space-y-3">
-              <label class="input-label mb-0">{{ t('admin.channels.form.platformConfig', '平台配置') }}</label>
+              <label class="input-label mb-0">{{ t('admin.channels.form.platformConfig') }}</label>
               <div class="flex flex-wrap gap-2">
                 <label
                   v-for="p in platformOrder"
@@ -1498,7 +1498,7 @@ async function handleSubmit() {
   for (const section of form.platforms.filter(s => s.enabled)) {
     for (const entry of section.model_pricing) {
       if (!entry.intervals || entry.intervals.length === 0) continue
-      const intervalErr = validateIntervals(entry.intervals, entry.billing_mode)
+      const intervalErr = validateIntervals(entry.intervals, entry.billing_mode, t)
       if (intervalErr) {
         const platformLabel = t('admin.groups.platforms.' + section.platform, section.platform)
         const modelLabel = entry.models.join(', ') || t('admin.channels.form.unnamed')

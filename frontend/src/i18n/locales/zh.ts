@@ -2335,6 +2335,7 @@
         openai: 'OpenAI',
         gemini: 'Gemini',
         antigravity: 'Antigravity',
+        grok: 'Grok',
       },
       saving: '儲存中...',
       noGroups: '暫無分組',
@@ -2419,6 +2420,13 @@
         modeHint: '預設關閉獨立倍率時，圖片費用 = 圖片價格 × 當前分組有效倍率；開啟獨立倍率後，圖片費用 = 圖片價格 × 生圖獨立倍率。',
         finalPricePreview: '最終單張價格預覽',
         notConfigured: '未配置'
+      },
+      peakRate: {
+        enable: '启用高峰倍率',
+        peakStart: '高峰开始',
+        peakEnd: '高峰结束',
+        peakMultiplier: '高峰倍率',
+        multiplierHint: '作用于 token 计费倍率；token 计费的图片 token 同样适用，0 表示高峰 token 请求按 0 倍计费'
       },
       modelsList: {
         title: '自定義 /v1/models 模型列表',

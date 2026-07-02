@@ -1,5 +1,7 @@
 import type { BillingMode, PricingInterval } from '@/api/admin/channels'
 
+type TranslateFn = (key: string, params?: Record<string, unknown>) => string
+
 export interface IntervalFormEntry {
   min_tokens: number
   max_tokens: number | null
@@ -124,7 +126,8 @@ export function findModelConflict(models: string[]): [string, string] | null {
  */
 export function validateIntervals(
   intervals: IntervalFormEntry[],
-  mode: BillingMode = 'token',
+  mode: BillingMode,
+  t: TranslateFn,
 ): string | null {
   if (!intervals || intervals.length === 0) return null
 
@@ -132,16 +135,29 @@ export function validateIntervals(
   const sorted = [...intervals].sort((a, b) => a.min_tokens - b.min_tokens)
 
   for (let i = 0; i < sorted.length; i++) {
-    const err = validateSingleInterval(sorted[i], i)
+    const err = validateSingleInterval(sorted[i], i, t)
     if (err) return err
   }
 
   // per_request / image 模式按 tier_label 匹配，不做 token 區間重疊校驗
   if (mode !== 'token') return null
-  return checkIntervalOverlap(sorted)
+  return checkIntervalOverlap(sorted, t)
 }
 
-function validateSingleInterval(iv: IntervalFormEntry, idx: number): string | null {
+function intervalValidationMessage(
+  t: TranslateFn,
+  key: string,
+  params: Record<string, unknown>,
+): string {
+  return t(`admin.channels.intervalValidation.${key}`, params)
+}
+
+function intervalPriceLabel(t: TranslateFn, key: string): string {
+  return t(`admin.channels.intervalValidation.price.${key}`)
+}
+
+function validateSingleInterval(iv: IntervalFormEntry, idx: number, t: TranslateFn): string | null {
+  const index = idx + 1
   if (iv.min_tokens < 0) {
     return `區間 #${idx + 1}: 最小 token 數 (${iv.min_tokens}) 不能為負數`
   }
@@ -153,10 +169,11 @@ function validateSingleInterval(iv: IntervalFormEntry, idx: number): string | nu
       return `區間 #${idx + 1}: 最大 token 數 (${iv.max_tokens}) 必須大於最小 token 數 (${iv.min_tokens})`
     }
   }
-  return validateIntervalPrices(iv, idx)
+  return validateIntervalPrices(iv, idx, t)
 }
 
-function validateIntervalPrices(iv: IntervalFormEntry, idx: number): string | null {
+function validateIntervalPrices(iv: IntervalFormEntry, idx: number, t: TranslateFn): string | null {
+  const index = idx + 1
   const prices: [string, number | string | null][] = [
     ['輸入價格', iv.input_price],
     ['輸出價格', iv.output_price],
@@ -164,7 +181,7 @@ function validateIntervalPrices(iv: IntervalFormEntry, idx: number): string | nu
     ['快取讀取價格', iv.cache_read_price],
     ['單次價格', iv.per_request_price],
   ]
-  for (const [name, val] of prices) {
+  for (const [key, val] of prices) {
     if (val != null && val !== '' && Number(val) < 0) {
       return `區間 #${idx + 1}: ${name}不能為負數`
     }
@@ -172,7 +189,7 @@ function validateIntervalPrices(iv: IntervalFormEntry, idx: number): string | nu
   return null
 }
 
-function checkIntervalOverlap(sorted: IntervalFormEntry[]): string | null {
+function checkIntervalOverlap(sorted: IntervalFormEntry[], t: TranslateFn): string | null {
   for (let i = 0; i < sorted.length; i++) {
     // 無上限區間必須是最後一個
     if (sorted[i].max_tokens == null && i < sorted.length - 1) {

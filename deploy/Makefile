@@ -1,5 +1,8 @@
 .PHONY: wire build build-api build-embed test-unit test-integration test-e2e test-cover-integration
 
+VERSION ?= $(shell ./scripts/resolve-version.sh)
+LDFLAGS ?= -s -w -X main.Version=$(VERSION)
+
 wire:
 	@echo "Generating Wire code..."
 	@cd cmd/server && go generate

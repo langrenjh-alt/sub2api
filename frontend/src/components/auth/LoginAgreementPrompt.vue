@@ -28,7 +28,7 @@
             >
               {{ doc.title }}
             </RouterLink>
-            <span v-if="index < documents.length - 1">、</span>
+            <span v-if="index < documents.length - 1">{{ t('legal.loginAgreementPrompt.documentSeparator') }}</span>
           </template>
         </p>
       </div>
@@ -140,8 +140,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import type { LoginAgreementDocument } from '@/types'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   accepted: boolean
