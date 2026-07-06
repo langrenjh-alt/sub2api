@@ -1072,7 +1072,7 @@
       time: '時間', model: '模型', endpoint: '端點', status: '狀態碼',
       category: '分類', platform: '平台', message: '錯誤資訊',
       keyName: 'Key 名稱', keyDeleted: '已刪除', allKeys: '全部 Key',
-      modelPlaceholder: '搜尋模型', allCategories: '全部分類',
+      modelPlaceholder: '搜尋模型', allCategories: '全部分類', allStatuses: '全部狀態碼',
       empty: '暫無錯誤請求', failedToLoad: '載入錯誤請求失敗',
       categories: {
         auth: '認證失敗', rate_limit: '限流', quota: '餘額/訂閱',
@@ -3193,7 +3193,7 @@
           resetQuota: '重置配額',
           resetQuotaDesc: '將日/周/月用量歸零，重新開始計算',
           revoke: '撤銷',
-          revokeDesc: '立即終止該使用者的訂閱，不可恢復'
+          revokeDesc: '立即終止該使用者的訂閱，可在已撤銷列表中恢復'
         },
         tip: '提示：訂閱分組下拉式清單中只會顯示計費型別為「訂閱」且狀態為「正常」的分組。如果沒有可選項，請先到分組管理中建立。'
       }
@@ -3306,6 +3306,7 @@
         priority: '優先順序',
         billingRateMultiplier: '帳號倍率',
         weight: '權重',
+        schedulerScore: '排程權值',
         status: '狀態',
         schedulable: '排程',
         todayStats: '今日統計',
@@ -3316,6 +3317,12 @@
         createdAt: '建立時間',
         expiresAt: '過期時間',
         actions: '操作'
+      },
+      schedulerScore: {
+        baseShort: '普通',
+        stickyShort: '粘性',
+        ungrouped: '未分組',
+        hint: '顯示格式為「分組名 / 基礎分 / 粘性加分」。基礎分按目前篩選條件限定的候選帳號計算，包含優先順序、負載、排隊、錯誤率、首包延遲、重置視窗、額度餘量等因子；粘性加分只在開啟粘性加權時用於 previous_response_id 或 session_hash。分數越大越優先。'
       },
       usageWindowsHint: '“5h / 7d”是上游帳號（如 OpenAI ChatGPT、Claude）官方的滾動用量視窗限制，由上游對帳號設定，並非 sub2api 配置，也與你對映的模型無關。視窗滾動到期後用量會自動重置，無法在 sub2api 端解除該限制。',
       allPrivacyModes: '全部Privacy狀態',
@@ -5229,6 +5236,7 @@
         accountId: '帳號 ID',
         status: '狀態碼',
         message: '響應內容',
+        ip: 'IP',
         latency: '請求時長',
         action: '操作',
         noErrors: '該視窗內暫無錯誤。',
@@ -6315,6 +6323,10 @@
         balanceRechargeMultiplier: '餘額儲值倍率',
         balanceRechargeMultiplierHint: '使用者每支付 1 CNY 可獲得多少 USD 餘額',
         balanceRechargePreview: '預覽：1 CNY = {usd} USD',
+        subscriptionUsdToCnyRate: '訂閱 CNY 換算匯率',
+        subscriptionUsdToCnyRateHint:
+          'CNY 支付通道下，套餐每 1 USD 價格收取多少 CNY（如 7.15）。0 或留空 = 不換算，訂閱按 price 數值直接收款。啟用後所有套餐 price 必須按 USD 定價',
+        subscriptionUsdToCnyRateDisabled: '未啟用（按 price 直付）',
         rechargeFeeRate: '儲值手續費率',
         rechargeFeeRateHint: '使用者儲值時額外收取的手續費百分比，0 表示不收取手續費',
         rechargeFeePreview: '預覽：儲值 100 元，手續費 {fee} 元',
@@ -6360,6 +6372,12 @@
         validationNameRequired: '服務商名稱不能為空',
         validationTypesRequired: '請至少選擇一種支援的支付方式',
         validationFieldRequired: '{field} 不能為空',
+        validationEasyPayCustomMethodRequired: '每個易支付自定義方式都必須填寫支付方式和上游 type',
+        validationEasyPayCustomMethodTypeInvalid: '易支付自定義支付方式只能包含小寫字母、數字、底線和短橫線',
+        validationEasyPayCustomMethodUpstreamTypeInvalid: '易支付上游 type 只能包含小寫字母、數字、底線和短橫線',
+        validationEasyPayCustomMethodReserved: '易支付自定義支付方式不能使用內建的 alipay 或 wxpay',
+        validationEasyPayCustomMethodPrefixReserved: '易支付自定義支付方式不能以 alipay 或 wxpay 開頭',
+        validationEasyPayCustomMethodDuplicate: '易支付自定義支付方式不能重複',
         field_apiBase: 'API 基礎地址',
         field_notifyUrl: '非同步通知地址',
         field_returnUrl: '同步跳轉地址',
@@ -6397,6 +6415,12 @@
         field_cid: '支付渠道 ID',
         field_cidAlipay: '支付寶渠道 ID',
         field_cidWxpay: '微信渠道 ID',
+        easypayCustomMethods: '易支付自定義支付方式',
+        easypayCustomMethodsHint: '新增目前易支付服務商額外支援的支付方式。支付方式會記錄到 Sub2API 訂單中，上游 type 會作為易支付 type 參數提交。',
+        addCustomMethod: '新增方式',
+        customMethodType: '支付方式',
+        customMethodUpstreamType: '上游 type',
+        customMethodDisplayName: '顯示名稱',
         stripeWebhookHint: '請在 Stripe Dashboard 中將以下地址配置為 Webhook 端點：',
         stripeWebhookApiVersionHint: 'Webhook 端點的 API 版本請與當前整合的 Stripe SDK 對齊，建議選擇 {version}；版本不一致可能導致回撥事件解析失敗。',
         airwallexWebhookHint: '請在 Airwallex 後臺將以下地址配置為 Webhook 端點；事件至少選擇 Payment Intent -> Succeeded（payment_intent.succeeded），建議同時選擇 Payment Intent -> Cancelled（payment_intent.cancelled）；API version 選擇帳戶預設或最新穩定版本。',
@@ -6870,7 +6894,24 @@
       },
       openaiExperimentalScheduler: {
         title: 'OpenAI 實驗排程策略',
-        description: '預設關閉。開啟後僅影響本閘道器在 OpenAI 帳號間的實驗性排程選擇邏輯，不代表上游 OpenAI 官方能力。'
+        description: '預設關閉。開啟後僅影響本閘道器在 OpenAI 帳號間的實驗性排程選擇邏輯，不代表上游 OpenAI 官方能力。',
+        stickyWeightedTitle: '粘性加權',
+        stickyWeightedDescription: '開啟後 previous_response_id 和 session_hash 粘性進入高級排程打分；關閉時仍按舊邏輯硬命中粘性帳號。',
+        subscriptionPriorityTitle: '訂閱優先',
+        subscriptionPriorityDescription: '開啟後先在 ChatGPT 訂閱帳號池中按權值選取；訂閱池拿不到席位時再回退到非訂閱帳號池。',
+        weightsTitle: '排程權值覆蓋',
+        weightsDescription: '留空時使用配置/環境變數值；配置未設定時使用內建預設值。頁面非空設定優先。',
+        defaultPlaceholder: '配置/預設：{value}',
+        topKLabel: 'TopK',
+        priorityWeight: '優先順序',
+        loadWeight: '負載',
+        queueWeight: '排隊',
+        errorRateWeight: '錯誤率',
+        ttftWeight: '首包延遲',
+        resetWeight: '重置視窗',
+        quotaHeadroomWeight: '額度餘量',
+        previousResponseWeight: 'previous_response 粘性',
+        sessionStickyWeight: 'session_hash 粘性'
       },
       usageRecords: {
         title: '使用記錄',

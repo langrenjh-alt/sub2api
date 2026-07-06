@@ -16,23 +16,23 @@ export interface DefaultSubscriptionSetting {
   validity_days: number;
 }
 
-// ── 平台限額型別 ──────────────────────────────────────────────────
+// ── 平台限额类型 ──────────────────────────────────────────────────
 export type PlatformType = "anthropic" | "openai" | "gemini" | "antigravity" | "grok"
 export type QuotaWindowType = "daily" | "weekly" | "monthly"
 
-/** 單平台三檔限額；null = 不限制，undefined = 未填（等價 null） */
+/** 单平台三档限额；null = 不限制，undefined = 未填（等价 null） */
 export interface PlatformQuotaLimits {
   daily:   number | null
   weekly:  number | null
   monthly: number | null
 }
 
-/** 全平台預設限額 map（key = PlatformType） */
+/** 全平台默认限额 map（key = PlatformType） */
 export type DefaultPlatformQuotasMap = Partial<Record<PlatformType, PlatformQuotaLimits>>
 
 const PLATFORMS: PlatformType[] = ["anthropic", "openai", "gemini", "antigravity", "grok"]
 
-/** 歸一化為全 4 平台 × 3 視窗（缺失填 null），供模板非空繫結 */
+/** 归一化为全 4 平台 × 3 窗口（缺失填 null），供模板非空绑定 */
 export function normalizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | null): DefaultPlatformQuotasMap {
   const result: DefaultPlatformQuotasMap = {}
   for (const p of PLATFORMS) {
@@ -46,7 +46,7 @@ export function normalizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | nu
   return result
 }
 
-/** 提交前清洗：非有限數/負數/空字串 → null（保留 0 = 顯式停用），返回全 4 平台巢狀 map */
+/** 提交前清洗：非有限数/负数/空字符串 → null（保留 0 = 显式禁用），返回全 4 平台嵌套 map */
 export function sanitizePlatformQuotasMap(input?: DefaultPlatformQuotasMap | null): DefaultPlatformQuotasMap {
   const clean = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null)
   const result: DefaultPlatformQuotasMap = {}
@@ -72,7 +72,7 @@ export interface AuthSourceDefaultsValue {
   subscriptions: DefaultSubscriptionSetting[];
   grant_on_signup: boolean;
   grant_on_first_bind: boolean;
-  // ★ 新增：平台限額覆蓋（key = PlatformType）
+  // ★ 新增：平台限额覆盖（key = PlatformType）
   platform_quotas: DefaultPlatformQuotasMap;
 }
 
@@ -120,12 +120,12 @@ const PAYMENT_VISIBLE_METHOD_SOURCE_OPTIONS: Record<
     { value: "", labelZh: "未配置", labelEn: "Not configured" },
     {
       value: "official_alipay",
-      labelZh: "支付寶官方",
+      labelZh: "支付宝官方",
       labelEn: "Official Alipay",
     },
     {
       value: "easypay_alipay",
-      labelZh: "易支付支付寶",
+      labelZh: "易支付支付宝",
       labelEn: "EasyPay Alipay",
     },
   ],
@@ -166,15 +166,15 @@ const PAYMENT_VISIBLE_METHOD_SOURCE_ALIASES: Record<
   },
 };
 const WECHAT_CONNECT_MODE_OPTIONS: WeChatConnectModeOption[] = [
-  { value: "open", labelZh: "PC 應用", labelEn: "PC App" },
+  { value: "open", labelZh: "PC 应用", labelEn: "PC App" },
   {
     value: "mp",
-    labelZh: "公眾號",
+    labelZh: "公众号",
     labelEn: "Official Account",
   },
   {
     value: "mobile",
-    labelZh: "行動應用",
+    labelZh: "移动应用",
     labelEn: "Mobile App",
   },
 ];
@@ -364,8 +364,8 @@ export interface SystemSettings {
   password_reset_enabled: boolean;
   frontend_url: string;
   invitation_code_enabled: boolean;
-  totp_enabled: boolean; // TOTP 雙因素認證
-  totp_encryption_key_configured: boolean; // TOTP 加密金鑰是否已配置
+  totp_enabled: boolean; // TOTP 双因素认证
+  totp_encryption_key_configured: boolean; // TOTP 加密密钥是否已配置
   login_agreement_enabled: boolean;
   login_agreement_mode: "modal" | "checkbox" | string;
   login_agreement_updated_at: string;
@@ -415,7 +415,7 @@ export interface SystemSettings {
   auth_source_default_google_grant_on_signup?: boolean;
   auth_source_default_google_grant_on_first_bind?: boolean;
   force_email_on_third_party_signup?: boolean;
-  // ── 平台限額（巢狀 JSON，系統層 + 7 auth-source 層）────────────────────────────────
+  // ── 平台限额（嵌套 JSON，系统层 + 7 auth-source 层）────────────────────────────────
   default_platform_quotas?: DefaultPlatformQuotasMap;
   auth_source_default_email_platform_quotas?: DefaultPlatformQuotasMap;
   auth_source_default_linuxdo_platform_quotas?: DefaultPlatformQuotasMap;
@@ -549,7 +549,7 @@ export interface SystemSettings {
   min_claude_code_version: string;
   max_claude_code_version: string;
 
-  // 分組隔離
+  // 分组隔离
   allow_ungrouped_key_scheduling: boolean;
 
   // Gateway forwarding behavior
@@ -575,8 +575,8 @@ export interface SystemSettings {
 
   // Payment configuration
   payment_enabled: boolean;
-  risk_control_enabled: boolean;
   ticket_system_enabled: boolean;
+  risk_control_enabled: boolean;
 
   // Cyber session block
   cyber_session_block_enabled: boolean;
@@ -590,6 +590,7 @@ export interface SystemSettings {
   payment_enabled_types: string[];
   payment_balance_disabled: boolean;
   payment_balance_recharge_multiplier: number;
+  payment_subscription_usd_to_cny_rate: number;
   payment_recharge_fee_rate: number;
   payment_load_balance_strategy: string;
   payment_product_name_prefix: string;
@@ -607,8 +608,30 @@ export interface SystemSettings {
   payment_visible_method_alipay_enabled?: boolean;
   payment_visible_method_wxpay_enabled?: boolean;
   openai_advanced_scheduler_enabled?: boolean;
+  openai_advanced_scheduler_sticky_weighted_enabled?: boolean;
+  openai_advanced_scheduler_subscription_priority_enabled?: boolean;
+  openai_advanced_scheduler_lb_top_k?: string;
+  openai_advanced_scheduler_weight_priority?: string;
+  openai_advanced_scheduler_weight_load?: string;
+  openai_advanced_scheduler_weight_queue?: string;
+  openai_advanced_scheduler_weight_error_rate?: string;
+  openai_advanced_scheduler_weight_ttft?: string;
+  openai_advanced_scheduler_weight_reset?: string;
+  openai_advanced_scheduler_weight_quota_headroom?: string;
+  openai_advanced_scheduler_weight_previous_response?: string;
+  openai_advanced_scheduler_weight_session_sticky?: string;
+  openai_advanced_scheduler_effective_lb_top_k?: string;
+  openai_advanced_scheduler_effective_weight_priority?: string;
+  openai_advanced_scheduler_effective_weight_load?: string;
+  openai_advanced_scheduler_effective_weight_queue?: string;
+  openai_advanced_scheduler_effective_weight_error_rate?: string;
+  openai_advanced_scheduler_effective_weight_ttft?: string;
+  openai_advanced_scheduler_effective_weight_reset?: string;
+  openai_advanced_scheduler_effective_weight_quota_headroom?: string;
+  openai_advanced_scheduler_effective_weight_previous_response?: string;
+  openai_advanced_scheduler_effective_weight_session_sticky?: string;
 
-  // 餘額、訂閱到期與帳號限額通知
+  // 余额、订阅到期与账号限额通知
   balance_low_notify_enabled: boolean;
   balance_low_notify_threshold: number;
   balance_low_notify_recharge_url: string;
@@ -623,7 +646,7 @@ export interface SystemSettings {
   // Available Channels feature switch
   available_channels_enabled: boolean;
 
-  // Affiliate (邀請返利) feature switch
+  // Affiliate (邀请返利) feature switch
   affiliate_enabled: boolean;
 
   // OpenAI fast/flex policy
@@ -641,7 +664,7 @@ export interface UpdateSettingsRequest {
   password_reset_enabled?: boolean;
   frontend_url?: string;
   invitation_code_enabled?: boolean;
-  totp_enabled?: boolean; // TOTP 雙因素認證
+  totp_enabled?: boolean; // TOTP 双因素认证
   login_agreement_enabled?: boolean;
   login_agreement_mode?: "modal" | "checkbox" | string;
   login_agreement_updated_at?: string;
@@ -690,7 +713,7 @@ export interface UpdateSettingsRequest {
   auth_source_default_google_grant_on_signup?: boolean;
   auth_source_default_google_grant_on_first_bind?: boolean;
   force_email_on_third_party_signup?: boolean;
-  // ── 平台限額（巢狀 JSON，系統層 + 7 auth-source 層）────────────────────────────────
+  // ── 平台限额（嵌套 JSON，系统层 + 7 auth-source 层）────────────────────────────────
   default_platform_quotas?: DefaultPlatformQuotasMap;
   auth_source_default_email_platform_quotas?: DefaultPlatformQuotasMap;
   auth_source_default_linuxdo_platform_quotas?: DefaultPlatformQuotasMap;
@@ -825,8 +848,8 @@ export interface UpdateSettingsRequest {
   codex_cli_only_engine_fingerprint_signals?: string;
   // Payment configuration
   payment_enabled?: boolean;
-  risk_control_enabled?: boolean;
   ticket_system_enabled?: boolean;
+  risk_control_enabled?: boolean;
 
   // Cyber session block
   cyber_session_block_enabled?: boolean;
@@ -840,6 +863,7 @@ export interface UpdateSettingsRequest {
   payment_enabled_types?: string[];
   payment_balance_disabled?: boolean;
   payment_balance_recharge_multiplier?: number;
+  payment_subscription_usd_to_cny_rate?: number;
   payment_recharge_fee_rate?: number;
   payment_load_balance_strategy?: string;
   payment_product_name_prefix?: string;
@@ -857,7 +881,19 @@ export interface UpdateSettingsRequest {
   payment_visible_method_alipay_enabled?: boolean;
   payment_visible_method_wxpay_enabled?: boolean;
   openai_advanced_scheduler_enabled?: boolean;
-  // 餘額、訂閱到期與帳號限額通知
+  openai_advanced_scheduler_sticky_weighted_enabled?: boolean;
+  openai_advanced_scheduler_subscription_priority_enabled?: boolean;
+  openai_advanced_scheduler_lb_top_k?: string;
+  openai_advanced_scheduler_weight_priority?: string;
+  openai_advanced_scheduler_weight_load?: string;
+  openai_advanced_scheduler_weight_queue?: string;
+  openai_advanced_scheduler_weight_error_rate?: string;
+  openai_advanced_scheduler_weight_ttft?: string;
+  openai_advanced_scheduler_weight_reset?: string;
+  openai_advanced_scheduler_weight_quota_headroom?: string;
+  openai_advanced_scheduler_weight_previous_response?: string;
+  openai_advanced_scheduler_weight_session_sticky?: string;
+  // 余额、订阅到期与账号限额通知
   balance_low_notify_enabled?: boolean;
   balance_low_notify_threshold?: number;
   balance_low_notify_recharge_url?: string;
@@ -872,7 +908,7 @@ export interface UpdateSettingsRequest {
   // Available Channels feature switch
   available_channels_enabled?: boolean;
 
-  // Affiliate (邀請返利) feature switch
+  // Affiliate (邀请返利) feature switch
   affiliate_enabled?: boolean;
 
   // OpenAI fast/flex policy
