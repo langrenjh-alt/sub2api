@@ -1067,6 +1067,21 @@
     exportExcelFailed: '使用資料匯出失敗',
     imageUnit: '張',
     userAgent: 'User-Agent',
+    ipGeo: {
+      fetch: '获取地区',
+      fetching: '获取中...',
+      failed: '获取失败',
+      private: '内网地址',
+      refreshTitle: '刷新地区信息',
+      batchFetch: '批量获取地区',
+      batchFetching: '获取中...',
+      pending: '{count} 个 IP 待获取地区',
+      batchFailed: '批量获取 IP 地区失败',
+      detailOrg: '运营商',
+      detailTimezone: '时区',
+      detailAccuracy: '精度',
+      detailCoordinates: '坐标',
+    },
     tabs: { usage: '用量明細', errors: '錯誤請求' },
     errors: {
       time: '時間', model: '模型', endpoint: '端點', status: '狀態碼',
@@ -2253,6 +2268,7 @@
       editGroup: '編輯分組',
       deleteGroup: '刪除分組',
       sortOrder: '排序',
+      columnSettings: '列設定',
       sortOrderHint: '拖拽分組調整顯示順序，排在前面的分組會優先顯示',
       sortOrderUpdated: '排序已更新',
       failedToUpdateSortOrder: '更新排序失敗',
@@ -2288,6 +2304,15 @@
       accountsRateLimited: '限流:',
       accountsTotal: '總量:',
       accountsUnit: '個帳號',
+      rateLabel: '費率',
+      accountFilters: {
+        title: '帳號篩選控制',
+        oauthOnly: '僅允許 OAuth 帳號',
+        oauthOnlyEnabled: '已啟用，API Key 帳號將被排除',
+        privacySetOnly: '僅允許已設定隱私保護的帳號',
+        privacySetOnlyEnabled: '已啟用，未設定 Privacy 的帳號將被排除',
+        disabled: '未啟用'
+      },
       form: {
         name: '名稱',
         description: '描述',
@@ -2432,7 +2457,10 @@
         title: '自定義 /v1/models 模型列表',
         hint: '僅影響 /v1/models 展示結果，不影響白名單模型呼叫和帳號排程。',
         loading: '正在載入模型列表...',
-        empty: '暫無可展示模型'
+        empty: '暫無可展示模型',
+        selectedSummary: '已選 {selected} / {total}',
+        selectAll: '全選',
+        invertSelection: '反選'
       },
       claudeCode: {
         title: 'Claude Code 客戶端限制',
@@ -2505,6 +2533,14 @@
         tooltip: '啟用後，當請求包含 MCP 工具時，會在 system prompt 中注入 XML 格式呼叫協議提示詞。關閉此選項可避免對某些客戶端造成幹擾。',
         enabled: '已啟用',
         disabled: '已停用'
+      },
+      claudeMaxSimulation: {
+        title: 'Claude Max 用量模擬',
+        tooltip:
+          '啟用後，對於上游未返回 cache-write 用量的 Claude 模型，系統會以確定性方式將 token 映射為少量輸入與 1 小時快取建立，同時保持總 token 不變。',
+        enabled: '已啟用（模擬 1 小時快取）',
+        disabled: '已停用',
+        hint: '僅調整用量計費日誌中的 token 分類，不持久化單次請求映射狀態。'
       },
       supportedScopes: {
         title: '支援的模型系列',
