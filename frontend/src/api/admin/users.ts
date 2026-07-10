@@ -121,6 +121,7 @@ export async function create(userData: {
   password: string
   username?: string
   notes?: string
+  role?: 'admin' | 'user'
   balance?: number
   concurrency?: number
   rpm_limit?: number
@@ -348,7 +349,7 @@ export async function getPlatformQuotas(id: number): Promise<PlatformQuotasRespo
 }
 
 /**
- * Replace user's platform quotas (全量替換)
+ * Replace user's platform quotas (全量替换)
  */
 export async function updatePlatformQuotas(
   id: number,

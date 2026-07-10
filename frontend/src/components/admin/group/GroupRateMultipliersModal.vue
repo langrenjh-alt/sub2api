@@ -1,7 +1,7 @@
 <template>
   <BaseDialog :show="show" :title="t('admin.groups.rateMultipliersTitle')" width="wide" @close="handleClose">
     <div v-if="group" class="space-y-4">
-      <!-- 分組資訊 -->
+      <!-- 分组资讯 -->
       <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 text-sm dark:bg-dark-700">
         <span class="inline-flex items-center gap-1.5" :class="platformColorClass">
           <PlatformIcon :platform="group.platform" size="sm" />
@@ -15,9 +15,9 @@
         </span>
       </div>
 
-      <!-- 操作區 -->
+      <!-- 操作区 -->
       <div class="rounded-lg border border-gray-200 p-3 dark:border-dark-600">
-        <!-- 新增使用者 -->
+        <!-- 新增用户 -->
         <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('admin.groups.addUserRate') }}
         </h4>
@@ -70,7 +70,7 @@
           </button>
         </div>
 
-        <!-- 批次調整 + 全部清空 -->
+        <!-- 批次调整 + 全部清空 -->
         <div v-if="localEntries.length > 0" class="mt-3 flex items-center gap-3 border-t border-gray-100 pt-3 dark:border-dark-600">
           <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.batchAdjust') }}</span>
           <div class="flex items-center gap-1.5">
@@ -105,7 +105,7 @@
         </div>
       </div>
 
-      <!-- 載入狀態 -->
+      <!-- 加载状态 -->
       <div v-if="loading" class="flex justify-center py-6">
         <svg class="h-6 w-6 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -113,7 +113,7 @@
         </svg>
       </div>
 
-      <!-- 已設定的使用者列表 -->
+      <!-- 已设置的用户列表 -->
       <div v-else>
         <h4 class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('admin.groups.rateMultipliers') }} ({{ localEntries.length }})
@@ -192,7 +192,7 @@
             </div>
           </div>
 
-          <!-- 分頁 -->
+          <!-- 分页 -->
           <Pagination
             :total="localEntries.length"
             :page="currentPage"
@@ -203,9 +203,9 @@
         </div>
       </div>
 
-      <!-- 底部操作欄 -->
+      <!-- 底部操作栏 -->
       <div class="flex items-center gap-3 border-t border-gray-200 pt-4 dark:border-dark-600">
-        <!-- 左側：未儲存提示 + 撤銷 -->
+        <!-- 左侧：未保存提示 + 撤销 -->
         <template v-if="isDirty">
           <span class="text-xs text-amber-600 dark:text-amber-400">{{ t('admin.groups.unsavedChanges') }}</span>
           <button
@@ -216,7 +216,7 @@
             {{ t('admin.groups.revertChanges') }}
           </button>
         </template>
-        <!-- 右側：關閉 / 儲存 -->
+        <!-- 右侧：关闭 / 保存 -->
         <div class="ml-auto flex items-center gap-3">
           <button type="button" class="btn btn-sm px-4 py-1.5" @click="handleClose">
             {{ t('common.close') }}
@@ -289,19 +289,19 @@ const platformColorClass = computed(() => {
   }
 })
 
-// 是否顯示"最終倍率"預覽列
+// 是否显示"最终倍率"预览列
 const showFinalRate = computed(() => {
   return batchFactor.value != null && batchFactor.value > 0 && batchFactor.value !== 1
 })
 
-// 計算最終倍率預覽
+// 计算最终倍率预览
 const computeFinalRate = (rate: number | null | undefined) => {
   const base = rate ?? props.group?.rate_multiplier ?? 1
   if (!batchFactor.value) return base
   return parseFloat((base * batchFactor.value).toFixed(6))
 }
 
-// 檢測是否有未儲存的修改
+// 检测是否有未保存的修改
 const isDirty = computed(() => {
   if (localEntries.value.length !== serverEntries.value.length) return true
   const serverMap = new Map(serverEntries.value.map(e => [e.user_id, e.rate_multiplier ?? null]))
@@ -322,7 +322,7 @@ const loadEntries = async () => {
   loading.value = true
   try {
     const raw = await adminAPI.groups.getGroupRateMultipliers(props.group.id)
-    // 僅顯示已設定 rate_multiplier 的條目；rpm_override 在另一個彈窗管理，保留不動
+    // 仅显示已设置 rate_multiplier 的条目；rpm_override 在另一个弹窗管理，保留不动
     serverEntries.value = raw.filter(e => e.rate_multiplier != null)
     localEntries.value = cloneEntries(serverEntries.value)
     adjustPage()
@@ -384,7 +384,7 @@ const selectUser = (user: AdminUser) => {
   searchResults.value = []
 }
 
-// 本地新增（或覆蓋已有使用者）
+// 本地新增（或覆盖已有用户）
 const handleAddLocal = () => {
   if (!selectedUser.value || !newRate.value) return
   const user = selectedUser.value
@@ -422,13 +422,13 @@ const updateLocalRate = (userId: number, value: string) => {
   entry.rate_multiplier = num
 }
 
-// 本地刪除
+// 本地删除
 const removeLocal = (userId: number) => {
   localEntries.value = localEntries.value.filter(e => e.user_id !== userId)
   adjustPage()
 }
 
-// 批次乘數套用到本地
+// 批次乘数应用到本地
 const applyBatchFactor = () => {
   if (!batchFactor.value || batchFactor.value <= 0) return
   for (const entry of localEntries.value) {
@@ -444,14 +444,14 @@ const clearAllLocal = () => {
   localEntries.value = []
 }
 
-// 取消：恢復到伺服器資料
+// 取消：恢复到伺服器资料
 const handleCancel = () => {
   localEntries.value = cloneEntries(serverEntries.value)
   batchFactor.value = null
   adjustPage()
 }
 
-// 儲存：一次性提交所有資料（只提交 rate_multiplier；rpm_override 由獨立彈窗管理）
+// 保存：一次性提交所有资料（只提交 rate_multiplier；rpm_override 由独立弹窗管理）
 const handleSave = async () => {
   if (!props.group) return
   saving.value = true
@@ -474,7 +474,7 @@ const handleSave = async () => {
   }
 }
 
-// 關閉時如果有未儲存修改，先恢復
+// 关闭时如果有未保存修改，先恢复
 const handleClose = () => {
   if (isDirty.value) {
     localEntries.value = cloneEntries(serverEntries.value)
@@ -482,7 +482,7 @@ const handleClose = () => {
   emit('close')
 }
 
-// 點選外部關閉下拉
+// 点击外部关闭下拉
 const handleClickOutside = () => {
   showDropdown.value = false
 }

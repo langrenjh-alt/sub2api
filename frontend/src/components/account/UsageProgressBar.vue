@@ -157,8 +157,8 @@ const formatResetTime = computed(() => {
   const date = new Date(props.resetsAt)
   const diffMs = date.getTime() - now.value.getTime()
 
-  // resetsAt 已過期：utilization>0 說明後端視窗資料還沒重新整理（active poll 沒回寫），
-  // 顯示「待重新整理」以區別於真正可用的「現在」。
+  // resetsAt 已过期：utilization>0 说明后端视窗资料还没刷新（active poll 没回写），
+  // 显示「待刷新」以区别于真正可用的「现在」。
   if (diffMs <= 0) {
     return props.utilization > 0 ? t('usage.resetPending') : t('usage.resetNow')
   }

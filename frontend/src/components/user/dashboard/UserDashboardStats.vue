@@ -178,14 +178,14 @@
           </div>
         </div>
 
-        <!-- Quota 區：僅當 quota 配置存在、非 __other__ 且至少有一個視窗配了 limit 時顯示 -->
+        <!-- Quota 区：仅当 quota 配置存在、非 __other__ 且至少有一个视窗配了 limit 时显示 -->
         <div v-if="hasAnyLimit(item.quota) && !item.isOther" class="mt-3 space-y-1.5 border-t border-gray-200 pt-2 dark:border-dark-700">
           <p class="text-[10px] uppercase tracking-wide text-gray-400">
             {{ t('dashboard.platformQuota.title') }}
           </p>
           <template v-for="w in (['daily', 'weekly', 'monthly'] as const)" :key="w">
             <div v-if="quotaVal(item.quota, `${w}_limit_usd`) != null" class="space-y-0.5">
-              <!-- limit=0：完全停用 -->
+              <!-- limit=0：完全禁用 -->
               <template v-if="(quotaVal(item.quota, `${w}_limit_usd`) as number) === 0">
                 <div class="flex items-center justify-between text-xs">
                   <span class="text-gray-600 dark:text-gray-300">{{ t(`dashboard.platformQuota.${w}`) }}</span>
@@ -195,7 +195,7 @@
                   <div class="h-full w-full rounded-full bg-red-500" />
                 </div>
               </template>
-              <!-- limit>0：正常用量進度條 -->
+              <!-- limit>0：正常用量进度条 -->
               <template v-else>
                 <div class="flex items-center justify-between text-xs">
                   <span class="text-gray-600 dark:text-gray-300">{{ t(`dashboard.platformQuota.${w}`) }}</span>
@@ -261,9 +261,9 @@ const sortedPlatforms = computed(() => {
   return [...list].sort((a, b) => b.total_actual_cost - a.total_actual_cost)
 })
 
-// 處理"各平台之和 < 總值"的差值：後端按平台聚合時過濾了無法歸屬平台的行
-// （group 與 account 都缺 platform）。這裡把差值作為"其他"卡片顯式展示，
-// 避免 Row 1 總值與 Row 3 平台拆分加總對不上、使用者困惑。
+// 处理"各平台之和 < 总值"的差值：后端按平台聚合时过滤了无法归属平台的行
+// （group 与 account 都缺 platform）。这里把差值作为"其他"卡片显式展示，
+// 避免 Row 1 总值与 Row 3 平台拆分加总对不上、用户困惑。
 const OTHER_THRESHOLD = 0.0001
 const platformCards = computed<FusedPlatformCard[]>(() => {
   // 建立 by_platform Map
@@ -274,8 +274,8 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
   const byQuota = new Map<string, PlatformQuotaItem>()
   for (const q of props.platformQuotas ?? []) byQuota.set(q.platform, q)
 
-  // union 平台集合。後端 by_platform / quota 介面均不會返回 platform='__other__'，
-  // 無需顯式排除；__other__ 由下方差值補差邏輯單獨追加。
+  // union 平台集合。后端 by_platform / quota 界面均不会返回 platform='__other__'，
+  // 无需显式排除；__other__ 由下方差值补差逻辑单独追加。
   const platforms = new Set<string>([...byPlat.keys(), ...byQuota.keys()])
 
   const PLATFORM_ORDER = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok']
@@ -293,7 +293,7 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
     })
   }
 
-  // 排序：按 PLATFORM_ORDER，未知平台按名稱排序
+  // 排序：按 PLATFORM_ORDER，未知平台按名称排序
   cards.sort((a, b) => {
     const ai = PLATFORM_ORDER.indexOf(a.platform)
     const bi = PLATFORM_ORDER.indexOf(b.platform)
@@ -303,7 +303,7 @@ const platformCards = computed<FusedPlatformCard[]>(() => {
     return ai - bi
   })
 
-  // __other__ 補差邏輯：只對 by_platform 有 usage 資料的總和計算
+  // __other__ 补差逻辑：只对 by_platform 有 usage 资料的总和计算
   const total = props.stats?.total_actual_cost ?? 0
   const today = props.stats?.today_actual_cost ?? 0
   const sumTotal = cards.reduce((s, c) => s + c.total_actual_cost, 0)
@@ -350,8 +350,8 @@ function quotaBarClass(p: number): string {
   return 'bg-green-500'
 }
 
-// 與 formatBalance 一致使用 Intl.NumberFormat 做半偶舍入，避免 toFixed 在不同 JS 引擎
-// 下偶發截斷而非四捨五入（與後端展示精度不一致）。
+// 与 formatBalance 一致使用 Intl.NumberFormat 做半偶舍入，避免 toFixed 在不同 JS 引擎
+// 下偶发截断而非四舍五入（与后端展示精度不一致）。
 const usdFormatter = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,

@@ -153,10 +153,10 @@ const renderedHtml = computed(() => {
 
 const documentIcon = computed<LegalDocumentIcon>(() => {
   const title = currentDocument.value?.title || ''
-  if (title.includes('政策') || title.includes('隱私')) {
+  if (title.includes('政策') || title.includes('隐私')) {
     return 'shield'
   }
-  if (title.includes('國家') || title.includes('地區')) {
+  if (title.includes('国家') || title.includes('地区')) {
     return 'globe'
   }
   if (title.includes('特定')) {

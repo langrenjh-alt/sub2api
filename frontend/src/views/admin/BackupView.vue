@@ -354,7 +354,7 @@ function startPolling(backupId: string) {
         await loadBackups()
       }
     } catch {
-      // 輪詢失敗時不中斷
+      // 轮询失败时不中断
     }
   }, 2000)
 }
@@ -390,7 +390,7 @@ function startRestorePolling(backupId: string) {
         await loadBackups()
       }
     } catch {
-      // 輪詢失敗時不中斷
+      // 轮询失败时不中断
     }
   }, 2000)
 }
@@ -407,7 +407,7 @@ function handleVisibilityChange() {
     stopPolling()
     stopRestorePolling()
   } else {
-    // 標籤頁恢復時重新整理列表，檢查是否仍有活躍操作
+    // 标签页恢复时刷新列表，检查是否仍有活跃操作
     loadBackups().then(() => {
       const running = backups.value.find(r => r.status === 'running')
       if (running) {
@@ -524,7 +524,7 @@ async function createBackup() {
   creatingBackup.value = true
   try {
     const record = await adminAPI.backup.createBackup({ expire_days: manualExpireDays.value })
-    // 插入到列表頂部
+    // 插入到列表顶部
     backups.value.unshift(record)
     startPolling(record.id)
   } catch (error: any) {
@@ -607,7 +607,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
   await Promise.all([loadS3Config(), loadSchedule(), loadBackups()])
 
-  // 如果有正在 running 的備份，恢復輪詢
+  // 如果有正在 running 的备份，恢复轮询
   const runningBackup = backups.value.find(r => r.status === 'running')
   if (runningBackup) {
     creatingBackup.value = true

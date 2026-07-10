@@ -37,7 +37,7 @@ export function storeAffiliateReferralCode(value?: unknown, now = Date.now()): v
     }
     window.localStorage.setItem(AFFILIATE_REFERRAL_CODE_KEY, JSON.stringify(payload))
   } catch {
-    // 忽略瀏覽器儲存異常。
+    // 忽略浏览器保存异常。
   }
 }
 
@@ -71,7 +71,7 @@ export function clearAffiliateReferralCode(): void {
   try {
     window.localStorage.removeItem(AFFILIATE_REFERRAL_CODE_KEY)
   } catch {
-    // 忽略瀏覽器儲存異常。
+    // 忽略浏览器保存异常。
   }
 }
 
@@ -96,7 +96,7 @@ export function storeOAuthAffiliateCode(value?: unknown): void {
       window.sessionStorage.removeItem(OAUTH_AFFILIATE_CODE_KEY)
     }
   } catch {
-    // 忽略瀏覽器儲存異常。
+    // 忽略浏览器保存异常。
   }
 }
 
@@ -118,7 +118,7 @@ export function clearOAuthAffiliateCode(): void {
   try {
     window.sessionStorage.removeItem(OAUTH_AFFILIATE_CODE_KEY)
   } catch {
-    // 忽略瀏覽器儲存異常。
+    // 忽略浏览器保存异常。
   }
 }
 

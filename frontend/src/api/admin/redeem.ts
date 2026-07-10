@@ -78,7 +78,7 @@ export async function generate(
     value
   }
 
-  // 訂閱型別專用欄位
+  // 订阅类型专用字段
   if (type === 'subscription') {
     payload.group_id = groupId
     if (validityDays && validityDays > 0) {

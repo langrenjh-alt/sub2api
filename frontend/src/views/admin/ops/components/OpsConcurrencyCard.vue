@@ -22,7 +22,7 @@ const concurrency = ref<OpsConcurrencyStatsResponse | null>(null)
 const availability = ref<OpsAccountAvailabilityStatsResponse | null>(null)
 const userConcurrency = ref<OpsUserConcurrencyStatsResponse | null>(null)
 
-// 使用者檢視開關
+// 用户视图开关
 const showByUser = ref(false)
 
 const realtimeEnabled = computed(() => {
@@ -33,7 +33,7 @@ function safeNumber(n: unknown): number {
   return typeof n === 'number' && Number.isFinite(n) ? n : 0
 }
 
-// 計算顯示維度
+// 计算显示维度
 const displayDimension = computed<'platform' | 'group' | 'account' | 'user'>(() => {
   if (showByUser.value) {
     return 'user'
@@ -47,37 +47,37 @@ const displayDimension = computed<'platform' | 'group' | 'account' | 'user'>(() 
   return 'platform'
 })
 
-// 平台/分組彙總行資料
+// 平台/分组汇总行资料
 interface SummaryRow {
   key: string
   name: string
   platform?: string
-  // 帳號統計
+  // 账号统计
   total_accounts: number
   available_accounts: number
   rate_limited_accounts: number
   error_accounts: number
-  // 並行統計
+  // 并行统计
   total_concurrency: number
   used_concurrency: number
   waiting_in_queue: number
-  // 計算欄位
+  // 计算字段
   availability_percentage: number
   concurrency_percentage: number
 }
 
-// 帳號詳細行資料
+// 账号详细行资料
 interface AccountRow {
   key: string
   name: string
   platform: string
   group_name: string
-  // 並行
+  // 并行
   current_in_use: number
   max_capacity: number
   waiting_in_queue: number
   load_percentage: number
-  // 狀態
+  // 状态
   is_available: boolean
   is_rate_limited: boolean
   rate_limit_remaining_sec?: number
@@ -87,7 +87,7 @@ interface AccountRow {
   error_message?: string
 }
 
-// 使用者行資料
+// 用户行资料
 interface UserRow {
   key: string
   user_id: number
@@ -99,7 +99,7 @@ interface UserRow {
   load_percentage: number
 }
 
-// 平台維度彙總
+// 平台维度汇总
 const platformRows = computed((): SummaryRow[] => {
   const concStats = concurrency.value?.platform || {}
   const availStats = availability.value?.platform || {}
@@ -132,7 +132,7 @@ const platformRows = computed((): SummaryRow[] => {
   }).sort((a, b) => b.concurrency_percentage - a.concurrency_percentage)
 })
 
-// 分組維度彙總
+// 分组维度汇总
 const groupRows = computed((): SummaryRow[] => {
   const concStats = concurrency.value?.group || {}
   const availStats = availability.value?.group || {}
@@ -144,7 +144,7 @@ const groupRows = computed((): SummaryRow[] => {
       const conc = concStats[gid] || {}
       const avail = availStats[gid] || {}
 
-      // 只顯示匹配的平台
+      // 只显示匹配的平台
       if (props.platformFilter && conc.platform !== props.platformFilter && avail.platform !== props.platformFilter) {
         return null
       }
@@ -175,7 +175,7 @@ const groupRows = computed((): SummaryRow[] => {
   return rows.sort((a, b) => b.concurrency_percentage - a.concurrency_percentage)
 })
 
-// 帳號維度詳細
+// 账号维度详细
 const accountRows = computed((): AccountRow[] => {
   const concStats = concurrency.value?.account || {}
   const availStats = availability.value?.account || {}
@@ -187,7 +187,7 @@ const accountRows = computed((): AccountRow[] => {
       const conc = concStats[aid] || {}
       const avail = availStats[aid] || {}
 
-      // 只顯示匹配的分組
+      // 只显示匹配的分组
       if (typeof props.groupIdFilter === 'number' && props.groupIdFilter > 0) {
         if (conc.group_id !== props.groupIdFilter && avail.group_id !== props.groupIdFilter) {
           return null
@@ -215,15 +215,15 @@ const accountRows = computed((): AccountRow[] => {
     .filter((row): row is NonNullable<typeof row> => row !== null)
 
   return rows.sort((a, b) => {
-    // 優先顯示異常帳號
+    // 优先显示异常账号
     if (a.has_error !== b.has_error) return a.has_error ? -1 : 1
     if (a.is_rate_limited !== b.is_rate_limited) return a.is_rate_limited ? -1 : 1
-    // 然後按負載排序
+    // 然后按负载排序
     return b.load_percentage - a.load_percentage
   })
 })
 
-// 使用者維度詳細
+// 用户维度详细
 const userRows = computed((): UserRow[] => {
   const userStats = userConcurrency.value?.user || {}
 
@@ -244,7 +244,7 @@ const userRows = computed((): UserRow[] => {
     .sort((a, b) => b.current_in_use - a.current_in_use || b.load_percentage - a.load_percentage)
 })
 
-// 根據維度選擇資料
+// 根据维度选择资料
 const displayRows = computed(() => {
   if (displayDimension.value === 'user') return userRows.value
   if (displayDimension.value === 'account') return accountRows.value
@@ -264,11 +264,11 @@ async function loadData() {
   errorMessage.value = ''
   try {
     if (showByUser.value) {
-      // 使用者檢視模式只載入使用者並行資料
+      // 用户视图模式只加载用户并行资料
       const userData = await opsAPI.getUserConcurrencyStats()
       userConcurrency.value = userData
     } else {
-      // 常規模式載入帳號/平台/分組資料
+      // 常规模式加载账号/平台/分组资料
       const [concData, availData] = await Promise.all([
         opsAPI.getConcurrencyStats(props.platformFilter, props.groupIdFilter),
         opsAPI.getAccountAvailabilityStats(props.platformFilter, props.groupIdFilter)
@@ -284,7 +284,7 @@ async function loadData() {
   }
 }
 
-// 重新整理節奏由父元件統一控制（OpsDashboard Header 的重新整理狀態/倒計時）
+// 刷新节奏由父组件统一控制（OpsDashboard Header 的刷新状态/倒计时）
 watch(
   () => props.refreshToken,
   () => {
@@ -293,7 +293,7 @@ watch(
   }
 )
 
-// 切換使用者檢視時重新載入資料
+// 切换用户视图时重新加载资料
 watch(
   () => showByUser.value,
   () => {
@@ -342,7 +342,7 @@ watch(
 
 <template>
   <div class="flex h-full flex-col rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700">
-    <!-- 頭部 -->
+    <!-- 头部 -->
     <div class="mb-4 flex shrink-0 items-center justify-between gap-3">
       <h3 class="flex items-center gap-2 text-sm font-bold text-gray-900 dark:text-white">
         <svg class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -351,7 +351,7 @@ watch(
         {{ t('admin.ops.concurrency.title') }}
       </h3>
       <div class="flex items-center gap-2">
-        <!-- 使用者檢視切換按鈕 -->
+        <!-- 用户视图切换按钮 -->
         <button
           class="flex items-center justify-center rounded-lg px-2 py-1 transition-colors"
           :class="showByUser
@@ -364,7 +364,7 @@ watch(
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
         </button>
-        <!-- 重新整理按鈕 -->
+        <!-- 刷新按钮 -->
         <button
           class="flex items-center gap-1 rounded-lg bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-700 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600"
           :disabled="loading"
@@ -378,12 +378,12 @@ watch(
       </div>
     </div>
 
-    <!-- 錯誤提示 -->
+    <!-- 错误提示 -->
     <div v-if="errorMessage" class="mb-3 shrink-0 rounded-xl bg-red-50 p-2.5 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
       {{ errorMessage }}
     </div>
 
-    <!-- 停用狀態 -->
+    <!-- 禁用状态 -->
     <div
       v-if="!realtimeEnabled"
       class="flex flex-1 items-center justify-center rounded-xl border border-dashed border-gray-200 text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400"
@@ -391,9 +391,9 @@ watch(
       {{ t('admin.ops.concurrency.disabledHint') }}
     </div>
 
-    <!-- 資料展示區域 -->
+    <!-- 资料展示区域 -->
     <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-gray-200 dark:border-dark-700">
-      <!-- 維度標題欄 -->
+      <!-- 维度标题栏 -->
       <div class="flex shrink-0 items-center justify-between border-b border-gray-200 bg-gray-50 px-3 py-2 dark:border-dark-700 dark:bg-dark-900">
         <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
           {{ displayTitle }}
@@ -403,15 +403,15 @@ watch(
         </span>
       </div>
 
-      <!-- 空狀態 -->
+      <!-- 空状态 -->
       <div v-if="displayRows.length === 0" class="flex flex-1 items-center justify-center text-sm text-gray-500 dark:text-gray-400">
         {{ t('admin.ops.concurrency.empty') }}
       </div>
 
-      <!-- 使用者檢視 -->
+      <!-- 用户视图 -->
       <div v-else-if="displayDimension === 'user'" class="custom-scrollbar max-h-[360px] flex-1 space-y-2 overflow-y-auto p-3">
         <div v-for="row in (displayRows as UserRow[])" :key="row.key" class="rounded-lg bg-gray-50 p-2.5 dark:bg-dark-900">
-          <!-- 使用者資訊和並行 -->
+          <!-- 用户资讯和并行 -->
           <div class="mb-1.5 flex items-center justify-between gap-2">
             <div class="flex min-w-0 flex-1 items-center gap-1.5">
               <span class="truncate text-[11px] font-bold text-gray-900 dark:text-white" :title="row.username || row.user_email">
@@ -427,12 +427,12 @@ watch(
             </div>
           </div>
 
-          <!-- 進度條 -->
+          <!-- 进度条 -->
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-700">
             <div class="h-full rounded-full transition-all duration-300" :class="getLoadBarClass(row.load_percentage)" :style="getLoadBarStyle(row.load_percentage)"></div>
           </div>
 
-          <!-- 等待佇列 -->
+          <!-- 等待伫列 -->
           <div v-if="row.waiting_in_queue > 0" class="mt-1.5 flex justify-end">
             <span class="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
               {{ t('admin.ops.concurrency.queued', { count: row.waiting_in_queue }) }}
@@ -441,10 +441,10 @@ watch(
         </div>
       </div>
 
-      <!-- 彙總檢視（平台/分組） -->
+      <!-- 汇总视图（平台/分组） -->
       <div v-else-if="displayDimension === 'platform' || displayDimension === 'group'" class="custom-scrollbar max-h-[360px] flex-1 space-y-2 overflow-y-auto p-3">
         <div v-for="row in (displayRows as SummaryRow[])" :key="row.key" class="rounded-lg bg-gray-50 p-3 dark:bg-dark-900">
-          <!-- 標題行 -->
+          <!-- 标题行 -->
           <div class="mb-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
               <div class="truncate text-[11px] font-bold text-gray-900 dark:text-white" :title="row.name">
@@ -460,7 +460,7 @@ watch(
             </div>
           </div>
 
-          <!-- 進度條 -->
+          <!-- 进度条 -->
           <div class="mb-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-700">
             <div
               class="h-full rounded-full transition-all duration-300"
@@ -469,9 +469,9 @@ watch(
             ></div>
           </div>
 
-          <!-- 統計資訊 -->
+          <!-- 统计资讯 -->
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
-            <!-- 帳號統計 -->
+            <!-- 账号统计 -->
             <div class="flex items-center gap-1">
               <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -488,7 +488,7 @@ watch(
               <span class="text-gray-400 dark:text-gray-500">{{ row.availability_percentage }}%</span>
             </div>
 
-            <!-- 限流帳號 -->
+            <!-- 限流账号 -->
             <span
               v-if="row.rate_limited_accounts > 0"
               class="rounded-full bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
@@ -496,7 +496,7 @@ watch(
               {{ t('admin.ops.concurrency.rateLimited', { count: row.rate_limited_accounts }) }}
             </span>
 
-            <!-- 異常帳號 -->
+            <!-- 异常账号 -->
             <span
               v-if="row.error_accounts > 0"
               class="rounded-full bg-red-100 px-1.5 py-0.5 font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400"
@@ -504,7 +504,7 @@ watch(
               {{ t('admin.ops.concurrency.errorAccounts', { count: row.error_accounts }) }}
             </span>
 
-            <!-- 等待佇列 -->
+            <!-- 等待伫列 -->
             <span
               v-if="row.waiting_in_queue > 0"
               class="rounded-full bg-purple-100 px-1.5 py-0.5 font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
@@ -515,10 +515,10 @@ watch(
         </div>
       </div>
 
-      <!-- 帳號詳細檢視 -->
+      <!-- 账号详细视图 -->
       <div v-else class="custom-scrollbar max-h-[360px] flex-1 space-y-2 overflow-y-auto p-3">
         <div v-for="row in (displayRows as AccountRow[])" :key="row.key" class="rounded-lg bg-gray-50 p-2.5 dark:bg-dark-900">
-          <!-- 帳號名稱和並行 -->
+          <!-- 账号名称和并行 -->
           <div class="mb-1.5 flex items-center justify-between gap-2">
             <div class="min-w-0 flex-1">
               <div class="truncate text-[11px] font-bold text-gray-900 dark:text-white" :title="row.name">
@@ -529,9 +529,9 @@ watch(
               </div>
             </div>
             <div class="flex shrink-0 items-center gap-2">
-              <!-- 並行使用 -->
+              <!-- 并行使用 -->
               <span class="font-mono text-[11px] font-bold text-gray-900 dark:text-white"> {{ row.current_in_use }}/{{ row.max_capacity }} </span>
-              <!-- 狀態徽章 -->
+              <!-- 状态徽章 -->
               <span
                 v-if="row.is_available"
                 class="inline-flex items-center gap-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
@@ -582,12 +582,12 @@ watch(
             </div>
           </div>
 
-          <!-- 進度條 -->
+          <!-- 进度条 -->
           <div class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-dark-700">
             <div class="h-full rounded-full transition-all duration-300" :class="getLoadBarClass(row.load_percentage)" :style="getLoadBarStyle(row.load_percentage)"></div>
           </div>
 
-          <!-- 等待佇列 -->
+          <!-- 等待伫列 -->
           <div v-if="row.waiting_in_queue > 0" class="mt-1.5 flex justify-end">
             <span class="rounded-full bg-purple-100 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
               {{ t('admin.ops.concurrency.queued', { count: row.waiting_in_queue }) }}

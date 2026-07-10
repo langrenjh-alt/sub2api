@@ -94,7 +94,7 @@
               :sort-key="sortKey"
               :sort-order="sortOrder"
             >
-              <div class="flex items-center space-x-1">
+              <div :class="['flex items-center space-x-1', getHeaderContentAlignmentClass(column)]">
                 <span>{{ column.label }}</span>
                 <span
                   v-if="column.sortable"
@@ -226,20 +226,20 @@ const tableWrapperRef = ref<HTMLElement | null>(null)
 const isScrollable = ref(false)
 const actionsColumnNeedsExpanding = ref(false)
 
-// --- 虛擬滾動「整表空白」根治 ---
-// 根因:本元件根 .table-wrapper 為 flex:1 / min-h-0,高度由父級 flex 鏈決定。@tanstack 虛擬化器
-// 僅在 observeElementRect 回撥裡寫 scrollRect;一旦該回撥讀到 0 高度(載入瞬間 flex 未結算,或
-// 滾動中動態行高校正觸發的 reflow),scrollRect 被釘死為 0 → calculateRange 返回 null → 整表空白。
-// 對策(見下方 virtualizer 選項):
-//   1) 覆寫 observeElementRect,直接丟棄 height<=0 的讀數,scrollRect 永不被釘成 0;
-//   2) initialRect 給一屏兜底高度,首個有效讀數到來前也有行可渲染,絕不空白。
-// 兜底高度:表格區域大致 = 視口高度 - 頂欄/外邊距/篩選/分頁 ≈ 320px
+// --- 虚拟滚动「整表空白」根治 ---
+// 根因:本组件根 .table-wrapper 为 flex:1 / min-h-0,高度由父级 flex 链决定。@tanstack 虚拟化器
+// 仅在 observeElementRect 回调里写 scrollRect;一旦该回调读到 0 高度(加载瞬间 flex 未结算,或
+// 滚动中动态行高校正触发的 reflow),scrollRect 被钉死为 0 → calculateRange 返回 null → 整表空白。
+// 对策(见下方 virtualizer 选项):
+//   1) 覆写 observeElementRect,直接丢弃 height<=0 的读数,scrollRect 永不被钉成 0;
+//   2) initialRect 给一屏兜底高度,首个有效读数到来前也有行可渲染,绝不空白。
+// 兜底高度:表格区域大致 = 视口高度 - 顶栏/外边距/筛选/分页 ≈ 320px
 const estimatedViewportHeight = () => {
   if (typeof window === 'undefined') return 600
   return Math.max(window.innerHeight - 320, 400)
 }
 
-// 覆寫預設 observeElementRect:過濾掉 0 高度讀數(根治整表空白的關鍵)
+// 覆写默认 observeElementRect:过滤掉 0 高度读数(根治整表空白的关键)
 const observeElementRectNonZero = (
   instance: any,
   cb: (rect: { width: number; height: number }) => void
@@ -247,32 +247,37 @@ const observeElementRectNonZero = (
   if (rect.height > 0) cb(rect)
 })
 
-// 檢查是否可滾動
+// 检查是否可滚动
 const checkScrollable = () => {
   if (tableWrapperRef.value) {
     isScrollable.value = tableWrapperRef.value.scrollWidth > tableWrapperRef.value.clientWidth
   }
 }
 
-// 檢查操作列是否需要展開
+// 检查操作列是否需要展开
 const checkActionsColumnWidth = () => {
+  if (!props.expandableActions) {
+    actionsColumnNeedsExpanding.value = false
+    actionsExpanded.value = false
+    return
+  }
   if (!tableWrapperRef.value) return
 
-  // 查詢第一行的操作列單元格
+  // 查询第一行的操作列单元格
   const firstActionCell = tableWrapperRef.value.querySelector('tbody tr:first-child td:last-child')
   if (!firstActionCell) return
 
-  // 查詢操作列內容的容器div
+  // 查询操作列内容的容器div
   const actionsContainer = firstActionCell.querySelector('div')
   if (!actionsContainer) return
 
-  // 臨時展開以測量完整寬度
+  // 临时展开以测量完整宽度
   const wasExpanded = actionsExpanded.value
   actionsExpanded.value = true
 
   // 等待DOM更新
   nextTick(() => {
-    // 測量所有按鈕的總寬度
+    // 测量所有按钮的总宽度
     const actionItems = actionsContainer.querySelectorAll('button, a, [role="button"]')
     if (actionItems.length <= 2) {
       actionsColumnNeedsExpanding.value = false
@@ -280,7 +285,7 @@ const checkActionsColumnWidth = () => {
       return
     }
 
-    // 計算所有按鈕的總寬度（包括gap）
+    // 计算所有按钮的总宽度（包括gap）
     let totalWidth = 0
     actionItems.forEach((item, index) => {
       totalWidth += (item as HTMLElement).offsetWidth
@@ -289,18 +294,18 @@ const checkActionsColumnWidth = () => {
       }
     })
 
-    // 獲取單元格可用寬度（減去padding）
-    const cellWidth = (firstActionCell as HTMLElement).clientWidth - 32 // 減去左右padding
+    // 获取单元格可用宽度（减去padding）
+    const cellWidth = (firstActionCell as HTMLElement).clientWidth - 32 // 减去左右padding
 
-    // 如果總寬度超過可用寬度，需要展開功能
+    // 如果总宽度超过可用宽度，需要展开功能
     actionsColumnNeedsExpanding.value = totalWidth > cellWidth
 
-    // 恢復原來的展開狀態
+    // 恢复原来的展开状态
     actionsExpanded.value = wasExpanded
   })
 }
 
-// 監聽尺寸變化
+// 监听尺寸变化
 let resizeObserver: ResizeObserver | null = null
 let resizeHandler: (() => void) | null = null
 let desktopViewportMediaQuery: MediaQueryList | null = null
@@ -325,7 +330,7 @@ const attachDesktopTableTracking = () => {
     })
     resizeObserver.observe(tableWrapperRef.value)
   } else {
-    // 降級方案：不支援 ResizeObserver 時使用 window resize
+    // 降级方案：不支持 ResizeObserver 时使用 window resize
     resizeHandler = () => {
       checkScrollable()
       checkActionsColumnWidth()
@@ -369,7 +374,7 @@ interface Props {
   stickyFirstColumn?: boolean
   stickyActionsColumn?: boolean
   expandableActions?: boolean
-  actionsCount?: number // 操作按鈕總數，用於判斷是否需要展開功能
+  actionsCount?: number // 操作按钮总数，用于判断是否需要展开功能
   rowKey?: string | ((row: any) => string | number)
   /**
    * Default sort configuration (only applied when there is no persisted sort state)
@@ -485,6 +490,13 @@ const getColumnAriaSort = (key: string) => {
   return sortOrder.value === 'asc' ? 'ascending' : 'descending'
 }
 
+const getHeaderContentAlignmentClass = (column: Column) => {
+  const className = column.class || ''
+  if (className.includes('text-center')) return 'justify-center'
+  if (className.includes('text-right')) return 'justify-end'
+  return 'justify-start'
+}
+
 const isNullishOrEmpty = (value: any) => value === null || value === undefined || value === ''
 
 const toFiniteNumberOrNull = (value: any): number | null => {
@@ -560,8 +572,8 @@ watch(
   { immediate: true, flush: 'post' }
 )
 
-// 資料/列變化時重新檢查滾動狀態
-// 注意：不能監聽 actionsExpanded，因為 checkActionsColumnWidth 會臨時修改它，會導致無限迴圈
+// 资料/列变化时重新检查滚动状态
+// 注意：不能监听 actionsExpanded，因为 checkActionsColumnWidth 会临时修改它，会导致无限循环
 watch(
   [() => props.data.length, columnsSignature],
   async () => {
@@ -572,7 +584,7 @@ watch(
   { flush: 'post' }
 )
 
-// 單獨監聽展開狀態變化，只更新滾動狀態
+// 单独监听展开状态变化，只更新滚动状态
 watch(actionsExpanded, async () => {
   await nextTick()
   checkScrollable()
@@ -620,11 +632,11 @@ const rowVirtualizer = useVirtualizer(computed(() => ({
   getScrollElement: () => tableWrapperRef.value,
   estimateSize: () => props.estimateRowHeight ?? 56,
   overscan: props.overscan ?? 5,
-  // 兜底高度:首個有效高度讀數到來前,先按一屏渲染,避免空白幀
+  // 兜底高度:首个有效高度读数到来前,先按一屏渲染,避免空白帧
   initialRect: { width: 0, height: estimatedViewportHeight() },
-  // 關鍵:過濾 0 高度讀數,杜絕 scrollRect 被釘成 0 → calculateRange 返回 null → 整表空白
+  // 关键:过滤 0 高度读数,杜绝 scrollRect 被钉成 0 → calculateRange 返回 null → 整表空白
   observeElementRect: observeElementRectNonZero,
-  // 把測量類 ResizeObserver 回撥批到 rAF,避免滾動中同步 reflow 風暴導致的校正抖動/空白
+  // 把测量类 ResizeObserver 回调批到 rAF,避免滚动中同步 reflow 风暴导致的校正抖动/空白
   useAnimationFrameWithResizeObserver: true,
 })))
 
@@ -655,12 +667,12 @@ const hasSelectColumn = computed(() => {
   return props.columns.length > 0 && props.columns[0].key === 'select'
 })
 
-// 生成固定列的 CSS 類
+// 生成固定列的 CSS 类
 const getStickyColumnClass = (column: Column, index: number) => {
   const classes: string[] = []
 
   if (props.stickyFirstColumn) {
-    // 如果第一列是勾選列，固定前兩列（勾選+名稱）
+    // 如果第一列是勾选列，固定前两列（勾选+名称）
     if (hasSelectColumn.value) {
       if (index === 0) {
         classes.push('sticky-col sticky-col-left-first')
@@ -668,14 +680,14 @@ const getStickyColumnClass = (column: Column, index: number) => {
         classes.push('sticky-col sticky-col-left-second')
       }
     } else {
-      // 否則只固定第一列
+      // 否则只固定第一列
       if (index === 0) {
         classes.push('sticky-col sticky-col-left')
       }
     }
   }
 
-  // 操作列固定（最後一列）
+  // 操作列固定（最后一列）
   if (props.stickyActionsColumn && column.key === 'actions') {
     classes.push('sticky-col sticky-col-right')
   }
@@ -683,11 +695,11 @@ const getStickyColumnClass = (column: Column, index: number) => {
   return classes.join(' ')
 }
 
-// 根據列數自適應調整內邊距
+// 根据列数自适应调整内边距
 const getAdaptivePaddingClass = () => {
   const columnCount = props.columns.length
 
-  // 列數越多，內邊距越小
+  // 列数越多，内边距越小
   if (columnCount >= 10) {
     return 'px-2' // 8px
   } else if (columnCount >= 7) {
@@ -753,9 +765,9 @@ defineExpose({
 </script>
 
 <style scoped>
-/* 表格橫向滾動 */
+/* 表格横向滚动 */
 .table-wrapper {
-  --select-col-width: 52px; /* 勾選列寬度：px-6 (24px*2) + checkbox (16px) */
+  --select-col-width: 52px; /* 勾选列宽度：px-6 (24px*2) + checkbox (16px) */
   position: relative;
   overflow-x: auto;
   overflow-y: auto;
@@ -764,7 +776,7 @@ defineExpose({
   isolation: isolate;
 }
 
-/* 表頭容器，確保在滾動時覆蓋表體內容 */
+/* 表头容器，确保在滚动时覆盖表体内容 */
 .table-wrapper .table-header {
   position: sticky;
   top: 0;
@@ -776,17 +788,17 @@ defineExpose({
   background-color: rgb(31 41 55);
 }
 
-/* 表體保持在表頭下方 */
+/* 表体保持在表头下方 */
 .table-body {
   position: relative;
   z-index: 0;
 }
 
-/* 所有表頭單元格固定在頂部 */
+/* 所有表头单元格固定在顶部 */
 .sticky-header-cell {
   position: sticky;
   top: 0;
-  z-index: 210; /* 必須高於所有表體內容 */
+  z-index: 210; /* 必须高于所有表体内容 */
   background-color: rgb(249 250 251);
 }
 
@@ -794,23 +806,23 @@ defineExpose({
   background-color: rgb(31 41 55);
 }
 
-/* Sticky 列基礎樣式 */
+/* Sticky 列基础样式 */
 .sticky-col {
   position: sticky;
-  z-index: 20; /* 表體固定列 */
+  z-index: 20; /* 表体固定列 */
 }
 
-/* 單列固定（無勾選列時） */
+/* 单列固定（无勾选列时） */
 .sticky-col-left {
   left: 0;
 }
 
-/* 雙列固定（有勾選列時）：第一列（勾選） */
+/* 双列固定（有勾选列时）：第一列（勾选） */
 .sticky-col-left-first {
   left: 0;
 }
 
-/* 雙列固定（有勾選列時）：第二列（名稱） */
+/* 双列固定（有勾选列时）：第二列（名称） */
 .sticky-col-left-second {
   left: var(--select-col-width);
 }
@@ -820,12 +832,12 @@ defineExpose({
   right: 0;
 }
 
-/* 表頭 sticky 列 - 需要比普通表頭單元格更高的 z-index */
+/* 表头 sticky 列 - 需要比普通表头单元格更高的 z-index */
 .sticky-header-cell.sticky-col {
-  z-index: 220; /* 高於普通表頭單元格和表體固定列 */
+  z-index: 220; /* 高于普通表头单元格和表体固定列 */
 }
 
-/* 表體 sticky 列背景 */
+/* 表体 sticky 列背景 */
 tbody .sticky-col {
   background-color: white;
 }
@@ -834,7 +846,7 @@ tbody .sticky-col {
   background-color: rgb(17 24 39);
 }
 
-/* hover 狀態保持 */
+/* hover 状态保持 */
 tbody tr:hover .sticky-col {
   background-color: rgb(249 250 251);
 }
@@ -843,8 +855,8 @@ tbody tr:hover .sticky-col {
   background-color: rgb(31 41 55);
 }
 
-/* 陰影只在可滾動時顯示 */
-/* 單列固定右側陰影 */
+/* 阴影只在可滚动时显示 */
+/* 单列固定右侧阴影 */
 .is-scrollable .sticky-col-left::after {
   content: '';
   position: absolute;
@@ -857,7 +869,7 @@ tbody tr:hover .sticky-col {
   pointer-events: none;
 }
 
-/* 雙列固定：只在第二列顯示陰影 */
+/* 双列固定：只在第二列显示阴影 */
 .is-scrollable .sticky-col-left-second::after {
   content: '';
   position: absolute;
@@ -870,7 +882,7 @@ tbody tr:hover .sticky-col {
   pointer-events: none;
 }
 
-/* 操作列左側陰影 */
+/* 操作列左侧阴影 */
 .is-scrollable .sticky-col-right::before {
   content: '';
   position: absolute;
@@ -883,7 +895,7 @@ tbody tr:hover .sticky-col {
   pointer-events: none;
 }
 
-/* 暗色模式陰影 */
+/* 暗色模式阴影 */
 .dark .is-scrollable .sticky-col-left::after,
 .dark .is-scrollable .sticky-col-left-second::after {
   background: linear-gradient(to right, rgba(0, 0, 0, 0.2), transparent);
@@ -896,16 +908,16 @@ tbody tr:hover .sticky-col {
 
 <style>
 /* ==========================================================================
-   終極懸浮捲軸防丟器 (Sledgehammer Override)
-   繞過 style.css 中 `* { scrollbar-color: transparent }` 的全域性懸停隱身詛咒！
+   终极悬浮滚动条防丢器 (Sledgehammer Override)
+   绕过 style.css 中 `* { scrollbar-color: transparent }` 的全局悬停隐身诅咒！
    ========================================================================== */
 
-/* 1. 廢除全域性針對所有元素的 scrollbar-width 設定，拿回 Chrome/Safari 下 Webkit 捲軸規則的控制權！ */
+/* 1. 废除全局针对所有元素的 scrollbar-width 设置，拿回 Chrome/Safari 下 Webkit 滚动条规则的控制权！ */
 .table-wrapper {
-  scrollbar-width: auto !important; /* 阻止 Chrome 121 退化到原生 Mac 閃隱捲軸 */
+  scrollbar-width: auto !important; /* 阻止 Chrome 121 退化到原生 Mac 闪隐滚动条 */
 }
 
-/* 2. 重寫 Webkit 滾動層，全部加上 !important 強制覆蓋透明懸停陷阱 */
+/* 2. 重写 Webkit 滚动层，全部加上 !important 强制覆盖透明悬停陷阱 */
 .table-wrapper::-webkit-scrollbar {
   height: 12px !important;
   width: 12px !important;
@@ -922,7 +934,7 @@ tbody tr:hover .sticky-col {
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* 常駐、不透明的滑塊，無視滑鼠是否 hover 都在那！ */
+/* 常驻、不透明的滑块，无视鼠标是否 hover 都在那！ */
 .table-wrapper::-webkit-scrollbar-thumb {
   background-color: rgba(107, 114, 128, 0.75) !important; 
   border-radius: 6px !important;
@@ -941,7 +953,7 @@ tbody tr:hover .sticky-col {
   background-color: rgba(209, 213, 219, 0.9) !important;
 }
 
-/* 3. 僅給真正的 Firefox 留的後路 */
+/* 3. 仅给真正的 Firefox 留的后路 */
 @supports (-moz-appearance:none) {
   .table-wrapper {
     scrollbar-width: thin !important;

@@ -97,7 +97,7 @@ async function loadData() {
   errorMessage.value = ''
   try {
     response.value = await opsAPI.getOpenAITokenStats(buildParams())
-    // 防禦：若 total 變化導致當前頁超出最大頁，則回退到末頁並重新拉取一次。
+    // 防御：若 total 变化导致当前页超出最大页，则回退到末页并重新拉取一次。
     if (viewMode.value === 'pagination' && page.value > totalPages.value) {
       page.value = totalPages.value
       response.value = await opsAPI.getOpenAITokenStats(buildParams())
@@ -123,8 +123,8 @@ watch(
     refreshToken: props.refreshToken
   }),
   (next, prev) => {
-    // 避免“篩選變化 -> 重置頁碼 -> 觸發兩次請求”：
-    // 先只重置頁碼，等待下一次 watch（僅 page 變化）再發起請求。
+    // 避免“筛选变化 -> 重置页码 -> 触发两次请求”：
+    // 先只重置页码，等待下一次 watch（仅 page 变化）再发起请求。
     const filtersChanged = !prev ||
       next.timeRange !== prev.timeRange ||
       next.viewMode !== prev.viewMode ||

@@ -1,26 +1,26 @@
 /**
- * 路由預載入組合式函式
- * 在瀏覽器空閒時預載入可能訪問的下一個頁面，提升導航體驗
+ * 路由预加载组合式函数
+ * 在浏览器空闲时预加载可能访问的下一个页面，提升导航体验
  *
- * 最佳化說明：
- * - 不使用靜態 import() 對映表，避免增加入口檔案大小
- * - 通過路由配置動態獲取元件的 import 函式
- * - 只在實際需要預載入時才執行
+ * 优化说明：
+ * - 不使用静态 import() 对映表，避免增加入口档案大小
+ * - 通过路由配置动态获取组件的 import 函数
+ * - 只在实际需要预加载时才执行
  */
 import { ref, readonly } from 'vue'
 import type { RouteLocationNormalized, Router } from 'vue-router'
 
 /**
- * 元件匯入函式型別
+ * 组件汇入函数类型
  */
 type ComponentImportFn = () => Promise<unknown>
 
 /**
- * 預載入鄰接表：定義每個路由應該預載入哪些相鄰路由
- * 只儲存路由路徑，不儲存 import 函式，避免打包問題
+ * 预加载邻接表：定义每个路由应该预加载哪些相邻路由
+ * 只保存路由路径，不保存 import 函数，避免打包问题
  */
 const PREFETCH_ADJACENCY: Record<string, string[]> = {
-  // Admin routes - 預載入最常訪問的相鄰頁面
+  // Admin routes - 预加载最常访问的相邻页面
   '/admin/dashboard': ['/admin/accounts', '/admin/users'],
   '/admin/accounts': ['/admin/dashboard', '/admin/users'],
   '/admin/users': ['/admin/groups', '/admin/dashboard'],
@@ -35,7 +35,7 @@ const PREFETCH_ADJACENCY: Record<string, string[]> = {
 }
 
 /**
- * requestIdleCallback 的返回型別
+ * requestIdleCallback 的返回类型
  */
 type IdleCallbackHandle = number | ReturnType<typeof setTimeout>
 
@@ -63,19 +63,19 @@ const cancelScheduledCallback = (handle: IdleCallbackHandle): void => {
 }
 
 /**
- * 路由預載入組合式函式
+ * 路由预加载组合式函数
  *
- * @param router - Vue Router 例項，用於獲取路由元件
+ * @param router - Vue Router 实例，用于获取路由组件
  */
 export function useRoutePrefetch(router?: Router) {
-  // 當前掛起的預載入任務控制代碼
+  // 当前挂起的预加载任务控制代码
   const pendingPrefetchHandle = ref<IdleCallbackHandle | null>(null)
 
-  // 已預載入的路由集合
+  // 已预加载的路由集合
   const prefetchedRoutes = ref<Set<string>>(new Set())
 
   /**
-   * 從路由配置中獲取元件的 import 函式
+   * 从路由配置中获取组件的 import 函数
    */
   const getComponentImporter = (path: string): ComponentImportFn | null => {
     if (!router) return null
@@ -85,7 +85,7 @@ export function useRoutePrefetch(router?: Router) {
 
     if (route && route.components?.default) {
       const component = route.components.default
-      // 檢查是否是懶載入元件（函式形式）
+      // 检查是否是懒加载组件（函数形式）
       if (typeof component === 'function') {
         return component as ComponentImportFn
       }
@@ -94,20 +94,20 @@ export function useRoutePrefetch(router?: Router) {
   }
 
   /**
-   * 獲取當前路由應該預載入的路由路徑列表
+   * 获取当前路由应该预加载的路由路径列表
    */
   const getPrefetchPaths = (route: RouteLocationNormalized): string[] => {
     return PREFETCH_ADJACENCY[route.path] || []
   }
 
   /**
-   * 執行單個元件的預載入
+   * 执行单个组件的预加载
    */
   const prefetchComponent = async (importFn: ComponentImportFn): Promise<void> => {
     try {
       await importFn()
     } catch (error) {
-      // 靜默處理預載入錯誤
+      // 静默处理预加载错误
       if (import.meta.env.DEV) {
         console.debug('[Prefetch] Failed to prefetch component:', error)
       }
@@ -115,7 +115,7 @@ export function useRoutePrefetch(router?: Router) {
   }
 
   /**
-   * 取消掛起的預載入任務
+   * 取消挂起的预加载任务
    */
   const cancelPendingPrefetch = (): void => {
     if (pendingPrefetchHandle.value !== null) {
@@ -125,7 +125,7 @@ export function useRoutePrefetch(router?: Router) {
   }
 
   /**
-   * 觸發路由預載入
+   * 触发路由预加载
    */
   const triggerPrefetch = (route: RouteLocationNormalized): void => {
     cancelPendingPrefetch()
@@ -140,7 +140,7 @@ export function useRoutePrefetch(router?: Router) {
         const routePath = route.path
         if (prefetchedRoutes.value.has(routePath)) return
 
-        // 獲取需要預載入的元件 import 函式
+        // 获取需要预加载的组件 import 函数
         const importFns: ComponentImportFn[] = []
         for (const path of prefetchPaths) {
           const importFn = getComponentImporter(path)
@@ -160,7 +160,7 @@ export function useRoutePrefetch(router?: Router) {
   }
 
   /**
-   * 重置預載入狀態
+   * 重置预加载状态
    */
   const resetPrefetchState = (): void => {
     cancelPendingPrefetch()
@@ -168,14 +168,14 @@ export function useRoutePrefetch(router?: Router) {
   }
 
   /**
-   * 判斷是否為管理員路由
+   * 判断是否为管理员路由
    */
   const isAdminRoute = (path: string): boolean => {
     return path.startsWith('/admin')
   }
 
   /**
-   * 獲取預載入配置（相容舊 API）
+   * 获取预加载配置（兼容旧 API）
    */
   const getPrefetchConfig = (route: RouteLocationNormalized): ComponentImportFn[] => {
     const paths = getPrefetchPaths(route)
@@ -197,6 +197,6 @@ export function useRoutePrefetch(router?: Router) {
   }
 }
 
-// 相容舊測試的匯出
+// 兼容旧测试的导出
 export const _adminPrefetchMap = PREFETCH_ADJACENCY
 export const _userPrefetchMap = PREFETCH_ADJACENCY

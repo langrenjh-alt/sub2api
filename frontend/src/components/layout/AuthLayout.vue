@@ -15,9 +15,9 @@
 
         <div class="max-w-xl">
           <p class="mb-4 text-sm font-medium text-black/45 dark:text-white/45">Secure access</p>
-          <h1 class="text-5xl font-semibold leading-none md:text-6xl">登入後進入統一控制台。</h1>
+          <h1 class="text-5xl font-semibold leading-none md:text-6xl">登录后进入统一控制台。</h1>
           <p class="mt-6 max-w-lg text-base leading-7 text-black/60 dark:text-white/60">
-            帳號、金鑰、訂閱和儲值都在同一個介面裡完成。介面保持簡潔，只讓最常用的操作靠近你。
+            账号、密钥、订阅和充值都在同一个界面里完成。界面保持简洁，只让最常用的操作靠近你。
           </p>
         </div>
 

@@ -39,19 +39,19 @@ export interface UserDashboardStats {
   total_cache_creation_tokens: number
   total_cache_read_tokens: number
   total_tokens: number
-  total_cost: number // 標準計費
-  total_actual_cost: number // 實際扣除
+  total_cost: number // 标准计费
+  total_actual_cost: number // 实际扣除
   today_requests: number
   today_input_tokens: number
   today_output_tokens: number
   today_cache_creation_tokens: number
   today_cache_read_tokens: number
   today_tokens: number
-  today_cost: number // 今日標準計費
-  today_actual_cost: number // 今日實際扣除
+  today_cost: number // 今日标准计费
+  today_actual_cost: number // 今日实际扣除
   average_duration_ms: number
-  rpm: number // 近5分鐘平均每分鐘請求數
-  tpm: number // 近5分鐘平均每分鐘Token數
+  rpm: number // 近5分钟平均每分钟请求数
+  tpm: number // 近5分钟平均每分钟Token数
   by_platform?: PlatformDashboardStats[]
 }
 

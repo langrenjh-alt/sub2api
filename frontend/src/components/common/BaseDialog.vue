@@ -20,7 +20,7 @@
             <button
               v-if="showCloseButton"
               @click="emit('close')"
-              class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300"
+              class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300 dark:focus-visible:ring-offset-dark-900"
               aria-label="Close modal"
             >
               <Icon name="x" size="md" />
@@ -46,11 +46,11 @@
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
 
-// 生成唯一ID以避免多個對話方塊時ID衝突
+// 生成唯一ID以避免多个对话方块时ID冲突
 let dialogIdCounter = 0
 const dialogId = `modal-title-${++dialogIdCounter}`
 
-// 焦點管理
+// 焦点管理
 const dialogRef = ref<HTMLElement | null>(null)
 let previousActiveElement: HTMLElement | null = null
 
@@ -116,12 +116,12 @@ watch(
   () => props.show,
   async (isOpen) => {
     if (isOpen) {
-      // 儲存當前焦點元素
+      // 保存当前焦点元素
       previousActiveElement = document.activeElement as HTMLElement
-      // 使用CSS類而不是直接操作style,更易於管理多個對話方塊
+      // 使用CSS类而不是直接操作style,更易于管理多个对话方块
       document.body.classList.add('modal-open')
 
-      // 等待DOM更新後設定焦點到對話方塊
+      // 等待DOM更新后设置焦点到对话方块
       await nextTick()
       if (dialogRef.value) {
         const firstFocusable = dialogRef.value.querySelector<HTMLElement>(
@@ -131,7 +131,7 @@ watch(
       }
     } else {
       document.body.classList.remove('modal-open')
-      // 恢復之前的焦點
+      // 恢复之前的焦点
       if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
         previousActiveElement.focus()
       }
@@ -147,7 +147,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
-  // 確保元件解除安裝時移除滾動鎖定
+  // 确保组件解除安装时移除滚动锁定
   document.body.classList.remove('modal-open')
 })
 </script>

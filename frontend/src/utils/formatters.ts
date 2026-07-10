@@ -1,5 +1,5 @@
 /**
- * 格式化快取 token 數量（1K/1M 縮寫）
+ * 格式化快取 token 数量（1K/1M 缩写）
  */
 export function formatCacheTokens(tokens: number): string {
   if (tokens >= 1000000) return `${(tokens / 1000000).toFixed(1)}M`
@@ -8,7 +8,7 @@ export function formatCacheTokens(tokens: number): string {
 }
 
 /**
- * 自適應精度格式化倍率（確保小數值如 0.001 不被截斷）
+ * 自适应精度格式化倍率（确保小数值如 0.001 不被截断）
  */
 export function formatMultiplier(val: number): string {
   if (val >= 0.01) return val.toFixed(2)

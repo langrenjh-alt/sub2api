@@ -97,7 +97,7 @@ async function handleCreateAccount(payload: PendingOAuthCreateAccountPayload) {
       return
     }
 
-    // 後端把 pending session 轉到 choice 狀態（使用者填的 email 已在系統內）→ 跳回 callback view 走繫結流程
+    // 后端把 pending session 转到 choice 状态（用户填的 email 已在系统内）→ 跳回 callback view 走绑定流程
     if (data.step === 'choose_account_action_required' || data.existing_account_bindable === true) {
       navigateToBindLogin(payload.email)
       return
@@ -105,7 +105,7 @@ async function handleCreateAccount(payload: PendingOAuthCreateAccountPayload) {
 
     accountActionError.value = t('auth.loginFailed')
   } catch (e: unknown) {
-    // 全域性"開放註冊"關閉且未開啟釘釘企業模式豁免時，引導使用者去繫結已有帳戶而非死路
+    // 全局"开放注册"关闭且未开启钉钉企业模式豁免时，引导用户去绑定已有账户而非死路
     const err = e as { response?: { data?: { reason?: string } } }
     if (err.response?.data?.reason === 'REGISTRATION_DISABLED') {
       appStore.showInfo(t('auth.dingtalk.registrationDisabledRedirectToBind'))

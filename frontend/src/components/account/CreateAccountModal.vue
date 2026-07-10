@@ -560,18 +560,18 @@
                   Google One
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                  個人帳號，享受 Google One 訂閱配額
+                  个人账号，享受 Google One 订阅配额
                 </span>
                 <div class="mt-2 flex flex-wrap gap-1">
                   <span
                     class="rounded bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700 dark:bg-purple-900/40 dark:text-purple-300"
                   >
-                    推薦個人使用者
+                    推荐个人用户
                   </span>
                   <span
                     class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                   >
-                    無需 GCP
+                    无需 GCP
                   </span>
                 </div>
               </div>
@@ -603,10 +603,10 @@
                   GCP Code Assist
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                  企業級，需要 GCP 專案
+                  企业级，需要 GCP 专案
                 </span>
                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  需要啟用 GCP 專案並繫結信用卡
+                  需要启用 GCP 专案并绑定信用卡
                   <a
                     :href="geminiHelpLinks.gcpProject"
                     class="ml-1 text-blue-600 hover:underline dark:text-blue-400"
@@ -620,12 +620,12 @@
                   <span
                     class="rounded bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
                   >
-                    企業使用者
+                    企业用户
                   </span>
                   <span
                     class="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
                   >
-                    高並行
+                    高并行
                   </span>
                 </div>
               </div>
@@ -648,7 +648,7 @@
               >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-              <span>{{ showAdvancedOAuth ? '隱藏' : '顯示' }}高階選項（自建 OAuth Client）</span>
+              <span>{{ showAdvancedOAuth ? '隐藏' : '显示' }}高阶选项（自建 OAuth Client）</span>
             </button>
           </div>
 
@@ -951,7 +951,7 @@
       </div>
 
       <!-- Antigravity model restriction (applies to OAuth + Upstream) -->
-      <!-- Antigravity 只支援模型對映模式，不支援白名單模式 -->
+      <!-- Antigravity 只支持模型对映模式，不支持白名单模式 -->
       <div v-if="form.platform === 'antigravity'" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -1006,7 +1006,7 @@
                   </svg>
                 </button>
               </div>
-              <!-- 校驗錯誤提示 -->
+              <!-- 校验错误提示 -->
               <p v-if="!isValidWildcardPattern(mapping.from)" class="text-xs text-red-500">
                 {{ t('admin.accounts.wildcardOnlyAtEnd') }}
               </p>
@@ -1114,7 +1114,7 @@
           <p class="input-hint">{{ t('admin.accounts.gemini.tier.aiStudioHint') }}</p>
         </div>
 
-        <!-- Model Restriction Section (Antigravity 已在上層條件排除) -->
+        <!-- Model Restriction Section (Antigravity 已在上层条件排除) -->
         <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
           <label class="input-label">{{ t('admin.accounts.modelRestriction') }}</label>
 
@@ -1462,6 +1462,110 @@
           </div>
         </div>
 
+        <!-- Header Override Section (anthropic/openai apikey only) -->
+        <div
+          v-if="isHeaderOverridePlatform(form.platform)"
+          class="border-t border-gray-200 pt-4 dark:border-dark-600"
+        >
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <label class="input-label mb-0">{{ t('admin.accounts.headerOverride.title') }}</label>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.headerOverride.hint') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="headerOverrideEnabled = !headerOverrideEnabled"
+              :class="[
+                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                headerOverrideEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  headerOverrideEnabled ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
+
+          <div v-if="headerOverrideEnabled" class="space-y-3">
+            <div class="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                <Icon name="exclamationCircle" size="sm" class="mr-1 inline" :stroke-width="2" />
+                {{ t('admin.accounts.headerOverride.info') }}
+              </p>
+            </div>
+
+            <div v-if="headerOverrideRows.length > 0" class="space-y-2">
+              <div
+                v-for="(row, index) in headerOverrideRows"
+                :key="getHeaderOverrideRowKey(row)"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="row.name"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.accounts.headerOverride.namePlaceholder')"
+                />
+                <input
+                  v-model="row.value"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.accounts.headerOverride.valuePlaceholder')"
+                />
+                <button
+                  type="button"
+                  @click="removeHeaderOverrideRow(index)"
+                  class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              @click="addHeaderOverrideRow"
+              class="w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-gray-600 transition-colors hover:border-gray-400 hover:text-gray-700 dark:border-dark-500 dark:text-gray-400 dark:hover:border-dark-400 dark:hover:text-gray-300"
+            >
+              <svg class="mr-1 inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              {{ t('admin.accounts.headerOverride.addRow') }}
+            </button>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                @click="fillHeaderOverrideTemplate"
+                class="rounded-lg bg-primary-50 px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+              >
+                + {{ t('admin.accounts.headerOverride.fillTemplate') }}
+              </button>
+            </div>
+
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.headerOverride.emptyValueHint') }}
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- Bedrock credentials (only for Anthropic Bedrock type) -->
@@ -1722,7 +1826,7 @@
         </div>
       </div>
 
-      <!-- 配額控制 (Anthropic apikey/bedrock: 配額限制 + 親和) -->
+      <!-- 配额控制 (Anthropic apikey/bedrock: 配额限制 + 亲和) -->
       <div
         v-if="form.platform === 'anthropic' && (form.type === 'apikey' || form.type === 'bedrock')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1774,7 +1878,7 @@
         />
       </div>
 
-      <!-- 配額控制 (非 Anthropic apikey/bedrock) -->
+      <!-- 配额控制 (非 Anthropic apikey/bedrock) -->
       <div
         v-else-if="form.type === 'apikey' || form.type === 'bedrock'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -1826,7 +1930,7 @@
         />
       </div>
 
-      <!-- OpenAI OAuth Model Mapping (OAuth 型別沒有 apikey 容器，需要獨立的模型對映區域) -->
+      <!-- OpenAI OAuth Model Mapping (OAuth 类型没有 apikey 容器，需要独立的模型对映区域) -->
       <div
         v-if="(form.platform === 'openai' || form.platform === 'grok') && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2142,7 +2246,7 @@
         </div>
       </div>
 
-      <!-- 配額控制 (Anthropic OAuth/SetupToken: 親和 + 視窗費用 + 會話 + RPM 等) -->
+      <!-- 配额控制 (Anthropic OAuth/SetupToken: 亲和 + 视窗费用 + 会话 + RPM 等) -->
       <div
         v-if="form.platform === 'anthropic' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600 space-y-4"
@@ -2363,7 +2467,7 @@
 
           </div>
 
-          <!-- 使用者訊息限速模式（獨立於 RPM 開關，始終可見） -->
+          <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
           <div class="mt-4">
             <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -2566,7 +2670,7 @@
         <p class="input-hint">{{ t('admin.accounts.expiresAtHint') }}</p>
       </div>
 
-      <!-- OpenAI 自動透傳開關（OAuth/API Key） -->
+      <!-- OpenAI 自动透传开关（OAuth/API Key） -->
       <div
         v-if="form.platform === 'openai'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2596,7 +2700,7 @@
         </div>
       </div>
 
-      <!-- OpenAI WS Mode 三態（off/ctx_pool/passthrough） -->
+      <!-- OpenAI WS Mode 三态（off/ctx_pool/passthrough） -->
       <div
         v-if="form.platform === 'openai' && (accountCategory === 'oauth-based' || accountCategory === 'apikey')"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2617,7 +2721,7 @@
         </div>
       </div>
 
-      <!-- Anthropic API Key 自動透傳開關 -->
+      <!-- Anthropic API Key 自动透传开关 -->
       <div
         v-if="form.platform === 'anthropic' && accountCategory === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2685,7 +2789,7 @@
         </div>
       </div>
 
-      <!-- OpenAI OAuth Codex 官方客戶端限制開關 -->
+      <!-- OpenAI OAuth Codex 官方客户端限制开关 -->
       <div
         v-if="form.platform === 'openai' && accountCategory === 'oauth-based'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
@@ -2877,7 +2981,7 @@
             >
               ?
             </span>
-            <!-- Tooltip（向下顯示避免被彈窗裁剪） -->
+            <!-- Tooltip（向下显示避免被弹窗裁剪） -->
             <div
               class="pointer-events-none absolute left-0 top-full z-[100] mt-1.5 w-72 rounded bg-gray-900 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 dark:bg-gray-700"
             >
@@ -2916,7 +3020,7 @@
           </div>
         </div>
 
-        <!-- Group Selection - 僅標準模式顯示 -->
+        <!-- Group Selection - 仅标准模式显示 -->
         <GroupSelector
           v-if="!authStore.isSimpleMode"
           v-model="form.group_ids"
@@ -3090,7 +3194,7 @@
                 rel="noreferrer"
                 class="text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
-                修改歸屬地
+                修改归属地
               </a>
               <span class="text-gray-400">·</span>
               <a
@@ -3322,7 +3426,12 @@ import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.
 import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
 import {
   applyAntigravityProjectID,
-  applyInterceptWarmup
+  applyHeaderOverride,
+  applyInterceptWarmup,
+  getHeaderOverrideTemplate,
+  isHeaderOverridePlatform,
+  validateHeaderOverrideRows,
+  type HeaderOverrideRow
 } from '@/components/account/credentialsBuilder'
 import { formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
@@ -3506,6 +3615,30 @@ function parsePoolModeRetryStatusCodes(input: string): number[] {
 const customErrorCodesEnabled = ref(false)
 const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
+const headerOverrideEnabled = ref(false)
+const headerOverrideRows = ref<HeaderOverrideRow[]>([])
+
+const addHeaderOverrideRow = () => {
+  headerOverrideRows.value.push({ name: '', value: '' })
+}
+
+const removeHeaderOverrideRow = (index: number) => {
+  headerOverrideRows.value.splice(index, 1)
+}
+
+// 模板按钮：填入标准客户端请求头名称（值留空），跳过已存在的同名行
+const fillHeaderOverrideTemplate = () => {
+  const existing = new Set(
+    headerOverrideRows.value.map((row) => row.name.trim().toLowerCase()).filter(Boolean)
+  )
+  const rows = headerOverrideRows.value.filter((row) => row.name.trim() || row.value.trim())
+  for (const row of getHeaderOverrideTemplate(form.platform)) {
+    if (!existing.has(row.name)) {
+      rows.push(row)
+    }
+  }
+  headerOverrideRows.value = rows
+}
 const interceptWarmupRequests = ref(false)
 const autoPauseOnExpired = ref(true)
 const openaiPassthroughEnabled = ref(false)
@@ -3563,6 +3696,7 @@ const vertexServiceAccountDragActive = ref(false)
 const tempUnschedEnabled = ref(false)
 const tempUnschedRules = ref<TempUnschedRuleForm[]>([])
 const getModelMappingKey = createStableObjectKeyResolver<ModelMapping>('create-model-mapping')
+const getHeaderOverrideRowKey = createStableObjectKeyResolver<HeaderOverrideRow>('create-header-override-row')
 const getOpenAICompactModelMappingKey = createStableObjectKeyResolver<ModelMapping>('create-openai-compact-model-mapping')
 const getAntigravityModelMappingKey = createStableObjectKeyResolver<ModelMapping>('create-antigravity-model-mapping')
 const getTempUnschedRuleKey = createStableObjectKeyResolver<TempUnschedRuleForm>('create-temp-unsched-rule')
@@ -3797,11 +3931,11 @@ const form = reactive({
 
 // Helper to check if current type needs OAuth flow
 const isOAuthFlow = computed(() => {
-  // Antigravity upstream 型別不需要 OAuth 流程
+  // Antigravity upstream 类型不需要 OAuth 流程
   if (form.platform === 'antigravity' && antigravityAccountType.value === 'upstream') {
     return false
   }
-  // Bedrock 型別不需要 OAuth 流程
+  // Bedrock 类型不需要 OAuth 流程
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
@@ -3847,7 +3981,7 @@ watch(
         .catch(() => { tlsFingerprintProfiles.value = [] })
       // Modal opened - fill related models
       allowedModels.value = [...getModelsByPlatform(form.platform)]
-      // Antigravity: 預設使用對映模式並填充預設對映
+      // Antigravity: 默认使用对映模式并填充默认对映
       if (form.platform === 'antigravity') {
         antigravityModelRestrictionMode.value = 'mapping'
         fetchAntigravityDefaultMappings().then(mappings => {
@@ -3869,12 +4003,12 @@ watch(
 watch(
   [accountCategory, addMethod, antigravityAccountType, () => form.platform],
   ([category, method, agType]) => {
-    // Antigravity upstream 型別（實際建立為 apikey）
+    // Antigravity upstream 类型（实际建立为 apikey）
     if (form.platform === 'antigravity' && agType === 'upstream') {
       form.type = 'apikey'
       return
     }
-    // Bedrock 型別
+    // Bedrock 类型
     if (form.platform === 'anthropic' && category === 'bedrock') {
       form.type = 'bedrock' as AccountType
       return
@@ -3906,7 +4040,7 @@ watch(
     // Clear model-related settings
     allowedModels.value = []
     modelMappings.value = []
-    // Antigravity: 預設使用對映模式並填充預設對映
+    // Antigravity: 默认使用对映模式并填充默认对映
     if (newPlatform === 'antigravity') {
       antigravityModelRestrictionMode.value = 'mapping'
       fetchAntigravityDefaultMappings().then(mappings => {
@@ -3964,6 +4098,10 @@ watch(
       anthropicAPIKeyAuthScheme.value = 'x_api_key'
       webSearchEmulationMode.value = 'default'
     }
+    // 请求头覆写为平台相关配置（模板/常用头集合不同），切换平台时清空，
+    // 避免上一平台的模板行被提交到新平台账号
+    headerOverrideEnabled.value = false
+    headerOverrideRows.value = []
     // Reset OAuth states
     oauth.resetState()
     openaiOAuth.resetState()
@@ -4028,8 +4166,8 @@ watch(
   [antigravityModelRestrictionMode, () => form.platform],
   ([, platform]) => {
     if (platform !== 'antigravity') return
-    // Antigravity 預設不做限制：白名單留空表示允許所有（包含未來新增模型）。
-    // 如果需要快速填充常用模型，可在元件內點“填充相關模型”。
+    // Antigravity 默认不做限制：白名单留空表示允许所有（包含未来新增模型）。
+    // 如果需要快速填充常用模型，可在组件内点“填充相关模型”。
   }
 )
 
@@ -4353,6 +4491,8 @@ const resetForm = () => {
   customErrorCodesEnabled.value = false
   selectedErrorCodes.value = []
   customErrorCodeInput.value = null
+  headerOverrideEnabled.value = false
+  headerOverrideRows.value = []
   interceptWarmupRequests.value = false
   autoPauseOnExpired.value = true
   openaiPassthroughEnabled.value = false
@@ -4429,7 +4569,7 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     extra.openai_apikey_responses_websockets_v2_mode = openaiAPIKeyResponsesWebSocketV2Mode.value
     extra.openai_apikey_responses_websockets_v2_enabled = isOpenAIWSModeEnabled(openaiAPIKeyResponsesWebSocketV2Mode.value)
   }
-  // 清理相容舊鍵，統一改用分型別開關。
+  // 清理兼容旧键，统一改用分类型开关。
   delete extra.responses_websockets_v2_enabled
   delete extra.openai_ws_enabled
   if (openaiPassthroughEnabled.value) {
@@ -4689,7 +4829,7 @@ const handleSubmit = async () => {
       api_key: upstreamApiKey.value.trim()
     }
 
-    // Antigravity 只使用對映模式
+    // Antigravity 只使用对映模式
     const antigravityModelMapping = buildModelMappingObject(
       'mapping',
       [],
@@ -4752,7 +4892,7 @@ const handleSubmit = async () => {
     credentials.tier_id = geminiTierAIStudio.value
   }
 
-  // Add model mapping if configured（OpenAI 開啟自動透傳時不套用）
+  // Add model mapping if configured（OpenAI 开启自动透传时不应用）
   if (!isOpenAIModelRestrictionDisabled.value) {
     const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
     if (modelMapping) {
@@ -4781,6 +4921,18 @@ const handleSubmit = async () => {
   if (customErrorCodesEnabled.value) {
     credentials.custom_error_codes_enabled = true
     credentials.custom_error_codes = [...selectedErrorCodes.value]
+  }
+
+  // Add header override if enabled (anthropic/openai apikey only)
+  if (isHeaderOverridePlatform(form.platform)) {
+    if (headerOverrideEnabled.value) {
+      const headerError = validateHeaderOverrideRows(headerOverrideRows.value)
+      if (headerError) {
+        appStore.showError(t(`admin.accounts.headerOverride.${headerError}`))
+        return
+      }
+    }
+    applyHeaderOverride(credentials, headerOverrideEnabled.value, headerOverrideRows.value, 'create')
   }
 
   applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
@@ -5018,7 +5170,7 @@ const handleGrokValidateRT = async (refreshTokenInput: string) => {
   }
 }
 
-// OpenAI OAuth 授權碼兌換
+// OpenAI OAuth 授权码兑换
 const handleOpenAIExchange = async (authCode: string) => {
   const oauthClient = openaiOAuth
   if (!authCode.trim() || !oauthClient.sessionId.value) return
@@ -5047,7 +5199,7 @@ const handleOpenAIExchange = async (authCode: string) => {
     const extra = buildOpenAIExtra(oauthExtra)
     const shouldCreateOpenAI = form.platform === 'openai'
 
-    // Add model mapping for OpenAI OAuth accounts（透傳模式下不套用）
+    // Add model mapping for OpenAI OAuth accounts（透传模式下不应用）
     if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
       const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
       if (modelMapping) {
@@ -5061,7 +5213,7 @@ const handleOpenAIExchange = async (authCode: string) => {
       }
     }
 
-    // 套用臨時不可排程配置
+    // 应用临时不可调度配置
     if (!applyTempUnschedConfig(credentials)) {
       return
     }
@@ -5096,7 +5248,7 @@ const handleOpenAIExchange = async (authCode: string) => {
   }
 }
 
-// OpenAI 手動 RT 批次驗證和建立
+// OpenAI 手动 RT 批次验证和建立
 // OpenAI Mobile RT client_id
 const OPENAI_MOBILE_RT_CLIENT_ID = 'app_LlGpXReQgckcGGUo2JrYvtJK'
 
@@ -5256,7 +5408,7 @@ const handleOpenAIImportCodexPAT = async (accessToken: string) => {
   }
 }
 
-// OpenAI RT 批次驗證和建立（共享邏輯）
+// OpenAI RT 批次验证和建立（共享逻辑）
 const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string) => {
   const oauthClient = openaiOAuth
   if (!refreshTokenInput.trim()) return
@@ -5301,7 +5453,7 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
         const oauthExtra = oauthClient.buildExtraInfo(tokenInfo) as Record<string, unknown> | undefined
         const extra = buildOpenAIExtra(oauthExtra)
 
-        // Add model mapping for OpenAI OAuth accounts（透傳模式下不套用）
+        // Add model mapping for OpenAI OAuth accounts（透传模式下不应用）
         if (shouldCreateOpenAI && !isOpenAIModelRestrictionDisabled.value) {
           const modelMapping = buildModelMappingObject(modelRestrictionMode.value, allowedModels.value, modelMappings.value)
           if (modelMapping) {
@@ -5370,13 +5522,13 @@ const handleOpenAIBatchRT = async (refreshTokenInput: string, clientId?: string)
   }
 }
 
-// 手動輸入 RT（Codex CLI client_id，預設）
+// 手动输入 RT（Codex CLI client_id，默认）
 const handleOpenAIValidateRT = (rt: string) => handleOpenAIBatchRT(rt)
 
-// 手動輸入 Mobile RT
+// 手动输入 Mobile RT
 const handleOpenAIValidateMobileRT = (rt: string) => handleOpenAIBatchRT(rt, OPENAI_MOBILE_RT_CLIENT_ID)
 
-// Antigravity 手動 RT 批次驗證和建立
+// Antigravity 手动 RT 批次验证和建立
 const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
   if (!refreshTokenInput.trim()) return
 
@@ -5468,7 +5620,7 @@ const handleAntigravityValidateRT = async (refreshTokenInput: string) => {
   }
 }
 
-// Gemini OAuth 授權碼兌換
+// Gemini OAuth 授权码兑换
 const handleGeminiExchange = async (authCode: string) => {
   if (!authCode.trim() || !geminiOAuth.sessionId.value) return
 
@@ -5505,7 +5657,7 @@ const handleGeminiExchange = async (authCode: string) => {
   }
 }
 
-// Antigravity OAuth 授權碼兌換
+// Antigravity OAuth 授权码兑换
 const handleAntigravityExchange = async (authCode: string) => {
   if (!authCode.trim() || !antigravityOAuth.sessionId.value) return
 
@@ -5532,7 +5684,7 @@ const handleAntigravityExchange = async (authCode: string) => {
 		const credentials = antigravityOAuth.buildCredentials(tokenInfo)
 		applyAntigravityProjectID(credentials, antigravityProjectId.value, 'create')
 		applyInterceptWarmup(credentials, interceptWarmupRequests.value, 'create')
-		// Antigravity 只使用對映模式
+		// Antigravity 只使用对映模式
 		const antigravityModelMapping = buildModelMappingObject(
 			'mapping',
 			[],
@@ -5586,7 +5738,7 @@ const handleGrokExchange = async (authCode: string) => {
   }
 }
 
-// Anthropic OAuth 授權碼兌換
+// Anthropic OAuth 授权码兑换
 const handleAnthropicExchange = async (authCode: string) => {
   if (!authCode.trim() || !oauth.sessionId.value) return
 
@@ -5634,7 +5786,7 @@ const handleAnthropicExchange = async (authCode: string) => {
       }
     }
 
-    // UMQ mode（獨立於 RPM）
+    // UMQ mode（独立于 RPM）
     if (userMsgQueueMode.value) {
       extra.user_msg_queue_mode = userMsgQueueMode.value
     }
@@ -5675,7 +5827,7 @@ const handleAnthropicExchange = async (authCode: string) => {
   }
 }
 
-// 主入口：根據平台路由到對應處理函式
+// 主入口：根据平台路由到对应处理函数
 const handleExchangeCode = async () => {
   const authCode = oauthFlowRef.value?.authCode || ''
 
@@ -5759,7 +5911,7 @@ const handleCookieAuth = async (sessionKey: string) => {
           }
         }
 
-        // UMQ mode（獨立於 RPM）
+        // UMQ mode（独立于 RPM）
         if (userMsgQueueMode.value) {
           extra.user_msg_queue_mode = userMsgQueueMode.value
         }

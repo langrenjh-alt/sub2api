@@ -486,6 +486,129 @@
         </div>
       </div>
 
+      <!-- Header Override (anthropic/openai apikey only) -->
+      <div v-if="allHeaderOverrideCapable" class="border-t border-gray-200 pt-4 dark:border-dark-600">
+        <div class="flex items-center justify-between">
+          <div class="flex-1 pr-4">
+            <label
+              id="bulk-edit-header-override-label"
+              class="input-label mb-0"
+              for="bulk-edit-header-override-enabled"
+            >
+              {{ t('admin.accounts.headerOverride.title') }}
+            </label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.headerOverride.hint') }}
+            </p>
+          </div>
+          <input
+            v-model="enableHeaderOverride"
+            id="bulk-edit-header-override-enabled"
+            type="checkbox"
+            aria-controls="bulk-edit-header-override-body"
+            class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+          />
+        </div>
+        <div v-if="enableHeaderOverride" id="bulk-edit-header-override-body" class="mt-3 space-y-3">
+          <button
+            type="button"
+            :class="[
+              'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              headerOverrideEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+            ]"
+            @click="headerOverrideEnabled = !headerOverrideEnabled"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                headerOverrideEnabled ? 'translate-x-5' : 'translate-x-0'
+              ]"
+            />
+          </button>
+
+          <div v-if="headerOverrideEnabled" class="space-y-3">
+            <div class="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+              <p class="text-xs text-blue-700 dark:text-blue-400">
+                <Icon name="exclamationCircle" size="sm" class="mr-1 inline" :stroke-width="2" />
+                {{ t('admin.accounts.headerOverride.info') }}
+              </p>
+            </div>
+
+            <p class="text-xs text-amber-600 dark:text-amber-400">
+              {{ t('admin.accounts.headerOverride.bulkReplaceHint') }}
+            </p>
+
+            <div v-if="headerOverrideRows.length > 0" class="space-y-2">
+              <div
+                v-for="(row, index) in headerOverrideRows"
+                :key="getHeaderOverrideRowKey(row)"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="row.name"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.accounts.headerOverride.namePlaceholder')"
+                />
+                <input
+                  v-model="row.value"
+                  type="text"
+                  class="input flex-1"
+                  :placeholder="t('admin.accounts.headerOverride.valuePlaceholder')"
+                />
+                <button
+                  type="button"
+                  class="rounded-lg p-2 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                  @click="removeHeaderOverrideRow(index)"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-2 text-gray-600 transition-colors hover:border-gray-400 hover:text-gray-700 dark:border-dark-500 dark:text-gray-400 dark:hover:border-dark-400 dark:hover:text-gray-300"
+              @click="addHeaderOverrideRow"
+            >
+              <svg class="mr-1 inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              {{ t('admin.accounts.headerOverride.addRow') }}
+            </button>
+
+            <div v-if="headerOverrideTemplatePlatform" class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="rounded-lg bg-primary-50 px-3 py-1 text-xs text-primary-700 transition-colors hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50"
+                @click="fillHeaderOverrideTemplate"
+              >
+                + {{ t('admin.accounts.headerOverride.fillTemplate') }}
+              </button>
+            </div>
+
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.headerOverride.emptyValueHint') }}
+            </p>
+          </div>
+          <p v-else class="text-xs text-gray-500 dark:text-gray-400">
+            {{ t('admin.accounts.headerOverride.bulkDisableHint') }}
+          </p>
+        </div>
+      </div>
+
       <!-- Proxy -->
       <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <div class="mb-3 flex items-center justify-between">
@@ -927,7 +1050,7 @@
         </div>
       </div>
 
-      <!-- RPM Limit (僅全部為 Anthropic OAuth/SetupToken 時顯示) -->
+      <!-- RPM Limit (仅全部为 Anthropic OAuth/SetupToken 时显示) -->
       <div v-if="allAnthropicOAuthOrSetupToken" class="border-t border-gray-200 pt-4 dark:border-dark-600">
         <div class="mb-3 flex items-center justify-between">
           <label
@@ -1032,7 +1155,7 @@
             </div>
           </div>
 
-        <!-- 使用者訊息限速模式（獨立於 RPM 開關，始終可見） -->
+        <!-- 用户消息限速模式（独立于 RPM 开关，始终可见） -->
         <div class="mt-4">
           <label class="input-label">{{ t('admin.accounts.quotaControl.rpmLimit.userMsgQueue') }}</label>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 mb-2">
@@ -1150,6 +1273,16 @@ import {
   getPresetMappingsByPlatform
 } from '@/composables/useModelWhitelist'
 import {
+  buildHeaderOverridesObject,
+  getHeaderOverrideTemplate,
+  isHeaderOverridePlatform,
+  validateHeaderOverrideRows,
+  HEADER_OVERRIDE_ENABLED_CREDENTIAL_KEY,
+  HEADER_OVERRIDES_CREDENTIAL_KEY,
+  type HeaderOverrideRow
+} from '@/components/account/credentialsBuilder'
+import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
+import {
   OPENAI_WS_MODE_CTX_POOL,
   OPENAI_WS_MODE_OFF,
   OPENAI_WS_MODE_PASSTHROUGH,
@@ -1217,7 +1350,17 @@ const allOpenAIAPIKey = computed(() => {
   )
 })
 
-// 是否全部為 Anthropic OAuth/SetupToken（RPM 配置僅在此條件下顯示）
+// 是否全部为 anthropic/openai 平台的 apikey 账号（请求头覆写仅在此条件下显示）
+const allHeaderOverrideCapable = computed(() => {
+  return (
+    targetSelectedPlatforms.value.length > 0 &&
+    targetSelectedPlatforms.value.every(p => isHeaderOverridePlatform(p)) &&
+    targetSelectedTypes.value.length > 0 &&
+    targetSelectedTypes.value.every(t => t === 'apikey')
+  )
+})
+
+// 是否全部为 Anthropic OAuth/SetupToken（RPM 配置仅在此条件下显示）
 const allAnthropicOAuthOrSetupToken = computed(() => {
   return (
     targetSelectedPlatforms.value.length === 1 &&
@@ -1253,6 +1396,7 @@ const enableBaseUrl = ref(false)
 const enableModelRestriction = ref(false)
 const enableCustomErrorCodes = ref(false)
 const enableInterceptWarmup = ref(false)
+const enableHeaderOverride = ref(false)
 const enableProxy = ref(false)
 const enableConcurrency = ref(false)
 const enableLoadFactor = ref(false)
@@ -1281,6 +1425,39 @@ const modelMappings = ref<ModelMapping[]>([])
 const selectedErrorCodes = ref<number[]>([])
 const customErrorCodeInput = ref<number | null>(null)
 const interceptWarmupRequests = ref(false)
+const headerOverrideEnabled = ref(false)
+const headerOverrideRows = ref<HeaderOverrideRow[]>([])
+const getHeaderOverrideRowKey = createStableObjectKeyResolver<HeaderOverrideRow>('bulk-header-override-row')
+
+const addHeaderOverrideRow = () => {
+  headerOverrideRows.value.push({ name: '', value: '' })
+}
+
+const removeHeaderOverrideRow = (index: number) => {
+  headerOverrideRows.value.splice(index, 1)
+}
+
+// 模板仅在所选账号平台唯一时可用：混合 anthropic+openai 选择无法确定用哪套模板，
+// 误填会把另一平台的专有头写进所有所选账号
+const headerOverrideTemplatePlatform = computed(() => {
+  return targetSelectedPlatforms.value.length === 1 ? targetSelectedPlatforms.value[0] : null
+})
+
+// 模板按钮：填入所选平台的标准客户端请求头名称（值留空），跳过已存在的同名行
+const fillHeaderOverrideTemplate = () => {
+  const platform = headerOverrideTemplatePlatform.value
+  if (!platform) return
+  const existing = new Set(
+    headerOverrideRows.value.map((row) => row.name.trim().toLowerCase()).filter(Boolean)
+  )
+  const rows = headerOverrideRows.value.filter((row) => row.name.trim() || row.value.trim())
+  for (const row of getHeaderOverrideTemplate(platform)) {
+    if (!existing.has(row.name)) {
+      rows.push(row)
+    }
+  }
+  headerOverrideRows.value = rows
+}
 const proxyId = ref<number | null>(null)
 const concurrency = ref(1)
 const loadFactor = ref<number | null>(null)
@@ -1447,7 +1624,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
   }
 
   if (enableProxy.value) {
-    // 後端期望 proxy_id: 0 表示清除代理，而不是 null
+    // 后端期望 proxy_id: 0 表示清除代理，而不是 null
     updates.proxy_id = proxyId.value === null ? 0 : proxyId.value
   }
 
@@ -1456,7 +1633,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
   }
 
   if (enableLoadFactor.value) {
-    // 空值/NaN/0 時傳送 0（後端約定 <= 0 表示清除）
+    // 空值/NaN/0 时传送 0（后端约定 <= 0 表示清除）
     const lf = loadFactor.value
     updates.load_factor = (lf != null && !Number.isNaN(lf) && lf > 0) ? lf : 0
   }
@@ -1494,10 +1671,10 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
   }
 
   if (enableModelRestriction.value && !isOpenAIModelRestrictionDisabled.value) {
-    // 統一使用 model_mapping 欄位
+    // 统一使用 model_mapping 字段
     if (modelRestrictionMode.value === 'whitelist') {
-      // 白名單模式：將模型轉換為 model_mapping 格式（key=value）
-      // 空白名單表示“支援所有模型”，需顯式傳送空物件以覆蓋已有限制。
+      // 白名单模式：将模型转换为 model_mapping 格式（key=value）
+      // 空白名单表示“支持所有模型”，需显式传送空对象以覆盖已有限制。
       const mapping: Record<string, string> = {}
       for (const m of allowedModels.value) {
         mapping[m] = m
@@ -1505,7 +1682,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
       credentials.model_mapping = mapping
       credentialsChanged = true
     } else {
-      // 對映模式下空配置同樣表示“支援所有模型”。
+      // 对映模式下空配置同样表示“支持所有模型”。
       const modelMapping = buildModelMappingObject()
       credentials.model_mapping = modelMapping ?? {}
       credentialsChanged = true
@@ -1520,6 +1697,15 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
 
   if (enableInterceptWarmup.value) {
     credentials.intercept_warmup_requests = interceptWarmupRequests.value
+    credentialsChanged = true
+  }
+
+  if (enableHeaderOverride.value) {
+    // 后端使用 JSONB || merge 语义：关闭时显式写入 false + 空对象以清除旧配置
+    credentials[HEADER_OVERRIDE_ENABLED_CREDENTIAL_KEY] = headerOverrideEnabled.value
+    credentials[HEADER_OVERRIDES_CREDENTIAL_KEY] = headerOverrideEnabled.value
+      ? buildHeaderOverridesObject(headerOverrideRows.value)
+      : {}
     credentialsChanged = true
   }
 
@@ -1559,7 +1745,7 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
     credentialsChanged = true
   }
 
-  // RPM limit settings (寫入 extra 欄位)
+  // RPM limit settings (写入 extra 字段)
   if (enableRpmLimit.value) {
     const extra = ensureExtra()
     if (rpmLimitEnabled.value && bulkBaseRpm.value != null && bulkBaseRpm.value > 0) {
@@ -1569,9 +1755,9 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
         extra.rpm_sticky_buffer = bulkRpmStickyBuffer.value
       }
     } else {
-      // 關閉 RPM 限制 - 設定 base_rpm 為 0，並用空值覆蓋關聯欄位
-      // 後端使用 JSONB || merge 語義，不會刪除已有 key，
-      // 所以必須顯式傳送空值來重置（後端讀取時會 fallback 到預設值）
+      // 关闭 RPM 限制 - 设置 base_rpm 为 0，并用空值覆盖关联字段
+      // 后端使用 JSONB || merge 语义，不会删除已有 key，
+      // 所以必须显式传送空值来重置（后端读取时会 fallback 到默认值）
       extra.base_rpm = 0
       extra.rpm_strategy = ''
       extra.rpm_sticky_buffer = 0
@@ -1579,11 +1765,11 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
     updates.extra = extra
   }
 
-  // UMQ mode（獨立於 RPM 儲存）
+  // UMQ mode（独立于 RPM 保存）
   if (userMsgQueueMode.value !== null) {
     const umqExtra = ensureExtra()
-    umqExtra.user_msg_queue_mode = userMsgQueueMode.value  // '' = 清除帳號級覆蓋
-    umqExtra.user_msg_queue_enabled = false  // 清理舊欄位（JSONB merge）
+    umqExtra.user_msg_queue_mode = userMsgQueueMode.value  // '' = 清除账号级覆盖
+    umqExtra.user_msg_queue_enabled = false  // 清理旧字段（JSONB merge）
   }
 
   if (credentialsChanged) {
@@ -1595,8 +1781,8 @@ const buildUpdatePayload = (): Record<string, unknown> | null => {
 
 const mixedChannelConfirmed = ref(false)
 
-// 是否需要預檢查：改了分組 + 全是單一的 antigravity 或 anthropic 平台
-// 多平台混合的情況由 submitBulkUpdate 的 409 catch 兜底
+// 是否需要预检查：改了分组 + 全是单一的 antigravity 或 anthropic 平台
+// 多平台混合的情况由 submitBulkUpdate 的 409 catch 兜底
 const canPreCheck = () =>
   enableGroups.value &&
   groupIds.value.length > 0 &&
@@ -1611,7 +1797,7 @@ const handleClose = () => {
   emit('close')
 }
 
-// 預檢查：提交前調介面檢測，有風險就彈窗阻止，返回 false 表示需要使用者確認
+// 预检查：提交前调界面检测，有风险就弹窗阻止，返回 false 表示需要用户确认
 const preCheckMixedChannelRisk = async (built: Record<string, unknown>): Promise<boolean> => {
   if (!canPreCheck()) return true
   if (mixedChannelConfirmed.value) return true
@@ -1645,6 +1831,7 @@ const handleSubmit = async () => {
     enableModelRestriction.value ||
     enableCustomErrorCodes.value ||
     enableInterceptWarmup.value ||
+    enableHeaderOverride.value ||
     enableProxy.value ||
     enableConcurrency.value ||
     enableLoadFactor.value ||
@@ -1666,6 +1853,20 @@ const handleSubmit = async () => {
     return
   }
 
+  if (enableHeaderOverride.value && headerOverrideEnabled.value) {
+    // 批量保存对 header_overrides 是整键替换：开启但没有任何有效行会把所选账号的
+    // 既有覆写配置静默清空，必须显式拦截（清空请走关闭开关的路径，有专门提示）
+    if (!headerOverrideRows.value.some((row) => row.name.trim())) {
+      appStore.showError(t('admin.accounts.headerOverride.bulkEmptyRows'))
+      return
+    }
+    const headerError = validateHeaderOverrideRows(headerOverrideRows.value)
+    if (headerError) {
+      appStore.showError(t(`admin.accounts.headerOverride.${headerError}`))
+      return
+    }
+  }
+
   const built = buildUpdatePayload()
   if (!built) {
     appStore.showError(t('admin.accounts.bulkEdit.noFieldsSelected'))
@@ -1679,7 +1880,7 @@ const handleSubmit = async () => {
 }
 
 const submitBulkUpdate = async (baseUpdates: Record<string, unknown>) => {
-  // 無論是預檢查確認還是 409 兜底確認，只要 mixedChannelConfirmed 為 true 就帶上 flag
+  // 无论是预检查确认还是 409 兜底确认，只要 mixedChannelConfirmed 为 true 就带上 flag
   const updates = mixedChannelConfirmed.value
     ? { ...baseUpdates, confirm_mixed_channel_risk: true }
     : baseUpdates
@@ -1710,7 +1911,7 @@ const submitBulkUpdate = async (baseUpdates: Record<string, unknown>) => {
       handleClose()
     }
   } catch (error: any) {
-    // 兜底：多平台混合場景下，預檢查跳過，由後端 409 觸發確認框
+    // 兜底：多平台混合场景下，预检查跳过，由后端 409 触发确认框
     if (error.status === 409 && error.error === 'mixed_channel_warning') {
       pendingUpdatesForConfirm.value = baseUpdates
       mixedChannelWarningMessage.value = error.message
@@ -1747,6 +1948,7 @@ watch(
       enableModelRestriction.value = false
       enableCustomErrorCodes.value = false
       enableInterceptWarmup.value = false
+      enableHeaderOverride.value = false
       enableProxy.value = false
       enableConcurrency.value = false
       enableLoadFactor.value = false
@@ -1772,6 +1974,8 @@ watch(
       selectedErrorCodes.value = []
       customErrorCodeInput.value = null
       interceptWarmupRequests.value = false
+      headerOverrideEnabled.value = false
+      headerOverrideRows.value = []
       proxyId.value = null
       concurrency.value = 1
       loadFactor.value = null

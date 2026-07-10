@@ -120,7 +120,7 @@
         <Toggle v-model="form.enabled" />
       </div>
 
-      <!-- 高階設定區：請求模板 + 自定義 headers/body -->
+      <!-- 高阶设置区：请求模板 + 自定义 headers/body -->
       <details class="rounded-lg border border-gray-200 bg-gray-50/50 p-3 dark:border-dark-700 dark:bg-dark-900/30">
         <summary class="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
           {{ t('admin.channelMonitor.advanced.section') }}
@@ -262,7 +262,7 @@ interface MonitorForm {
   interval_seconds: number
   jitter_seconds: number
   enabled: boolean
-  // 高階設定快照
+  // 高阶设置快照
   template_id: number | null
   extra_headers: Record<string, string>
   body_override_mode: BodyOverrideMode
@@ -287,12 +287,12 @@ const form = reactive<MonitorForm>({
   body_override: null,
 })
 
-// jitter 上限與後端校驗一致：interval - jitter 不得低於最小檢測間隔 15 秒。
+// jitter 上限与后端校验一致：interval - jitter 不得低于最小检测间隔 15 秒。
 const maxJitterSeconds = computed<number>(() => Math.max(0, (form.interval_seconds || 0) - 15))
 
 let suppressFormWatchers = false
 
-// 可用模板列表（進入 dialog 時一次性拉取 cache；按 provider / api mode 過濾）。
+// 可用模板列表（进入 dialog 时一次性拉取 cache；按 provider / api mode 过滤）。
 const templatesCache = ref<ChannelMonitorTemplate[]>([])
 const templatesLoading = ref(false)
 
@@ -315,14 +315,14 @@ async function loadTemplates() {
     const { items } = await adminAPI.channelMonitorTemplate.list()
     templatesCache.value = items
   } catch (err: unknown) {
-    // 模板拉取失敗不阻塞監控表單，使用者可以不選模板
+    // 模板拉取失败不阻塞监控表单，用户可以不选模板
     console.warn('load monitor templates failed', err)
   } finally {
     templatesLoading.value = false
   }
 }
 
-// 模板下拉繫結：value 是 string（Select 元件約束），需要與 number | null 互轉。
+// 模板下拉绑定：value 是 string（Select 组件约束），需要与 number | null 互转。
 const templateSelectValue = computed<string>({
   get: () => (form.template_id == null ? '' : String(form.template_id)),
   set: (raw: string) => {
@@ -333,7 +333,7 @@ const templateSelectValue = computed<string>({
     const id = Number(raw)
     if (!Number.isFinite(id)) return
     form.template_id = id
-    // 套用模板 = 複製快照
+    // 应用模板 = 复制快照
     const tpl = templatesCache.value.find((t) => t.id === id)
     if (tpl) {
       suppressFormWatchers = true
@@ -402,7 +402,7 @@ const providerOptions = computed<ProviderOption[]>(() => [
 // Editing mode loads api_key='' via loadFromMonitor and only sets it on user
 // typing, so clearing on provider change is always a safe no-op until the user
 // picks a new key.
-// 同時清空 template_id（模板有 provider 歸屬，跨平台不通用）。
+// 同时清空 template_id（模板有 provider 归属，跨平台不通用）。
 watch(() => form.provider, () => {
   if (suppressFormWatchers) return
   form.api_key = ''
@@ -460,7 +460,7 @@ function loadFromMonitor(m: ChannelMonitor) {
 }
 
 // Re-sync form whenever the dialog is opened or the target monitor changes.
-// 同時拉取模板列表（cache 過的話一次性返回）。
+// 同时拉取模板列表（cache 过的话一次性返回）。
 watch(
   () => [props.show, props.monitor] as const,
   ([show, m]) => {
@@ -544,7 +544,7 @@ async function handleSubmit() {
       const req: UpdateParams = { ...rest }
       // Only send api_key if user typed a new value
       if (api_key) req.api_key = api_key
-      // template_id=null 用 clear_template=true 明確告訴後端清空（pointer 語義）
+      // template_id=null 用 clear_template=true 明确告诉后端清空（pointer 语义）
       if (form.template_id == null) {
         req.clear_template = true
         delete req.template_id

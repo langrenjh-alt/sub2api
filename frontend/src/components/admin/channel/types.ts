@@ -26,7 +26,7 @@ export interface PricingFormEntry {
   intervals: IntervalFormEntry[]
 }
 
-// 價格轉換：後端存 per-token，前端顯示 per-MTok ($/1M tokens)
+// 价格转换：后端存 per-token，前端显示 per-MTok ($/1M tokens)
 const MTOK = 1_000_000
 
 export function toNullableNumber(val: number | string | null | undefined): number | null {
@@ -35,16 +35,16 @@ export function toNullableNumber(val: number | string | null | undefined): numbe
   return isNaN(num) ? null : num
 }
 
-/** 前端顯示值($/MTok) → 後端儲存值(per-token) */
+/** 前端显示值($/MTok) → 后端保存值(per-token) */
 export function mTokToPerToken(val: number | string | null | undefined): number | null {
   const num = toNullableNumber(val)
   return num === null ? null : parseFloat((num / MTOK).toPrecision(10))
 }
 
-/** 後端儲存值(per-token) → 前端顯示值($/MTok) */
+/** 后端保存值(per-token) → 前端显示值($/MTok) */
 export function perTokenToMTok(val: number | null | undefined): number | null {
   if (val === null || val === undefined) return null
-  // toPrecision(10) 消除 IEEE 754 浮點乘法精度誤差，如 5e-8 * 1e6 = 0.04999...96 → 0.05
+  // toPrecision(10) 消除 IEEE 754 浮点乘法精度误差，如 5e-8 * 1e6 = 0.04999...96 → 0.05
   return parseFloat((val * MTOK).toPrecision(10))
 }
 
@@ -76,11 +76,11 @@ export function formIntervalsToAPI(intervals: IntervalFormEntry[]): PricingInter
   }))
 }
 
-// ── 模型模式衝突檢測 ──────────────────────────────────────
+// ── 模型模式冲突检测 ──────────────────────────────────────
 
 interface ModelPattern {
   pattern: string
-  prefix: string  // lowercase, 萬用字元去掉尾部 *
+  prefix: string  // lowercase, 通配符去掉尾部 *
   wildcard: boolean
 }
 
@@ -98,11 +98,11 @@ function patternsConflict(a: ModelPattern, b: ModelPattern): boolean {
   if (!a.wildcard && !b.wildcard) return a.prefix === b.prefix
   if (a.wildcard && !b.wildcard) return b.prefix.startsWith(a.prefix)
   if (!a.wildcard && b.wildcard) return a.prefix.startsWith(b.prefix)
-  // 雙萬用字元：任一字首是另一字首的字首即衝突
+  // 双通配符：任一字首是另一字首的字首即冲突
   return a.prefix.startsWith(b.prefix) || b.prefix.startsWith(a.prefix)
 }
 
-/** 檢測模型模式列表中的衝突，返回衝突的兩個模式名；無衝突返回 null */
+/** 检测模型模式列表中的冲突，返回冲突的两个模式名；无冲突返回 null */
 export function findModelConflict(models: string[]): [string, string] | null {
   const patterns = models.map(toModelPattern)
   for (let i = 0; i < patterns.length; i++) {
@@ -115,23 +115,23 @@ export function findModelConflict(models: string[]): [string, string] | null {
   return null
 }
 
-// ── 區間校驗 ──────────────────────────────────────────────
+// ── 区间校验 ──────────────────────────────────────────────
 
-/** 校驗區間列表的合法性，返回錯誤訊息；通過則返回 null
+/** 校验区间列表的合法性，返回错误消息；通过则返回 null
  *
- * mode 決定區間語義：
- * - token：區間是上下文 token 數分段 (min, max]，不能重疊，無上限段必須放最後
- * - per_request / image：區間是按 tier_label 分層（1K/2K/4K 等），後端按 label
- *   匹配，不依賴 min/max，因此跳過重疊 / last-unlimited 校驗
+ * mode 决定区间语义：
+ * - token：区间是上下文 token 数分段 (min, max]，不能重叠，无上限段必须放最后
+ * - per_request / image：区间是按 tier_label 分层（1K/2K/4K 等），后端按 label
+ *   匹配，不依赖 min/max，因此跳过重叠 / last-unlimited 校验
  */
 export function validateIntervals(
   intervals: IntervalFormEntry[],
-  mode: BillingMode,
-  t: TranslateFn,
+  mode: BillingMode = 'token',
+  t?: TranslateFn,
 ): string | null {
   if (!intervals || intervals.length === 0) return null
 
-  // 按 min_tokens 排序（不修改原陣列）
+  // 按 min_tokens 排序（不修改原数组）
   const sorted = [...intervals].sort((a, b) => a.min_tokens - b.min_tokens)
 
   for (let i = 0; i < sorted.length; i++) {
@@ -139,60 +139,114 @@ export function validateIntervals(
     if (err) return err
   }
 
-  // per_request / image 模式按 tier_label 匹配，不做 token 區間重疊校驗
+  // per_request / image 模式按 tier_label 匹配，不做 token 区间重叠校验
   if (mode !== 'token') return null
   return checkIntervalOverlap(sorted, t)
 }
 
-function validateSingleInterval(iv: IntervalFormEntry, idx: number, t: TranslateFn): string | null {
+function intervalValidationMessage(
+  t: TranslateFn | undefined,
+  key: string,
+  params: Record<string, unknown>,
+  fallback: string,
+): string {
+  return t ? t(`admin.channels.intervalValidation.${key}`, params) : fallback
+}
+
+function intervalPriceLabel(t: TranslateFn | undefined, key: string): string {
+  if (t) return t(`admin.channels.intervalValidation.price.${key}`)
+  const labels: Record<string, string> = {
+    inputPrice: '输入价格',
+    outputPrice: '输出价格',
+    cacheWritePrice: '缓存写入价格',
+    cacheReadPrice: '缓存读取价格',
+    perRequestPrice: '单次价格',
+  }
+  return labels[key] || key
+}
+
+function validateSingleInterval(iv: IntervalFormEntry, idx: number, t?: TranslateFn): string | null {
+  const index = idx + 1
   if (iv.min_tokens < 0) {
-    return `區間 #${idx + 1}: 最小 token 數 (${iv.min_tokens}) 不能為負數`
+    return intervalValidationMessage(
+      t,
+      'negativeMin',
+      { index, value: iv.min_tokens },
+      `区间 #${index}: 最小 token 数 (${iv.min_tokens}) 不能为负数`,
+    )
   }
   if (iv.max_tokens != null) {
     if (iv.max_tokens <= 0) {
-      return `區間 #${idx + 1}: 最大 token 數 (${iv.max_tokens}) 必須大於 0`
+      return intervalValidationMessage(
+        t,
+        'maxPositive',
+        { index, value: iv.max_tokens },
+        `区间 #${index}: 最大 token 数 (${iv.max_tokens}) 必须大于 0`,
+      )
     }
     if (iv.max_tokens <= iv.min_tokens) {
-      return `區間 #${idx + 1}: 最大 token 數 (${iv.max_tokens}) 必須大於最小 token 數 (${iv.min_tokens})`
+      return intervalValidationMessage(
+        t,
+        'maxGreaterThanMin',
+        { index, max: iv.max_tokens, min: iv.min_tokens },
+        `区间 #${index}: 最大 token 数 (${iv.max_tokens}) 必须大于最小 token 数 (${iv.min_tokens})`,
+      )
     }
   }
   return validateIntervalPrices(iv, idx, t)
 }
 
-function validateIntervalPrices(iv: IntervalFormEntry, idx: number, _t: TranslateFn): string | null {
+function validateIntervalPrices(iv: IntervalFormEntry, idx: number, t?: TranslateFn): string | null {
+  const index = idx + 1
   const prices: [string, number | string | null][] = [
-    ['輸入價格', iv.input_price],
-    ['輸出價格', iv.output_price],
-    ['快取寫入價格', iv.cache_write_price],
-    ['快取讀取價格', iv.cache_read_price],
-    ['單次價格', iv.per_request_price],
+    ['inputPrice', iv.input_price],
+    ['outputPrice', iv.output_price],
+    ['cacheWritePrice', iv.cache_write_price],
+    ['cacheReadPrice', iv.cache_read_price],
+    ['perRequestPrice', iv.per_request_price],
   ]
   for (const [key, val] of prices) {
     if (val != null && val !== '' && Number(val) < 0) {
-      return `區間 #${idx + 1}: ${key}不能為負數`
+      const field = intervalPriceLabel(t, key)
+      return intervalValidationMessage(
+        t,
+        'negativePrice',
+        { index, field },
+        `区间 #${index}: ${field}不能为负数`,
+      )
     }
   }
   return null
 }
 
-function checkIntervalOverlap(sorted: IntervalFormEntry[], _t: TranslateFn): string | null {
+function checkIntervalOverlap(sorted: IntervalFormEntry[], t?: TranslateFn): string | null {
   for (let i = 0; i < sorted.length; i++) {
-    // 無上限區間必須是最後一個
+    // 无上限区间必须是最后一个
     if (sorted[i].max_tokens == null && i < sorted.length - 1) {
-      return `區間 #${i + 1}: 無上限區間（最大 token 數為空）只能是最後一個`
+      return intervalValidationMessage(
+        t,
+        'unboundedLast',
+        { index: i + 1 },
+        `区间 #${i + 1}: 无上限区间（最大 token 数为空）只能是最后一个`,
+      )
     }
     if (i === 0) continue
     const prev = sorted[i - 1]
-    // (min, max] 語義：前一個區間上界 > 當前區間下界則重疊
+    // (min, max] 语义：前一个区间上界 > 当前区间下界则重叠
     if (prev.max_tokens == null || prev.max_tokens > sorted[i].min_tokens) {
       const prevMax = prev.max_tokens == null ? '∞' : String(prev.max_tokens)
-      return `區間 #${i} 和 #${i + 1} 重疊：前一個區間上界 (${prevMax}) 大於當前區間下界 (${sorted[i].min_tokens})`
+      return intervalValidationMessage(
+        t,
+        'overlap',
+        { previousIndex: i, currentIndex: i + 1, previousMax: prevMax, currentMin: sorted[i].min_tokens },
+        `区间 #${i} 和 #${i + 1} 重叠：前一个区间上界 (${prevMax}) 大于当前区间下界 (${sorted[i].min_tokens})`,
+      )
     }
   }
   return null
 }
 
-/** 平台對應的模型 tag 樣式（背景+文字） */
+/** 平台对应的模型 tag 样式（背景+文字） */
 export function getPlatformTagClass(platform: string): string {
   switch (platform) {
     case 'anthropic': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
@@ -204,7 +258,7 @@ export function getPlatformTagClass(platform: string): string {
   }
 }
 
-/** 平台對應的模型文字色（僅 text-*，用於 input/text 場景）— 與 getPlatformTagClass 同色系 */
+/** 平台对应的模型文字色（仅 text-*，用于 input/text 场景）— 与 getPlatformTagClass 同色系 */
 export function getPlatformTextClass(platform: string): string {
   switch (platform) {
     case 'anthropic': return 'text-orange-700 dark:text-orange-400'

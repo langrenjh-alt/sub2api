@@ -145,7 +145,7 @@
                 >
                   <Icon name="copy" size="sm" />
                 </button>
-                <!-- 右鍵展開格式選擇選單 -->
+                <!-- 右键展开格式选择菜单 -->
                 <div
                   v-if="copyMenuProxyId === row.id"
                   class="absolute left-0 top-full z-50 mt-1 w-auto min-w-[180px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-500 dark:bg-dark-700"
@@ -1700,7 +1700,7 @@ const qualityStatusLabel = (status: string) => {
   return t('admin.proxies.qualityStatusFail')
 }
 
-// 有效期「選天數」⇄ 日曆聯動:天數自 base 起算(建立=今天;編輯=代理建立日),本地日曆日 round-trip 穩定;canonical 仍是 expires_at 日期串
+// 有效期「选天数」⇄ 日历联动:天数自 base 起算(创建=今天;编辑=代理创建日),本地日历日 round-trip 稳定;canonical 仍是 expires_at 日期串
 const EXPIRY_PRESETS = [7, 30, 90, 180]
 const toLocalDateStr = (dt: Date): string => {
   const y = dt.getFullYear()
@@ -1708,13 +1708,13 @@ const toLocalDateStr = (dt: Date): string => {
   const d = String(dt.getDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
-// base 為空 → 今天本地 00:00;否則該日期本地 00:00
+// base 为空 → 今天本地 00:00;否则该日期本地 00:00
 const baseDateOrToday = (baseDateStr: string): Date => {
   const base = baseDateStr ? new Date(`${baseDateStr}T00:00:00`) : new Date()
   base.setHours(0, 0, 0, 0)
   return base
 }
-// base + N 天 → 本地 YYYY-MM-DD;N≤0/空 → '' 表示永不過期
+// base + N 天 → 本地 YYYY-MM-DD;N≤0/空 → '' 表示永不过期
 const addDaysToBase = (baseDateStr: string, n: number | null): string => {
   const days = Number(n)
   if (!days || days <= 0) return ''
@@ -1722,13 +1722,13 @@ const addDaysToBase = (baseDateStr: string, n: number | null): string => {
   dt.setDate(dt.getDate() + days)
   return toLocalDateStr(dt)
 }
-// target 相對 base 的整天數(本地日曆差,避免時區/時刻抖動)
+// target 相对 base 的整天数(本地日历差,避免时区/时刻抖动)
 const daysFromBase = (baseDateStr: string, targetDateStr: string): number | null => {
   if (!targetDateStr) return null
   const target = new Date(`${targetDateStr}T00:00:00`)
   return Math.round((target.getTime() - baseDateOrToday(baseDateStr).getTime()) / 86400000)
 }
-// 編輯時有效期自「代理建立日」起算;建立時無 created_at → base='' 用今天
+// 编辑时有效期自「代理创建日」起算;创建时无 created_at → base='' 用今天
 const editBaseDate = computed(() =>
   editingProxy.value?.created_at ? editingProxy.value.created_at.slice(0, 10) : '',
 )

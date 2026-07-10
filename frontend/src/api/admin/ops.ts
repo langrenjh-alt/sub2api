@@ -751,10 +751,10 @@ export interface EmailNotificationConfig {
 }
 
 export interface OpsMetricThresholds {
-  sla_percent_min?: number | null                 // SLA低於此值變紅
-  ttft_p99_ms_max?: number | null                 // TTFT P99高於此值變紅
-  request_error_rate_percent_max?: number | null  // 請求錯誤率高於此值變紅
-  upstream_error_rate_percent_max?: number | null // 上游錯誤率高於此值變紅
+  sla_percent_min?: number | null                 // SLA低于此值变红
+  ttft_p99_ms_max?: number | null                 // TTFT P99高于此值变红
+  request_error_rate_percent_max?: number | null  // 请求错误率高于此值变红
+  upstream_error_rate_percent_max?: number | null // 上游错误率高于此值变红
 }
 
 export interface OpsDistributedLockSettings {
@@ -777,12 +777,12 @@ export interface OpsAlertRuntimeSettings {
       reason: string
     }>
   }
-  thresholds: OpsMetricThresholds // 指標閾值配置
+  thresholds: OpsMetricThresholds // 指标阈值配置
 }
 
 export interface OpsOpenAIAccountQuotaAutoPauseSettings {
-  default_threshold_5h: number // 0~1，0 表示不啟用全域性預設 5h 閾值
-  default_threshold_7d: number // 0~1，0 表示不啟用全域性預設 7d 閾值
+  default_threshold_5h: number // 0~1，0 表示不启用全局默认 5h 阈值
+  default_threshold_7d: number // 0~1，0 表示不启用全局默认 7d 阈值
 }
 
 export interface OpsAdvancedSettings {
@@ -912,7 +912,7 @@ export interface OpsErrorLog {
   user_id?: number | null
   user_email: string
   api_key_id?: number | null
-  // 關聯 api_key 名稱（後端 LEFT JOIN api_keys；軟刪保留 name，故已刪 key 仍有原名）。
+  // 关联 api_key 名称（后端 LEFT JOIN api_keys；软删保留 name，故已删 key 仍有原名）。
   api_key_name?: string
   api_key_deleted?: boolean
   account_id?: number | null
@@ -1098,7 +1098,7 @@ export type OpsErrorListQueryParams = {
   account_id?: number | null
   user_id?: number
   api_key_id?: number
-  // 模型過濾：後端以 COALESCE(requested_model, model) 精確匹配（admin 路徑）。
+  // 模型过滤：后端以 COALESCE(requested_model, model) 精确匹配（admin 路径）。
   model?: string
 
   phase?: string

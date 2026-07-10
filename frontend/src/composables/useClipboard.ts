@@ -5,22 +5,25 @@ import { i18n } from '@/i18n'
 const { t } = i18n.global
 
 /**
- * 檢測是否支援 Clipboard API（需要安全上下文：HTTPS/localhost）
+ * 检测是否支持 Clipboard API（需要安全上下文：HTTPS/localhost）
  */
 function isClipboardSupported(): boolean {
   return !!(navigator.clipboard && window.isSecureContext)
 }
 
 /**
- * 降級方案：使用 textarea + execCommand
- * 使用 textarea 而非 input，以正確處理多行文本
+ * 降级方案：使用 textarea + execCommand
+ * 使用 textarea 而非 input，以正确处理多行文本
  */
 function fallbackCopy(text: string): boolean {
   const textarea = document.createElement('textarea')
   textarea.value = text
-  textarea.style.cssText = 'position:fixed;left:-9999px;top:-9999px'
+  textarea.setAttribute('readonly', 'true')
+  textarea.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none'
   document.body.appendChild(textarea)
+  textarea.focus({ preventScroll: true })
   textarea.select()
+  textarea.setSelectionRange(0, textarea.value.length)
   try {
     return document.execCommand('copy')
   } finally {

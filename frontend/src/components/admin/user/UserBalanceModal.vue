@@ -38,19 +38,19 @@ const emit = defineEmits(['close', 'success']); const { t } = useI18n(); const a
 const submitting = ref(false); const form = reactive({ amount: 0, notes: '' })
 watch(() => props.show, (v) => { if(v) { form.amount = 0; form.notes = '' } })
 
-// 格式化餘額：顯示完整精度，去除尾部多餘的0
+// 格式化余额：显示完整精度，去除尾部多余的0
 const formatBalance = (value: number) => {
   if (value === 0) return '0.00'
-  // 最多保留8位小數，去除尾部的0
+  // 最多保留8位小数，去除尾部的0
   const formatted = value.toFixed(8).replace(/\.?0+$/, '')
-  // 確保至少有2位小數
+  // 确保至少有2位小数
   const parts = formatted.split('.')
   if (parts.length === 1) return formatted + '.00'
   if (parts[1].length === 1) return formatted + '0'
   return formatted
 }
 
-// 填入全部餘額
+// 填入全部余额
 const fillAllBalance = () => {
   if (props.user) {
     form.amount = props.user.balance
@@ -60,7 +60,7 @@ const fillAllBalance = () => {
 const calculateNewBalance = () => {
   if (!props.user) return 0
   const result = props.operation === 'add' ? props.user.balance + form.amount : props.user.balance - form.amount
-  // 避免浮點數精度問題導致的 -0.00 顯示
+  // 避免浮点数精度问题导致的 -0.00 显示
   return Math.abs(result) < 1e-10 ? 0 : result
 }
 const handleBalanceSubmit = async () => {
@@ -69,7 +69,7 @@ const handleBalanceSubmit = async () => {
     appStore.showError(t('admin.users.amountRequired'))
     return
   }
-  // 退款時驗證金額不超過實際餘額
+  // 退款时验证金额不超过实际余额
   if (props.operation === 'subtract' && form.amount > props.user.balance) {
     appStore.showError(t('admin.users.insufficientBalance'))
     return

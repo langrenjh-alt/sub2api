@@ -206,6 +206,19 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/batch-image',
+    name: 'BatchImageGuide',
+    alias: '/docs/batch-image',
+    component: () => import('@/views/user/BatchImageGuideView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Batch Image Guide',
+      titleKey: 'batchImageGuide.title',
+      descriptionKey: 'batchImageGuide.description'
+    }
+  },
+  {
     path: '/usage',
     name: 'Usage',
     component: () => import('@/views/user/UsageView.vue'),
@@ -712,9 +725,9 @@ const router = createRouter({
  */
 let authInitialized = false
 
-// 初始化導航載入狀態和預載入
+// 初始化导航加载状态和预加载
 const navigationLoading = useNavigationLoadingState()
-// 延遲初始化預載入，傳入 router 例項
+// 延迟初始化预加载，传入 router 实例
 let routePrefetch: ReturnType<typeof useRoutePrefetch> | null = null
 const BACKEND_MODE_ALLOWED_PATHS = ['/login', '/key-usage', '/setup', '/payment/result', '/payment/airwallex', '/legal']
 const BACKEND_MODE_CALLBACK_PATHS = [
@@ -745,7 +758,7 @@ function isBackendModePublicRouteAllowed(path: string, hasPendingAuthSession: bo
 }
 
 router.beforeEach(async (to, _from, next) => {
-  // 開始導航載入狀態
+  // 开始导航加载状态
   navigationLoading.startNavigation()
 
   const authStore = useAuthStore()
@@ -839,6 +852,17 @@ router.beforeEach(async (to, _from, next) => {
   }
 
 
+  // 公共设置可能尚未加载（App.vue 的 onMounted 异步拉取晚于首次导航，且纯静态部署
+  // 无 __APP_CONFIG__ 注入）。此时 cachedPublicSettings 为空会把 payment/risk_control
+  // 误判为“未启用”而错误拦截，故这里先确保设置加载完成。
+  if ((to.meta.requiresPayment || to.meta.requiresRiskControl) && !appStore.publicSettingsLoaded) {
+    try {
+      await appStore.fetchPublicSettings()
+    } catch (error) {
+      console.warn('Failed to load public settings in route guard', error)
+    }
+  }
+
   // Check payment requirement (internal payment system only)
   if (to.meta.requiresPayment) {
     const paymentEnabled = appStore.cachedPublicSettings?.payment_enabled
@@ -864,7 +888,7 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // 簡易模式下限制訪問某些頁面
+  // 简易模式下限制访问某些页面
   if (authStore.isSimpleMode) {
     const restrictedPaths = [
       '/admin/groups',
@@ -875,7 +899,7 @@ router.beforeEach(async (to, _from, next) => {
     ]
 
     if (restrictedPaths.some((path) => to.path.startsWith(path))) {
-      // 簡易模式下訪問受限頁面,重定向到儀表板
+      // 简易模式下访问受限页面,重定向到仪表板
       next(authStore.isAdmin ? '/admin/dashboard' : '/dashboard')
       return
     }
@@ -902,14 +926,14 @@ router.beforeEach(async (to, _from, next) => {
  * Navigation guard: End loading and trigger prefetch
  */
 router.afterEach((to) => {
-  // 結束導航載入狀態
+  // 结束导航加载状态
   navigationLoading.endNavigation()
 
-  // 懶初始化預載入（首次導航時建立，傳入 router 例項）
+  // 懒初始化预加载（首次导航时建立，传入 router 实例）
   if (!routePrefetch) {
     routePrefetch = useRoutePrefetch(router)
   }
-  // 觸發路由預載入（在瀏覽器空閒時執行）
+  // 触发路由预加载（在浏览器空闲时执行）
   routePrefetch.triggerPrefetch(to)
 })
 

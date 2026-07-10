@@ -45,7 +45,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
     currentClickListener = null
   }
 
-  // 使用 store 管理的全域性 driver 例項
+  // 使用 store 管理的全局 driver 实例
   let driverInstance: Driver | null = onboardingStore.getDriverInstance()
   let currentClickListener: {
     element: HTMLElement
@@ -77,7 +77,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
   }
 
   /**
-   * 檢查元素是否存在，如果不存在則重試
+   * 检查元素是否存在，如果不存在则重试
    */
   const ensureElement = async (selector: string, timeout = 5000): Promise<boolean> => {
     const startTime = Date.now()
@@ -92,15 +92,15 @@ export function useOnboardingTour(options: OnboardingOptions) {
   }
 
   const startTour = async (startIndex = 0) => {
-    // 動態獲取當前使用者角色和步驟
+    // 动态获取当前用户角色和步骤
     const isAdmin = userStore.user?.role === 'admin'
     const isSimpleMode = userStore.isSimpleMode
     const steps = isAdmin ? getAdminSteps(t, isSimpleMode) : getUserSteps(t)
 
-    // 確保 DOM 就緒
+    // 确保 DOM 就绪
     await nextTick()
 
-    // 如果指定了起始步驟，確保元素可見
+    // 如果指定了起始步骤，确保元素可见
     const currentStep = steps[startIndex]
     if (currentStep?.element && typeof currentStep.element === 'string') {
       await ensureElement(currentStep.element, TIMING.ELEMENT_TIMEOUT_MS)
@@ -110,27 +110,27 @@ export function useOnboardingTour(options: OnboardingOptions) {
       driverInstance.destroy()
     }
 
-    // 建立新的 driver 例項並儲存到 store
+    // 建立新的 driver 实例并保存到 store
     driverInstance = driver({
       showProgress: true,
       steps,
       animate: true,
-      allowClose: false, // 禁止點選遮罩關閉
+      allowClose: false, // 禁止点击遮罩关闭
       stagePadding: 4,
       popoverClass: 'theme-tour-popover',
       nextBtnText: t('common.next'),
       prevBtnText: t('common.back'),
       doneBtnText: t('common.confirm'),
 
-      // 導航處理
+      // 导航处理
       onNextClick: async (_el, _step, { config, state }) => {
-        // 如果是最後一步，點選則是"完成"
+        // 如果是最后一步，点击则是"完成"
         if (state.activeIndex === (config.steps?.length ?? 0) - 1) {
           markAsSeen()
           driverInstance?.destroy()
           onboardingStore.setDriverInstance(null)
         } else {
-          // 注意：互動式步驟通常隱藏 Next 按鈕，此處邏輯為防禦性程式設計
+          // 注意：互动式步骤通常隐藏 Next 按钮，此处逻辑为防御性程式设计
           const currentIndex = state.activeIndex ?? 0
           const currentStep = steps[currentIndex]
 
@@ -159,7 +159,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
         onboardingStore.setDriverInstance(null)
       },
 
-      // 渲染時重組 Footer 佈局
+      // 渲染时重组 Footer 布局
       onPopoverRender: (popover, { config, state }) => {
         // Class name constants for easier maintenance
         const CLASS_REORGANIZED = 'reorganized'
@@ -179,7 +179,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
             return
           }
 
-          // 1.5 互動式步驟提示
+          // 1.5 互动式步骤提示
           const currentStep = steps[state.activeIndex ?? 0]
 
           if (currentStep && isInteractiveStep(currentStep) && popover.description) {
@@ -201,7 +201,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
             }
           }
 
-          // 2. 底部：DOM 重組
+          // 2. 底部：DOM 重组
           if (!footerEl.classList.contains(CLASS_REORGANIZED)) {
             footerEl.classList.add(CLASS_REORGANIZED)
 
@@ -253,7 +253,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
             footerEl.appendChild(rightContainer)
           }
 
-          // 3. 狀態更新
+          // 3. 状态更新
           const isLastStep = state.activeIndex === (config.steps?.length ?? 0) - 1
           const activeNextBtn = nextButton || footerEl.querySelector(`.${CLASS_NEXT_BTN}`)
 
@@ -269,12 +269,12 @@ export function useOnboardingTour(options: OnboardingOptions) {
         }
       },
 
-      // 步驟高亮時觸發
+      // 步骤高亮时触发
       onHighlightStarted: async (element, step) => {
-        // 清理之前的監聽器
+        // 清理之前的监听器
         cleanupClickListener()
 
-        // 嘗試等待元素
+        // 尝试等待元素
         if (!element && step.element && typeof step.element === 'string') {
            const exists = await ensureElement(step.element, 8000)
            if (!exists) {
@@ -399,7 +399,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
 
       onDestroyed: () => {
         cleanupClickListener()
-        // 清理全域性監聽器 (由此處唯一管理)
+        // 清理全局监听器 (由此处唯一管理)
         if (globalKeyboardHandler) {
           document.removeEventListener('keydown', globalKeyboardHandler, { capture: true })
           globalKeyboardHandler = null
@@ -410,7 +410,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
 
     onboardingStore.setDriverInstance(driverInstance)
 
-    // 新增全域性鍵盤監聽器
+    // 新增全局键盘监听器
     globalKeyboardHandler = (e: KeyboardEvent) => {
       if (!driverInstance?.isActive()) return
 
@@ -425,7 +425,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
 
       if (e.key === 'ArrowRight') {
         const target = e.target as HTMLElement
-        // 允許在輸入框中使用方向鍵
+        // 允许在输入框中使用方向键
         if (['INPUT', 'TEXTAREA'].includes(target?.tagName)) {
            return
         }
@@ -433,7 +433,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
         e.preventDefault()
         e.stopPropagation()
 
-        // 對於互動式步驟，箭頭鍵應該觸發互動而非跳過
+        // 对于互动式步骤，箭头键应该触发互动而非跳过
         const currentIndex = driverInstance!.getActiveIndex() ?? 0
         const currentStep = steps[currentIndex]
 
@@ -443,21 +443,21 @@ export function useOnboardingTour(options: OnboardingOptions) {
             : currentStep.element as HTMLElement
 
           if (targetElement) {
-            // 對於非輸入類元素，提示使用者需要點選或按Enter
+            // 对于非输入类元素，提示用户需要点击或按Enter
             const isClickable = !['INPUT', 'TEXTAREA', 'SELECT'].includes(targetElement.tagName)
             if (isClickable) {
-              // 不自動觸發，只是停留提示
+              // 不自动触发，只是停留提示
               return
             }
           }
         }
 
-        // 非互動式步驟才允許箭頭鍵翻頁
+        // 非互动式步骤才允许箭头键翻页
         driverInstance!.moveNext()
       }
       else if (e.key === 'Enter') {
         const target = e.target as HTMLElement
-        // 允許在輸入框中使用回車
+        // 允许在输入框中使用回车
         if (['INPUT', 'TEXTAREA'].includes(target?.tagName)) {
            return
         }
@@ -465,7 +465,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
         e.preventDefault()
         e.stopPropagation()
 
-        // 回車鍵處理互動式步驟
+        // 回车键处理互动式步骤
         const currentIndex = driverInstance!.getActiveIndex() ?? 0
         const currentStep = steps[currentIndex]
 
@@ -486,7 +486,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
       }
       else if (e.key === 'ArrowLeft') {
         const target = e.target as HTMLElement
-        // 允許在輸入框中使用方向鍵
+        // 允许在输入框中使用方向键
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName) || target?.isContentEditable) {
            return
         }
@@ -531,12 +531,12 @@ export function useOnboardingTour(options: OnboardingOptions) {
       return
     }
 
-    // 簡易模式下停用新手引導
+    // 简易模式下禁用新手引导
     if (userStore.isSimpleMode) {
       return
     }
 
-    // 只在管理員+標準模式下自動啟動
+    // 只在管理员+标准模式下自动启动
     const isAdmin = userStore.user?.role === 'admin'
     if (!isAdmin) {
       return
@@ -553,7 +553,7 @@ export function useOnboardingTour(options: OnboardingOptions) {
       clearTimeout(autoStartTimer)
       autoStartTimer = null
     }
-    // 關鍵修復：不再此處清理 globalKeyboardHandler，交由 driver.onDestroyed 管理
+    // 关键修复：不再此处清理 globalKeyboardHandler，交由 driver.onDestroyed 管理
     onboardingStore.clearControlMethods()
   })
 

@@ -1,14 +1,14 @@
 import { DriveStep } from 'driver.js'
 
 /**
- * 管理員完整引導流程
- * 互動式引導：指引使用者實際操作
- * @param t 國際化函式
- * @param isSimpleMode 是否為簡易模式（簡易模式下會過濾分組相關步驟）
+ * 管理员完整引导流程
+ * 互动式引导：指引用户实际操作
+ * @param t 国际化函数
+ * @param isSimpleMode 是否为简易模式（简易模式下会过滤分组相关步骤）
  */
 export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false): DriveStep[] => {
   const allSteps: DriveStep[] = [
-  // ========== 歡迎介紹 ==========
+  // ========== 欢迎介绍 ==========
   {
     popover: {
       title: t('onboarding.admin.welcome.title'),
@@ -19,7 +19,7 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
     }
   },
 
-  // ========== 第一部分：建立分組 ==========
+  // ========== 第一部分：建立分组 ==========
   {
     element: '#sidebar-group-manage',
     popover: {
@@ -91,7 +91,7 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
     }
   },
 
-  // ========== 第二部分：建立帳號授權 ==========
+  // ========== 第二部分：建立账号授权 ==========
   {
     element: '#sidebar-channel-manage',
     popover: {
@@ -173,7 +173,7 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
     }
   },
 
-  // ========== 第三部分：建立API金鑰 ==========
+  // ========== 第三部分：建立API密钥 ==========
   {
     element: '[data-tour="sidebar-my-keys"]',
     popover: {
@@ -226,11 +226,11 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
   }
   ]
 
-  // 簡易模式下過濾分組相關步驟
+  // 简易模式下过滤分组相关步骤
   if (isSimpleMode) {
     return allSteps.filter(step => {
       const element = step.element as string | undefined
-      // 過濾掉分組管理和帳號分組選擇相關步驟
+      // 过滤掉分组管理和账号分组选择相关步骤
       return !element || (
         !element.includes('sidebar-group-manage') &&
         !element.includes('groups-create-btn') &&
@@ -244,7 +244,7 @@ export const getAdminSteps = (t: (key: string) => string, isSimpleMode = false):
 }
 
 /**
- * 普通使用者引導流程
+ * 普通用户引导流程
  */
 export const getUserSteps = (t: (key: string) => string): DriveStep[] => [
   {

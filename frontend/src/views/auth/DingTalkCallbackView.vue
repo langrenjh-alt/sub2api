@@ -295,7 +295,7 @@ const totpTempToken = ref('')
 const totpCode = ref('')
 const totpError = ref('')
 const totpUserEmailMasked = ref('')
-const providerName = '釘釘'
+const providerName = '钉钉'
 
 const needsCreateAccount = computed(() => pendingAccountAction.value === 'create_account')
 const needsChooser = computed(() => pendingAccountAction.value === 'choose_account_action')
@@ -593,7 +593,7 @@ async function finalizePendingAccountResponse(completion: DingTalkPendingActionR
   applyAdoptionSuggestionState(completion)
   const redirect = sanitizeRedirectPath(completion.redirect || redirectTo.value)
 
-  // step=email_completion: 使用者無電子信箱，需要跳到補電子信箱頁面
+  // step=email_completion: 用户无邮箱，需要跳到补邮箱页面
   if (completion.step === 'email_completion' || (completion as Record<string, unknown>)['requires_email_completion'] === true) {
     await router.replace('/auth/dingtalk/email-completion?redirect=' + encodeURIComponent(redirect))
     return
@@ -785,8 +785,8 @@ onMounted(async () => {
     redirectTo.value = completionRedirect
 
     const completionData = completion as DingTalkPendingActionResponse
-    // 使用者從補電子信箱頁"我已有帳戶"按鈕跳回時攜帶 bind=1，跳過 email_completion 自動 redirect，
-    // 直接進入 bind_login 輸入密碼繫結已有帳戶。
+    // 用户从补邮箱页"我已有账户"按钮跳回时携带 bind=1，跳过 email_completion 自动 redirect，
+    // 直接进入 bind_login 输入密码绑定已有账户。
     const wantsBindExisting = (route.query.bind as string | undefined) === '1'
     const presetEmail = ((route.query.email as string | undefined) || '').trim()
     if (completionData.step === 'email_completion' || (completionData as unknown as Record<string, unknown>)['requires_email_completion'] === true) {

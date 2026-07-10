@@ -15,7 +15,7 @@
           <div class="space-y-2">
             <p class="font-semibold">请先勾选同意后，才能继续进入登录 / 注册</p>
             <p class="leading-6">
-              本弹窗同时提供繁體中文、简体中文与 English 三个版本；当您注册、登录、创建 API Key 或使用本平台 API 服务，即视为同意并承诺遵守相关条款。
+              本弹窗同时提供简体中文与 English 两个版本；当您注册、登录、创建 API Key 或使用本平台 API 服务，即视为同意并承诺遵守相关条款。
             </p>
           </div>
         </div>
@@ -28,7 +28,7 @@
           class="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-900"
         />
         <span class="text-sm leading-6 text-gray-700 dark:text-dark-200">
-          我已阅读并同意以上三种语言版本的地区服务条款，并确认在继续前已理解相关内容。
+          我已阅读并同意以上两个语言版本的地区服务条款，并确认在继续前已理解相关内容。
         </span>
       </label>
 

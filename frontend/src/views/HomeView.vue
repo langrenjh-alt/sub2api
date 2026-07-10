@@ -233,6 +233,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
+import { sanitizeUrl } from '@/utils/url'
 
 type IconName = InstanceType<typeof Icon>['$props']['name']
 
@@ -261,7 +262,12 @@ const isHomeContentUrl = computed(
   () => trimmedHomeContent.value.startsWith('http://') || trimmedHomeContent.value.startsWith('https://')
 )
 
-const siteLogo = computed(() => appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '')
+const siteLogo = computed(() =>
+  sanitizeUrl(appStore.cachedPublicSettings?.site_logo || appStore.siteLogo || '', {
+    allowRelative: true,
+    allowDataUrl: true,
+  })
+)
 const brandName = computed(
   () => appStore.cachedPublicSettings?.site_name?.trim() || appStore.siteName?.trim() || 'Sub2API'
 )
@@ -271,7 +277,9 @@ const siteTagline = computed(
 const heroDescription = computed(
   () => appStore.cachedPublicSettings?.site_subtitle?.trim() || t('home.heroDescription')
 )
-const docUrl = computed(() => appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
+const docUrl = computed(() =>
+  sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || '')
+)
 const apiBaseUrl = computed(() => appStore.cachedPublicSettings?.api_base_url || appStore.apiBaseUrl || '')
 const customEndpoints = computed(() => appStore.cachedPublicSettings?.custom_endpoints ?? [])
 

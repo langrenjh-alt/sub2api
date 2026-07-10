@@ -1,14 +1,14 @@
 <script setup lang="ts">
 /**
- * 導航進度條元件
- * 在頁面頂部顯示載入進度，提供導航反饋
+ * 导航进度条组件
+ * 在页面顶部显示加载进度，提供导航反馈
  */
 import { computed } from 'vue'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 
 const { isLoading } = useNavigationLoadingState()
 
-// 進度條可見性
+// 进度条可见性
 const isVisible = computed(() => isLoading.value)
 </script>
 
@@ -54,7 +54,7 @@ const isVisible = computed(() => isLoading.value)
   animation: progress-slide 1.5s ease-in-out infinite;
 }
 
-/* 暗色模式下的進度條顏色 */
+/* 暗色模式下的进度条颜色 */
 :root.dark .navigation-progress-bar {
   background: linear-gradient(
     90deg,
@@ -66,7 +66,7 @@ const isVisible = computed(() => isLoading.value)
   );
 }
 
-/* 進度條滑動動畫 */
+/* 进度条滑动动画 */
 @keyframes progress-slide {
   0% {
     transform: translateX(-100%);
@@ -76,7 +76,7 @@ const isVisible = computed(() => isLoading.value)
   }
 }
 
-/* 淡入淡出過渡 */
+/* 淡入淡出过渡 */
 .progress-fade-enter-active {
   transition: opacity 0.15s ease-out;
 }
@@ -90,7 +90,7 @@ const isVisible = computed(() => isLoading.value)
   opacity: 0;
 }
 
-/* 減少動畫模式 */
+/* 减少动画模式 */
 @media (prefers-reduced-motion: reduce) {
   .navigation-progress-bar {
     animation: progress-pulse 2s ease-in-out infinite;

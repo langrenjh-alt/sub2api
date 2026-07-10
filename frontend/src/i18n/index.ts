@@ -22,11 +22,16 @@ function getDefaultLocale(): LocaleCode {
     return saved
   }
 
+  const browserLang = navigator.language.toLowerCase()
+  if (browserLang.startsWith('zh')) {
+    return 'zh'
+  }
+
   return DEFAULT_LOCALE
 }
 
 function resolveDocumentLang(locale: LocaleCode): string {
-  return locale === 'zh' ? 'zh-Hant-TW' : locale
+  return locale === 'zh' ? 'zh-Hans-CN' : locale
 }
 
 export const i18n = createI18n({
@@ -34,8 +39,8 @@ export const i18n = createI18n({
   locale: getDefaultLocale(),
   fallbackLocale: DEFAULT_LOCALE,
   messages: {},
-  // 停用 HTML 訊息警告 - 引導步驟使用富文字內容（driver.js 支援 HTML）
-  // 這些內容是內部定義的，不存在 XSS 風險
+  // 禁用 HTML 消息警告 - 引导步骤使用富文本内容（driver.js 支持 HTML）
+  // 这些内容是内部定义的，不存在 XSS 风险
   warnHtmlMessage: false
 })
 
@@ -68,7 +73,7 @@ export async function setLocale(locale: string): Promise<void> {
   localStorage.setItem(LOCALE_KEY, locale)
   document.documentElement.setAttribute('lang', resolveDocumentLang(locale))
 
-  // 同步更新瀏覽器頁籤標題，使其跟隨語言切換
+  // 同步更新浏览器页签标题，使其跟随语言切换
   const { resolveRouteDocumentTitle } = await import('@/router/title')
   const { default: router } = await import('@/router')
   const { useAppStore } = await import('@/stores/app')
@@ -92,7 +97,7 @@ export function getLocale(): LocaleCode {
 
 export const availableLocales = [
   { code: 'en', name: 'English', flag: 'US' },
-  { code: 'zh', name: '繁體中文', flag: 'TW' }
+  { code: 'zh', name: '简体中文', flag: 'CN' }
 ] as const
 
 export default i18n

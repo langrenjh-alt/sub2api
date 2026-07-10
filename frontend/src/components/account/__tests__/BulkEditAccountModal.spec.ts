@@ -100,14 +100,14 @@ describe('BulkEditAccountModal', () => {
     expect(wrapper.text()).not.toContain('gpt-5.3-codex')
   })
 
-  it('antigravity 映射预设包含图片映射并过滤 OpenAI 预设', async () => {
+  it('antigravity 映射默认包含图片映射并过滤 OpenAI 默认', async () => {
     const wrapper = mountModal()
 
     const mappingTab = wrapper.findAll('button').find((btn) => btn.text().includes('admin.accounts.modelMapping'))
     expect(mappingTab).toBeTruthy()
     await mappingTab!.trigger('click')
 
-    expect(wrapper.text()).toContain('3.1-Flash-Image透傳')
+    expect(wrapper.text()).toContain('3.1-Flash-Image透传')
     expect(wrapper.text()).toContain('3-Pro-Image→3.1')
     expect(wrapper.text()).not.toContain('GPT-5.3 Codex Spark')
   })

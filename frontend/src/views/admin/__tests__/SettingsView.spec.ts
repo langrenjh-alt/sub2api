@@ -1013,7 +1013,7 @@ describe("admin SettingsView wechat connect controls", () => {
       wrapper
         .get('[data-testid="wechat-connect-mp-app-secret"]')
         .attributes("placeholder"),
-    ).toContain("金鑰已配置");
+    ).toContain("密钥已配置");
     expect(
       (
         wrapper.get('[data-testid="wechat-connect-frontend-redirect-url"]')
@@ -1091,7 +1091,7 @@ describe("admin SettingsView wechat connect controls", () => {
       wrapper
         .get('[data-testid="wechat-connect-mp-app-secret"]')
         .attributes("placeholder"),
-    ).toContain("金鑰已配置");
+    ).toContain("密钥已配置");
   });
 
   it("collapses auth source defaults until the source is enabled", async () => {

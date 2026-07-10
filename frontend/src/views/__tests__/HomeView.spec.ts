@@ -127,7 +127,7 @@ describe('HomeView', () => {
     const links = wrapper.findAll('a')
     expect(links.some((link) => link.attributes('href') === '/login')).toBe(true)
     expect(links.some((link) => link.attributes('href') === 'https://catfk.com/shop/Z30AI')).toBe(true)
-    expect(links.some((link) => link.attributes('href') === 'https://docs.example.com')).toBe(true)
+    expect(links.some((link) => link.attributes('href') === 'https://docs.example.com/')).toBe(true)
   })
 
   it('routes authenticated users to the correct dashboard', async () => {

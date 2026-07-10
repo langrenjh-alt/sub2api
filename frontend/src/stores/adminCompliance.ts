@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import adminComplianceAPI, { type AdminComplianceStatus } from '@/api/admin/compliance'
 import { getLocale } from '@/i18n'
 
-const FALLBACK_ZH_PHRASE = '我已閱讀、理解並同意 Sub2API 部署與運營合規承諾'
+const FALLBACK_ZH_PHRASE = '我已阅读、理解并同意 Sub2API 部署与运营合规承诺'
 const FALLBACK_EN_PHRASE = 'I have read, understood, and agree to the Sub2API Deployment and Operation Compliance Commitment'
 
 export const useAdminComplianceStore = defineStore('adminCompliance', () => {

@@ -4,7 +4,7 @@
       Unified action row. Parents that already render their own "local query"
       affordance (e.g. AccountUsageCell's active-sampling refresh) pass it in
       via the #pre-actions slot so the user sees a single row of related
-      buttons rather than two near-duplicate "查詢" rows.
+      buttons rather than two near-duplicate "查询" rows.
 
       The 5h / 7d window bars are deliberately NOT rendered here — the local
       active-sampling display (UsageProgressBar in AccountUsageCell) already
@@ -195,7 +195,7 @@ const resetButtonTitle = computed(() => {
   return t('admin.accounts.openaiQuotaReset.resetTooltipReady')
 })
 
-// "次數" button doubles as the upstream-query trigger and the count display.
+// "次数" button doubles as the upstream-query trigger and the count display.
 // Tooltip differs between "click to load" (no data yet) and "click to refresh".
 const countButtonTitle = computed(() => {
   if (!data.value) return t('admin.accounts.openaiQuotaReset.countTooltipLoad')
