@@ -4,6 +4,8 @@ import App from './App.vue'
 import router from './router'
 import i18n, { initI18n } from './i18n'
 import { useAppStore } from '@/stores/app'
+import '@fontsource-variable/geist'
+import '@fontsource-variable/geist-mono'
 import './style.css'
 
 function initThemeClass() {

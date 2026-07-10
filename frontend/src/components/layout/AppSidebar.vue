@@ -11,7 +11,7 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-black text-white shadow-none transition-opacity hover:opacity-80 dark:bg-white dark:text-black"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-black text-white shadow-none transition-opacity hover:opacity-80 dark:bg-white dark:text-black"
         @click="handleMenuItemClick(homePath)"
       >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.png'" alt="Logo" class="h-full w-full object-contain" />
@@ -19,7 +19,7 @@
       <div class="sidebar-brand" :class="{ 'sidebar-brand-collapsed': sidebarCollapsed }" :aria-hidden="sidebarCollapsed ? 'true' : 'false'">
         <router-link
           :to="homePath"
-          class="sidebar-brand-title text-lg font-bold text-gray-900 transition-colors hover:text-primary-600 dark:text-white dark:hover:text-primary-400"
+          class="sidebar-brand-title text-base font-semibold text-[var(--geist-foreground-100)] transition-colors hover:opacity-70"
           @click="handleMenuItemClick(homePath)"
         >
           {{ siteName }}
@@ -166,7 +166,7 @@
     </nav>
 
     <!-- Bottom Section -->
-  <div class="mt-auto border-t border-black/10 p-3 dark:border-white/10">
+  <div class="mt-auto border-t border-[var(--geist-border-100)] p-3">
       <!-- Theme Toggle -->
       <button
         @click="toggleTheme"
@@ -979,6 +979,14 @@ onBeforeUnmount(() => {
   min-width: 2.25rem;
 }
 
+.sidebar-nav {
+  scrollbar-gutter: stable;
+}
+
+.sidebar-section:first-child {
+  margin-top: 0.125rem;
+}
+
 .sidebar-header-collapsed {
   gap: 0;
   padding-left: 1.125rem;
@@ -1043,14 +1051,14 @@ onBeforeUnmount(() => {
   right: 0.75rem;
   top: 50%;
   height: 1px;
-  background: rgb(229 231 235);
+  background: var(--geist-border-100);
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.18s ease;
 }
 
 .dark .sidebar-section-title::after {
-  background: rgb(55 65 81);
+  background: var(--geist-border-100);
 }
 
 .sidebar-section-title-text-collapsed {

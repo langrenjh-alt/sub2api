@@ -52,6 +52,13 @@ vi.mock('@/components/icons/Icon.vue', () => ({
   }),
 }))
 
+vi.mock('@/components/home/GatewayField.vue', () => ({
+  default: defineComponent({
+    name: 'GatewayFieldStub',
+    template: '<canvas class="gateway-field-stub" />',
+  }),
+}))
+
 vi.mock('@/api/setup', () => ({
   getSetupStatus: vi.fn(),
 }))
@@ -117,7 +124,14 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('home.providers.claude')
     expect(wrapper.find('.geist-home').exists()).toBe(true)
     expect(wrapper.find('.home-topnav').exists()).toBe(true)
-    expect(wrapper.find('.home-hero-panel').exists()).toBe(true)
+    expect(wrapper.find('.gateway-field-stub').exists()).toBe(true)
+    expect(wrapper.find('.home-hero-title').text()).toBe('Sub2API')
+    expect(wrapper.find('.home-hero-overline').text()).toContain('UNIFIED AI GATEWAY')
+    expect(wrapper.find('.home-lunar-meta').text()).toContain('NASA LRO')
+    expect(wrapper.find('.home-node-label').exists()).toBe(false)
+    expect(wrapper.find('.home-request-rail').exists()).toBe(true)
+    expect(wrapper.find('.home-terminal-cta').exists()).toBe(true)
+    expect(wrapper.find('.home-terminal-cta a').attributes('href')).toBe('/login')
   })
 
   it('keeps auth destination and recharge CTA stable', async () => {
@@ -126,7 +140,7 @@ describe('HomeView', () => {
 
     const links = wrapper.findAll('a')
     expect(links.some((link) => link.attributes('href') === '/login')).toBe(true)
-    expect(links.some((link) => link.attributes('href') === 'https://catfk.com/shop/Z30AI')).toBe(true)
+    expect(links.some((link) => link.attributes('href') === 'https://z30.top/purchase')).toBe(true)
     expect(links.some((link) => link.attributes('href') === 'https://docs.example.com/')).toBe(true)
   })
 
@@ -141,13 +155,14 @@ describe('HomeView', () => {
     expect(links.some((link) => link.attributes('href') === '/admin/dashboard')).toBe(true)
   })
 
-  it('toggles theme and persists selection', async () => {
+  it('uses the permanent dark landing shell and renders the Apollo archive', async () => {
     const wrapper = mount(HomeView)
     await flushPromises()
 
-    await wrapper.find('button[title="home.switchToDark"]').trigger('click')
-    expect(document.documentElement.classList.contains('dark')).toBe(true)
-    expect(localStorage.getItem('theme')).toBe('dark')
+    expect(wrapper.find('button[title="home.switchToDark"]').exists()).toBe(false)
+    expect(wrapper.find('.home-mission-archive').exists()).toBe(true)
+    expect(wrapper.find('img[src="/assets/home/apollo-17-astronaut.jpg"]').exists()).toBe(true)
+    expect(wrapper.find('img[src="/assets/home/apollo-17-lunar-rover.jpg"]').exists()).toBe(true)
   })
 
   it('uses public settings for branding and API base URL', async () => {

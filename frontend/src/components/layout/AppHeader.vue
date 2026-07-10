@@ -1,6 +1,6 @@
 <template>
-  <header class="sticky top-0 z-30 border-b border-black/10 bg-[#f7f7f4]/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#101010]/85">
-    <div class="flex h-16 items-center justify-between px-4 md:px-6">
+  <header class="app-header sticky top-0 z-30">
+    <div class="app-header-inner flex h-16 items-center justify-between px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex items-center gap-4">
         <button
@@ -12,10 +12,10 @@
         </button>
 
         <div class="hidden lg:block">
-          <h1 class="text-lg font-semibold text-gray-900 dark:text-white">
+          <h1 class="text-base font-semibold text-[var(--geist-foreground-100)]">
             {{ pageTitle }}
           </h1>
-          <p v-if="pageDescription" class="text-xs text-gray-500 dark:text-dark-400">
+          <p v-if="pageDescription" class="text-xs text-[var(--geist-foreground-300)]">
             {{ pageDescription }}
           </p>
         </div>
@@ -32,7 +32,7 @@
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-            class="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-black/60 transition-colors hover:bg-black/5 hover:text-black dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
+            class="header-action"
         >
           <Icon name="book" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
@@ -47,7 +47,7 @@
         <!-- Balance Display -->
         <div
           v-if="user"
-          class="group relative hidden items-center gap-2 rounded-lg border border-black/10 bg-white px-3 py-1.5 dark:border-white/10 dark:bg-white/5 sm:flex"
+          class="header-balance group relative hidden items-center gap-2 px-3 py-1.5 sm:flex"
         >
           <svg
             class="h-4 w-4 text-black/60 dark:text-white/60"
@@ -95,10 +95,10 @@
         <div v-if="user" class="relative" ref="dropdownRef">
           <button
             @click="toggleDropdown"
-            class="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+            class="header-user flex items-center gap-2 p-1.5"
             aria-label="User Menu"
           >
-            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-black text-sm font-medium text-white shadow-sm dark:bg-white dark:text-black">
+            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-black text-sm font-medium text-white dark:bg-white dark:text-black">
               <img
                 v-if="avatarUrl"
                 :src="avatarUrl"
@@ -370,6 +370,45 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.app-header {
+  border-bottom: 1px solid var(--geist-border-100);
+  background: color-mix(in srgb, var(--geist-background-100) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+.app-header-inner {
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+.header-action,
+.header-user {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  color: var(--geist-foreground-200);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.header-action {
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.header-action:hover,
+.header-user:hover {
+  background: var(--geist-background-300);
+  color: var(--geist-foreground-100);
+}
+
+.header-balance {
+  border: 1px solid var(--geist-border-100);
+  border-radius: 6px;
+  background: var(--geist-background-100);
+}
+
 .dropdown-enter-active,
 .dropdown-leave-active {
   transition: all 0.2s ease;
