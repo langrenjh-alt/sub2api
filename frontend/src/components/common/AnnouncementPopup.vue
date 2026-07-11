@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -118,15 +118,32 @@ function handleDismiss() {
   announcementStore.dismissPopup()
 }
 
-// Manage body overflow — only set, never unset (bell component handles restore)
+let previousBodyOverflow: string | null = null
+
+function lockBodyScroll() {
+  if (previousBodyOverflow === null) {
+    previousBodyOverflow = document.body.style.overflow
+  }
+  document.body.style.overflow = 'hidden'
+}
+
+function restoreBodyScroll() {
+  if (previousBodyOverflow === null) return
+  document.body.style.overflow = previousBodyOverflow
+  previousBodyOverflow = null
+}
+
+// Preserve any existing scroll lock owned by another overlay.
 watch(
   () => announcementStore.currentPopup,
   (popup) => {
-    if (popup) {
-      document.body.style.overflow = 'hidden'
-    }
-  }
+    if (popup) lockBodyScroll()
+    else restoreBodyScroll()
+  },
+  { immediate: true },
 )
+
+onBeforeUnmount(restoreBodyScroll)
 </script>
 
 <style scoped>
