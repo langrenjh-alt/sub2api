@@ -1571,6 +1571,48 @@ func TestHandleGrokAccountUpstreamError429UsesFallbackReset(t *testing.T) {
 	require.Zero(t, repo.tempUnschedCalls)
 }
 
+func TestHandleGrokAccountUpstreamErrorPoolModeDoesNotChangeSchedulingState(t *testing.T) {
+	tests := []struct {
+		name        string
+		status      int
+		headers     http.Header
+		wantUpdates int
+	}{
+		{
+			name:        "rate limit",
+			status:      http.StatusTooManyRequests,
+			headers:     http.Header{"Retry-After": []string{"45"}},
+			wantUpdates: 1,
+		},
+		{
+			name:   "temporary upstream error",
+			status: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			account := &Account{
+				ID:       631,
+				Platform: PlatformGrok,
+				Type:     AccountTypeAPIKey,
+				Credentials: map[string]any{
+					"pool_mode": true,
+				},
+			}
+			repo := &grokQuotaAccountRepo{}
+			svc := &OpenAIGatewayService{accountRepo: repo}
+
+			svc.handleGrokAccountUpstreamError(context.Background(), account, tt.status, tt.headers, nil)
+
+			require.Equal(t, tt.wantUpdates, repo.updateCalls)
+			require.Zero(t, repo.rateLimitedCalls)
+			require.Zero(t, repo.tempUnschedCalls)
+			require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
+		})
+	}
+}
+
 func TestGrokRateLimitResetAtUsesFutureWindowAfterRetryAfterExpires(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	observedAt := now.Add(-2 * time.Minute)
@@ -1670,6 +1712,35 @@ func TestUpdateGrokUsageSnapshotAvailableSuccessDoesNotSetRateLimited(t *testing
 
 	require.Equal(t, 1, repo.updateCalls)
 	require.Zero(t, repo.rateLimitedCalls)
+}
+
+func TestUpdateGrokUsageSnapshotPoolModeExhaustionDoesNotSetRateLimited(t *testing.T) {
+	repo := &grokQuotaAccountRepo{}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+	account := &Account{
+		ID:       661,
+		Platform: PlatformGrok,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"pool_mode": true,
+		},
+	}
+	now := time.Now()
+
+	svc.updateGrokUsageSnapshot(context.Background(), account, &xai.QuotaSnapshot{
+		StatusCode: http.StatusOK,
+		Requests: &xai.QuotaWindow{
+			Limit:     grokInt64PtrForTest(10),
+			Remaining: grokInt64PtrForTest(0),
+			ResetUnix: grokInt64PtrForTest(now.Add(10 * time.Minute).Unix()),
+		},
+		UpdatedAt: now.UTC().Format(time.RFC3339),
+	})
+
+	require.Equal(t, 1, repo.updateCalls)
+	require.Zero(t, repo.rateLimitedCalls)
+	require.Zero(t, repo.tempUnschedCalls)
+	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
 }
 
 func TestUpdateGrokUsageSnapshotExhaustedSuccessWithoutResetUsesFallback(t *testing.T) {

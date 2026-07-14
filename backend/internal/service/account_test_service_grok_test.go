@@ -160,6 +160,41 @@ func TestAccountTestService_Grok429PersistsRateLimitReset(t *testing.T) {
 	require.WithinDuration(t, time.Now().Add(45*time.Second), repo.resetAt, time.Second)
 }
 
+func TestAccountTestService_GrokPoolMode429DoesNotPersistRateLimit(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	account := &Account{
+		ID:          141,
+		Name:        "grok-api-key-pool",
+		Platform:    PlatformGrok,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key":   "grok-api-key",
+			"base_url":  "https://api.x.ai/v1",
+			"pool_mode": true,
+		},
+	}
+	baseRepo := &mockAccountRepoForGemini{accountsByID: map[int64]*Account{account.ID: account}}
+	repo := &grokAccountTestRateLimitRepo{mockAccountRepoForGemini: baseRepo}
+	upstream := &httpUpstreamRecorder{resp: &http.Response{
+		StatusCode: http.StatusTooManyRequests,
+		Header:     http.Header{"Retry-After": []string{"45"}},
+		Body:       io.NopCloser(strings.NewReader(`{"error":{"message":"rate limited"}}`)),
+	}}
+	svc := &AccountTestService{accountRepo: repo, httpUpstream: upstream}
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/admin/accounts/141/test", nil)
+
+	err := svc.testGrokAccountConnection(c, account, "grok")
+
+	require.Error(t, err)
+	require.Zero(t, repo.rateLimitedCalls)
+}
+
 func TestAccountTestService_Grok429WithoutQuotaHeadersUsesFallback(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	account := &Account{

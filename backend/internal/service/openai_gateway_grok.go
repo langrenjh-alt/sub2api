@@ -803,8 +803,9 @@ func (s *OpenAIGatewayService) updateGrokUsageSnapshot(ctx context.Context, acco
 	// also installs the immediate in-memory scheduling block. Successful
 	// responses can still consume the last available request/token, so persist
 	// that exhausted window here as a real rate limit rather than relying only
-	// on the passive snapshot scheduler check.
-	if hasActiveLimit {
+	// on the passive snapshot scheduler check. Pool-mode upstreams own their
+	// member-account state, so their aggregate quota snapshot stays observational.
+	if hasActiveLimit && !account.IsPoolMode() {
 		s.rateLimitGrok(stateCtx, account, resetAt)
 	}
 }
@@ -911,7 +912,7 @@ type grokRateLimitExtendingRepository interface {
 }
 
 func persistGrokRateLimit(ctx context.Context, repo AccountRepository, account *Account, resetAt time.Time) {
-	if repo == nil || account == nil || account.ID <= 0 {
+	if repo == nil || account == nil || account.ID <= 0 || account.IsPoolMode() {
 		return
 	}
 	resetAt = normalizeGrokRateLimitResetAt(account, resetAt, time.Now())
@@ -929,7 +930,7 @@ func persistGrokRateLimit(ctx context.Context, repo AccountRepository, account *
 }
 
 func (s *OpenAIGatewayService) rateLimitGrok(ctx context.Context, account *Account, resetAt time.Time) {
-	if s == nil || account == nil {
+	if s == nil || account == nil || account.IsPoolMode() {
 		return
 	}
 	resetAt = normalizeGrokRateLimitResetAt(account, resetAt, time.Now())
@@ -948,6 +949,10 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 	}
 	now := time.Now()
 	s.updateGrokUsageSnapshot(ctx, account, parseGrokQuotaSnapshot(headers, statusCode, now))
+	if account.IsPoolMode() {
+		slog.Info("grok_pool_mode_account_state_skipped", "account_id", account.ID, "status_code", statusCode)
+		return
+	}
 	switch statusCode {
 	case http.StatusUnauthorized:
 		s.tempUnscheduleGrok(ctx, account, 10*time.Minute, "grok credentials unauthorized")
@@ -964,7 +969,7 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 }
 
 func (s *OpenAIGatewayService) tempUnscheduleGrok(ctx context.Context, account *Account, cooldown time.Duration, reason string) {
-	if s == nil || account == nil {
+	if s == nil || account == nil || account.IsPoolMode() {
 		return
 	}
 	until := time.Now().Add(cooldown)
