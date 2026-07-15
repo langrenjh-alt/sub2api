@@ -1456,6 +1456,8 @@ func TestForwardAsAnthropicForGrokUsesXAIResponses(t *testing.T) {
 	require.Contains(t, recorder.Body.String(), `"type":"message"`)
 	require.Equal(t, int64(3), gjson.Get(recorder.Body.String(), "usage.cache_read_input_tokens").Int())
 	require.Contains(t, recorder.Body.String(), "ok")
+	require.NotContains(t, recorder.Body.String(), "server_tool_use")
+	require.NotContains(t, recorder.Body.String(), "web_search_tool_result")
 }
 
 func TestForwardAsAnthropicForGrokFunctionToolUsesCacheCapableMixedRoute(t *testing.T) {
@@ -1560,11 +1562,33 @@ func TestForwardAsAnthropicForGrokStreamingPreservesCacheUsage(t *testing.T) {
 	require.Equal(t, identity, upstream.lastReq.Header.Get(grokConversationIDHeader))
 	require.Contains(t, recorder.Header().Get("Content-Type"), "text/event-stream")
 	require.Contains(t, recorder.Body.String(), `"cache_read_input_tokens":2`)
+	require.NotContains(t, recorder.Body.String(), "server_tool_use")
+	require.NotContains(t, recorder.Body.String(), "web_search_tool_result")
+	require.Contains(t, recorder.Body.String(), `"text":"ok"`)
+	requireGrokAnthropicSSEOrder(t, recorder.Body.String())
+}
+
+func requireGrokAnthropicSSEOrder(t *testing.T, body string) {
+	t.Helper()
+	eventTypes := []string{
+		"message_start",
+		"content_block_start",
+		"content_block_delta",
+		"content_block_stop",
+		"message_delta",
+		"message_stop",
+	}
+	previous := -1
+	for _, eventType := range eventTypes {
+		position := strings.Index(body, "event: "+eventType+"\n")
+		require.Greater(t, position, previous, "%s must follow the preceding Anthropic SSE event", eventType)
+		previous = position
+	}
 }
 
 func grokMessagesSSECompletedResponse(responseID string, cachedTokens int) *http.Response {
 	body := strings.Join([]string{
-		fmt.Sprintf(`data: {"type":"response.completed","response":{"id":%q,"object":"response","model":"grok-4.3","status":"completed","output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7,"input_tokens_details":{"cached_tokens":%d}}}}`, responseID, cachedTokens),
+		fmt.Sprintf(`data: {"type":"response.completed","response":{"id":%q,"object":"response","model":"grok-4.3","status":"completed","output":[{"type":"web_search_call","id":"ws_1","status":"completed","action":{"type":"search","query":"latest result"}},{"type":"message","id":"msg_1","role":"assistant","status":"completed","content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":5,"output_tokens":2,"total_tokens":7,"input_tokens_details":{"cached_tokens":%d}}}}`, responseID, cachedTokens),
 		"",
 		"data: [DONE]",
 		"",

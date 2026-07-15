@@ -507,7 +507,9 @@ func (s *OpenAIGatewayService) handleAnthropicBufferedStreamingResponse(
 	// accumulated delta events so the client receives the full content.
 	acc.SupplementResponseOutput(finalResponse)
 
-	anthropicResp := apicompat.ResponsesToAnthropic(finalResponse, originalModel)
+	anthropicResp := apicompat.ResponsesToAnthropicWithOptions(finalResponse, originalModel, apicompat.ResponsesToAnthropicOptions{
+		SuppressServerToolBlocks: account != nil && account.Platform == PlatformGrok,
+	})
 
 	if s.responseHeaderFilter != nil {
 		responseheaders.WriteFilteredHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
@@ -735,6 +737,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 
 	state := apicompat.NewResponsesEventToAnthropicState()
 	state.Model = originalModel
+	state.SuppressServerToolBlocks = account != nil && account.Platform == PlatformGrok
 	var usage OpenAIUsage
 	responseID := ""
 	var firstTokenMs *int

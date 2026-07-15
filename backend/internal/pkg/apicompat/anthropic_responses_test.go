@@ -508,12 +508,13 @@ func TestResponsesEventToAnthropicEvents_ResponseDone(t *testing.T) {
 			Usage:  &ResponsesUsage{InputTokens: 12, OutputTokens: 4},
 		},
 	}, state)
-	require.Len(t, events, 2)
-	assert.Equal(t, "message_delta", events[0].Type)
-	assert.Equal(t, "end_turn", events[0].Delta.StopReason)
-	assert.Equal(t, 12, events[0].Usage.InputTokens)
-	assert.Equal(t, 4, events[0].Usage.OutputTokens)
-	assert.Equal(t, "message_stop", events[1].Type)
+	require.Len(t, events, 3)
+	assert.Equal(t, "message_start", events[0].Type)
+	assert.Equal(t, "message_delta", events[1].Type)
+	assert.Equal(t, "end_turn", events[1].Delta.StopReason)
+	assert.Equal(t, 12, events[1].Usage.InputTokens)
+	assert.Equal(t, 4, events[1].Usage.OutputTokens)
+	assert.Equal(t, "message_stop", events[2].Type)
 	assert.Nil(t, FinalizeResponsesAnthropicStream(state))
 }
 
@@ -535,13 +536,14 @@ func TestResponsesEventToAnthropicEvents_TopLevelTerminalUsage(t *testing.T) {
 		},
 	}, state)
 
-	require.Len(t, events, 2)
-	assert.Equal(t, "message_delta", events[0].Type)
-	require.NotNil(t, events[0].Usage)
-	assert.Equal(t, 15, events[0].Usage.InputTokens)
-	assert.Equal(t, 5, events[0].Usage.CacheReadInputTokens)
-	assert.Equal(t, 6, events[0].Usage.OutputTokens)
-	assert.Equal(t, "message_stop", events[1].Type)
+	require.Len(t, events, 3)
+	assert.Equal(t, "message_start", events[0].Type)
+	assert.Equal(t, "message_delta", events[1].Type)
+	require.NotNil(t, events[1].Usage)
+	assert.Equal(t, 15, events[1].Usage.InputTokens)
+	assert.Equal(t, 5, events[1].Usage.CacheReadInputTokens)
+	assert.Equal(t, 6, events[1].Usage.OutputTokens)
+	assert.Equal(t, "message_stop", events[2].Type)
 }
 
 func TestResponsesEventToAnthropicEvents_ResponseDoneIncomplete(t *testing.T) {
@@ -556,10 +558,11 @@ func TestResponsesEventToAnthropicEvents_ResponseDoneIncomplete(t *testing.T) {
 			Usage:             &ResponsesUsage{InputTokens: 12, OutputTokens: 4},
 		},
 	}, state)
-	require.Len(t, events, 2)
-	assert.Equal(t, "message_delta", events[0].Type)
-	assert.Equal(t, "max_tokens", events[0].Delta.StopReason)
-	assert.Equal(t, "message_stop", events[1].Type)
+	require.Len(t, events, 3)
+	assert.Equal(t, "message_start", events[0].Type)
+	assert.Equal(t, "message_delta", events[1].Type)
+	assert.Equal(t, "max_tokens", events[1].Delta.StopReason)
+	assert.Equal(t, "message_stop", events[2].Type)
 	assert.Nil(t, FinalizeResponsesAnthropicStream(state))
 }
 
@@ -785,12 +788,48 @@ func TestStreamingReasoning(t *testing.T) {
 	assert.Equal(t, "thinking_delta", events[0].Delta.Type)
 	assert.Equal(t, "Let me think...", events[0].Delta.Thinking)
 
-	// reasoning done
+	// A summary part ending does not end the reasoning item.
 	events = ResponsesEventToAnthropicEvents(&ResponsesStreamEvent{
-		Type: "response.reasoning_summary_text.done",
+		Type:        "response.reasoning_summary_text.done",
+		OutputIndex: 0,
+	}, state)
+	require.Empty(t, events)
+
+	events = ResponsesEventToAnthropicEvents(&ResponsesStreamEvent{
+		Type:        "response.reasoning_summary_text.delta",
+		OutputIndex: 0,
+		Delta:       " More thinking.",
+	}, state)
+	require.Len(t, events, 1)
+	assert.Equal(t, "content_block_delta", events[0].Type)
+	assert.Equal(t, 0, *events[0].Index)
+
+	// The item-level done event closes the thinking block.
+	events = ResponsesEventToAnthropicEvents(&ResponsesStreamEvent{
+		Type:        "response.output_item.done",
+		OutputIndex: 0,
+		Item:        &ResponsesOutput{Type: "reasoning"},
 	}, state)
 	require.Len(t, events, 1)
 	assert.Equal(t, "content_block_stop", events[0].Type)
+}
+
+func TestStreamingReasoningDeltaSynthesizesMissingStarts(t *testing.T) {
+	state := NewResponsesEventToAnthropicState()
+	state.Model = "grok"
+
+	events := ResponsesEventToAnthropicEvents(&ResponsesStreamEvent{
+		Type:        "response.reasoning_summary_text.delta",
+		OutputIndex: 4,
+		Delta:       "Thinking without item metadata.",
+	}, state)
+
+	require.Len(t, events, 3)
+	assert.Equal(t, "message_start", events[0].Type)
+	assert.Equal(t, "content_block_start", events[1].Type)
+	assert.Equal(t, "thinking", events[1].ContentBlock.Type)
+	assert.Equal(t, "content_block_delta", events[2].Type)
+	assert.Equal(t, *events[1].Index, *events[2].Index)
 }
 
 func TestStreamingIncomplete(t *testing.T) {
