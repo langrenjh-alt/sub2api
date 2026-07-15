@@ -165,7 +165,7 @@ func GatewayUserPlatformQuotaFlusherStats(f *UserPlatformQuotaUsageFlusher) map[
 	}
 }
 
-func openAIStreamEventIsTerminal(data string) bool {
+func openAIResponsesStreamEventIsTerminal(data string) bool {
 	trimmed := strings.TrimSpace(data)
 	if trimmed == "" {
 		return false

@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/apicompat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/gin-gonic/gin"
@@ -990,6 +991,8 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	failedMessage := ""
 	clientOutputStarted := false
 	upstreamRequestID := strings.TrimSpace(resp.Header.Get("x-request-id"))
+	streamOutputAccumulator := apicompat.NewBufferedResponseAccumulator()
+	doneBridge := &openAIResponsesDONEBridge{}
 	// pendingLines 在首个可见输出前保留前导事件，确保无输出失败仍可安全 failover。
 	pendingLines := make([]string, 0, 8)
 	// flushPending 表示已写入但未到 SSE 空行边界的脏状态；defer 兜底函数退出前的残留，断连后不再 Flush。
@@ -1042,6 +1045,20 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 		if data, ok := extractOpenAISSEDataLine(line); ok {
 			dataBytes := []byte(data)
 			trimmedData := strings.TrimSpace(data)
+			wasDoneMarker := trimmedData == "[DONE]"
+			synthesizedTerminal := false
+			if wasDoneMarker && !sawTerminalEvent && doneBridge.HasResponse() {
+				completedData, buildErr := doneBridge.TerminalEvent(
+					responseID, originalModel, streamOutputAccumulator, nil, usage,
+				)
+				if buildErr != nil {
+					return resultWithUsage(), fmt.Errorf("normalize OpenAI passthrough [DONE] terminal: %w", buildErr)
+				}
+				dataBytes = completedData
+				data = string(completedData)
+				trimmedData = strings.TrimSpace(data)
+				synthesizedTerminal = true
+			}
 			if needModelReplace && strings.Contains(data, mappedModel) {
 				line = s.replaceModelInSSELine(line, mappedModel, originalModel)
 				if replacedData, replaced := extractOpenAISSEDataLine(line); replaced {
@@ -1110,10 +1127,10 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				forceFlushFailedEvent = true
 				sawFailedEvent = true
 			}
-			if trimmedData == "[DONE]" {
+			if wasDoneMarker {
 				sawDone = true
 			}
-			if openAIStreamEventIsTerminal(trimmedData) {
+			if openAIResponsesStreamEventIsTerminal(trimmedData) {
 				sawTerminalEvent = true
 			}
 			if responseID == "" {
@@ -1128,6 +1145,16 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 				dataBytes = sanitizedData
 				trimmedData = strings.TrimSpace(string(sanitizedData))
 				line = "data: " + string(sanitizedData)
+			}
+			if responsesStreamEventMayContributeToOutput(eventType) {
+				var streamEvent apicompat.ResponsesStreamEvent
+				if err := json.Unmarshal(dataBytes, &streamEvent); err == nil {
+					streamOutputAccumulator.ProcessEvent(&streamEvent)
+				}
+			}
+			doneBridge.Observe(dataBytes)
+			if synthesizedTerminal {
+				line = "event: " + eventType + "\ndata: " + string(dataBytes)
 			}
 			lineStartsClientOutput = forceFlushFailedEvent || openAIStreamDataStartsClientOutput(trimmedData, eventType)
 			if firstTokenMs == nil && lineStartsClientOutput && trimmedData != "[DONE]" {

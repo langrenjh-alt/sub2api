@@ -288,6 +288,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 	streamOutputAccumulator := apicompat.NewBufferedResponseAccumulator()
 	streamImageOutputs := make([]json.RawMessage, 0, 1)
 	streamSeenImages := make(map[string]struct{})
+	doneBridge := &openAIResponsesDONEBridge{}
 	resultWithUsage := func() *openaiStreamingResult {
 		return &openaiStreamingResult{
 			usage:            usage,
@@ -396,8 +397,18 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		// Extract data from SSE line (supports both "data: " and "data:" formats)
 		if data, ok := extractOpenAISSEDataLine(line); ok {
 			dataBytes := []byte(data)
-			if openAIStreamEventIsTerminal(data) {
-				sawTerminalEvent = true
+			synthesizedTerminal := false
+			if strings.TrimSpace(data) == "[DONE]" && !sawTerminalEvent && doneBridge.HasResponse() {
+				completedData, err := doneBridge.TerminalEvent(
+					responseID, originalModel, streamOutputAccumulator, streamImageOutputs, usage,
+				)
+				if err != nil {
+					streamEarlyErr = fmt.Errorf("normalize OpenAI Responses [DONE] terminal: %w", err)
+					return
+				}
+				dataBytes = completedData
+				data = string(completedData)
+				synthesizedTerminal = true
 			}
 			eventType := strings.TrimSpace(gjson.GetBytes(dataBytes, "type").String())
 			if responseID == "" {
@@ -494,6 +505,13 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				dataBytes = sanitizedData
 				data = string(sanitizedData)
 				line = "data: " + data
+			}
+			doneBridge.Observe(dataBytes)
+			if openAIResponsesStreamEventIsTerminal(string(dataBytes)) {
+				sawTerminalEvent = true
+			}
+			if synthesizedTerminal {
+				line = "event: " + eventType + "\ndata: " + string(dataBytes)
 			}
 			// Replace model in response if needed.
 			// Fast path: most events do not contain model field values.
