@@ -5,7 +5,7 @@
       <section class="hidden border-r border-[var(--geist-border-100)] px-8 py-8 lg:flex lg:flex-col lg:justify-between">
         <div class="flex items-center gap-3">
           <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-black text-white dark:bg-white dark:text-black">
-            <img :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
           </span>
           <div>
             <p class="text-sm font-semibold">{{ siteName }}</p>
@@ -34,7 +34,7 @@
           <div class="mb-8 flex items-center justify-between lg:hidden">
             <div class="flex items-center gap-3">
               <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-black text-white dark:bg-white dark:text-black">
-                <img :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+                <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
               </span>
               <div>
                 <p class="text-sm font-semibold">{{ siteName }}</p>

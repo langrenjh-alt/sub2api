@@ -1,12 +1,12 @@
 <template>
   <header class="app-header sticky top-0 z-30">
-    <div class="app-header-inner flex h-16 items-center justify-between px-4 md:px-6">
+    <div class="app-header-inner flex h-16 items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
-      <div class="flex items-center gap-4">
+      <div class="flex shrink-0 items-center gap-2 sm:gap-4">
         <button
           @click="toggleMobileSidebar"
           class="btn-ghost btn-icon lg:hidden"
-          aria-label="Toggle Menu"
+          :aria-label="t('common.toggleMenu')"
         >
           <Icon name="menu" size="md" />
         </button>
@@ -22,7 +22,7 @@
       </div>
 
       <!-- Right: Announcements + Docs + Language + Subscriptions + Balance + User Dropdown -->
-      <div class="flex items-center gap-3">
+      <div class="flex min-w-0 items-center gap-1 sm:gap-3">
         <!-- Announcement Bell -->
         <AnnouncementBell v-if="user" />
 
@@ -32,7 +32,7 @@
           :href="docUrl"
           target="_blank"
           rel="noopener noreferrer"
-            class="header-action"
+          class="header-action"
         >
           <Icon name="book" size="sm" />
           <span class="hidden sm:inline">{{ t('nav.docs') }}</span>
@@ -96,7 +96,7 @@
           <button
             @click="toggleDropdown"
             class="header-user flex items-center gap-2 p-1.5"
-            aria-label="User Menu"
+            :aria-label="t('common.userMenu')"
           >
             <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md bg-black text-sm font-medium text-white dark:bg-white dark:text-black">
               <img
@@ -407,6 +407,12 @@ onBeforeUnmount(() => {
   border: 1px solid var(--geist-border-100);
   border-radius: 6px;
   background: var(--geist-background-100);
+}
+
+@media (max-width: 639px) {
+  .header-action {
+    display: none;
+  }
 }
 
 .dropdown-enter-active,

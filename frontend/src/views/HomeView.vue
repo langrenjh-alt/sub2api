@@ -13,7 +13,7 @@
       <div class="home-shell home-topbar-inner">
         <RouterLink to="/home" class="home-brand" aria-label="Home">
           <span class="home-brand-mark">
-            <img :src="siteLogo || '/logo.png'" alt="" class="h-full w-full object-contain" />
+            <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
           </span>
           <span class="home-brand-copy">
             <strong>{{ brandName }}</strong>
