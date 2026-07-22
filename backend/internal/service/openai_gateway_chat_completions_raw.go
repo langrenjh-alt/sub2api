@@ -259,6 +259,25 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 	clientOutputStarted := false
 	pendingLines := make([]string, 0, 8)
 	refusalDetector := newOpenAIChatSilentRefusalDetector(requestBodyLen)
+	upstreamCommentOpen := false
+
+	writeUpstreamCommentLine := func(line string) {
+		if clientDisconnected {
+			return
+		}
+		writeStreamHeaders()
+		if _, werr := c.Writer.WriteString(line + "\n"); werr != nil {
+			clientDisconnected = true
+			logger.L().Debug("openai chat_completions raw: client disconnected while forwarding upstream keepalive",
+				zap.Error(werr),
+				zap.String("request_id", requestID),
+			)
+			return
+		}
+		if line == "" {
+			c.Writer.Flush()
+		}
+	}
 
 	writeLine := func(line string) {
 		if clientDisconnected {
@@ -295,6 +314,21 @@ func (s *OpenAIGatewayService) streamRawChatCompletions(
 	for scanner.Scan() {
 		line := scanner.Text()
 		refusalDetector.ObserveSSELine(line)
+		// SSE comments carry no completion content. Forward them immediately
+		// instead of staging them with large-request silent-refusal candidates;
+		// otherwise a cascaded gateway can swallow every upstream heartbeat and
+		// leave its client-facing proxy idle until it returns a 524.
+		if strings.HasPrefix(line, ":") {
+			upstreamCommentOpen = true
+			writeUpstreamCommentLine(line)
+			continue
+		}
+		if upstreamCommentOpen && line == "" {
+			upstreamCommentOpen = false
+			writeUpstreamCommentLine(line)
+			continue
+		}
+		upstreamCommentOpen = false
 		if payload, ok := extractOpenAISSEDataLine(line); ok {
 			trimmedPayload := strings.TrimSpace(payload)
 			if trimmedPayload != "[DONE]" {

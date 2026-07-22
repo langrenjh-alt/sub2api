@@ -260,9 +260,10 @@ func newOpenAISilentRefusalFailoverError(c *gin.Context, account *Account, upstr
 		headers.Set("x-request-id", strings.TrimSpace(upstreamRequestID))
 	}
 	return &UpstreamFailoverError{
-		StatusCode:      http.StatusBadGateway,
-		ResponseBody:    openAISilentRefusalErrorBody(),
-		ResponseHeaders: headers,
+		StatusCode:               http.StatusBadGateway,
+		ResponseBody:             openAISilentRefusalErrorBody(),
+		ResponseHeaders:          headers,
+		SafeToFailoverAfterWrite: true,
 	}
 }
 

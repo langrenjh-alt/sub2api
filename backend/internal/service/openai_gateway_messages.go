@@ -819,6 +819,11 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 	firstChunk := true
 	clientDisconnected := false
 	clientOutputStarted := false
+	lastDownstreamWriteAt := time.Now()
+	flushDownstream := func() {
+		c.Writer.Flush()
+		lastDownstreamWriteAt = time.Now()
+	}
 	var streamFailoverErr error
 	var streamNonFailoverErr error
 
@@ -906,7 +911,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 							clientMsg = "Request blocked by upstream cyber-security policy"
 						}
 						if _, err := fmt.Fprint(c.Writer, buildAnthropicStreamErrorSSE("invalid_request_error", clientMsg)); err == nil {
-							c.Writer.Flush()
+							flushDownstream()
 						}
 						clientDisconnected = true
 					}
@@ -940,7 +945,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 					} else {
 						writeStreamHeaders()
 						if _, err := fmt.Fprint(c.Writer, buildAnthropicStreamErrorSSE(errType, errMsg)); err == nil {
-							c.Writer.Flush()
+							flushDownstream()
 						}
 					}
 				}
@@ -973,7 +978,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 			}
 		}
 		if len(events) > 0 && !clientDisconnected {
-			c.Writer.Flush()
+			flushDownstream()
 		}
 		return isTerminalEvent
 	}
@@ -1003,7 +1008,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 				clientOutputStarted = true
 			}
 			if !clientDisconnected {
-				c.Writer.Flush()
+				flushDownstream()
 			}
 		}
 		return resultWithUsage(), nil
@@ -1112,7 +1117,6 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 	if keepaliveTicker != nil {
 		keepaliveCh = keepaliveTicker.C
 	}
-	lastDataAt := time.Now()
 	var parser openAICompatSSEFrameParser
 
 	for {
@@ -1134,7 +1138,6 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 				handleScanErr(ev.err)
 				return resultWithUsage(), fmt.Errorf("stream usage incomplete: %w", ev.err)
 			}
-			lastDataAt = time.Now()
 			line := ev.line
 			if isOpenAICompatDoneSentinelLine(line) {
 				return missingTerminalErr()
@@ -1166,7 +1169,10 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 			if clientDisconnected {
 				continue
 			}
-			if time.Since(lastDataAt) < keepaliveInterval {
+			// Cascaded gateways commonly consume upstream SSE comments instead of
+			// forwarding them. Heartbeats must follow downstream idle time so an
+			// upstream ping cannot starve the client-facing Anthropic ping.
+			if time.Since(lastDownstreamWriteAt) < keepaliveInterval {
 				continue
 			}
 			// Send Anthropic-format ping event
@@ -1180,7 +1186,7 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 				continue
 			}
 			clientOutputStarted = true
-			c.Writer.Flush()
+			flushDownstream()
 		}
 	}
 }
