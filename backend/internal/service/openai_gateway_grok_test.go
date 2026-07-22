@@ -2244,7 +2244,7 @@ func TestForwardAsAnthropicForGrokUsesXAIResponses(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(recorder)
-	body := []byte(`{"model":"grok","max_tokens":32,"stream":false,"messages":[{"role":"user","content":"hi"}]}`)
+	body := []byte(`{"model":"grok","max_tokens":32,"stream":false,"messages":[{"role":"user","content":"hi"},{"role":"assistant","content":[{"type":"thinking","thinking":"plan","signature":"foreign-grok-signature"},{"type":"text","text":"ready"}]},{"role":"user","content":"continue"}]}`)
 	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", bytes.NewReader(body))
 	c.Set("api_key", &APIKey{ID: 5401})
 	c.Request.Header.Set("OpenAI-Beta", "grok-experimental")
@@ -2280,6 +2280,10 @@ func TestForwardAsAnthropicForGrokUsesXAIResponses(t *testing.T) {
 	require.Equal(t, "none", gjson.GetBytes(upstream.lastBody, "tool_choice").String())
 	require.Empty(t, upstream.lastReq.Header.Get("session_id"))
 	require.True(t, gjson.GetBytes(upstream.lastBody, "stream").Bool())
+	require.NotContains(t, string(upstream.lastBody), "foreign-grok-signature")
+	for _, item := range gjson.GetBytes(upstream.lastBody, "input").Array() {
+		require.False(t, item.Get("encrypted_content").Exists(), "historical Grok input must not replay encrypted reasoning")
+	}
 	require.NotContains(t, string(upstream.lastBody), "chatgpt.com")
 	require.Equal(t, "grok", result.Model)
 	require.Equal(t, "grok-4.5", result.UpstreamModel)

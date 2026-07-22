@@ -42,6 +42,16 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 	}
 
 	startTime := time.Now()
+	// v0.1.162 began replaying Anthropic thinking signatures as Responses
+	// reasoning.encrypted_content. Those signatures are scoped to the upstream
+	// response/cache identity and are not portable across Grok accounts. Keep
+	// the signature in the client-facing response, but omit it when rebuilding
+	// Grok input so a later Claude Code turn cannot stall on foreign ciphertext.
+	if account.Platform == PlatformGrok {
+		if strippedBody, stripped := stripAnthropicThinkingSignatures(body); stripped {
+			body = strippedBody
+		}
+	}
 
 	// 1. Parse Anthropic request
 	var anthropicReq apicompat.AnthropicRequest
