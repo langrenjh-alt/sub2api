@@ -50,6 +50,11 @@ type UpdateSettingsRequest struct {
 	TurnstileSiteKey   string `json:"turnstile_site_key"`
 	TurnstileSecretKey string `json:"turnstile_secret_key"`
 
+	// GEETEST v4 设置
+	GeetestEnabled    bool   `json:"geetest_enabled"`
+	GeetestCaptchaID  string `json:"geetest_captcha_id"`
+	GeetestCaptchaKey string `json:"geetest_captcha_key"`
+
 	// API Key IP 访问控制设置
 	APIKeyACLTrustForwardedIP *bool     `json:"api_key_acl_trust_forwarded_ip"`
 	ForwardedClientIPHeaders  *[]string `json:"forwarded_client_ip_headers"`
@@ -531,6 +536,22 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 				response.ErrorFrom(c, err)
 				return
 			}
+		}
+	}
+
+	req.GeetestCaptchaID = strings.TrimSpace(req.GeetestCaptchaID)
+	req.GeetestCaptchaKey = strings.TrimSpace(req.GeetestCaptchaKey)
+	if req.GeetestEnabled {
+		if req.GeetestCaptchaID == "" {
+			response.BadRequest(c, "GEETEST Captcha ID is required when enabled")
+			return
+		}
+		if req.GeetestCaptchaKey == "" {
+			if previousSettings.GeetestCaptchaKey == "" {
+				response.BadRequest(c, "GEETEST Captcha Key is required when enabled")
+				return
+			}
+			req.GeetestCaptchaKey = previousSettings.GeetestCaptchaKey
 		}
 	}
 
@@ -1271,6 +1292,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		TurnstileEnabled:                 req.TurnstileEnabled,
 		TurnstileSiteKey:                 req.TurnstileSiteKey,
 		TurnstileSecretKey:               req.TurnstileSecretKey,
+		GeetestEnabled:                   req.GeetestEnabled,
+		GeetestCaptchaID:                 req.GeetestCaptchaID,
+		GeetestCaptchaKey:                req.GeetestCaptchaKey,
 		APIKeyACLTrustForwardedIP: func() bool {
 			if req.APIKeyACLTrustForwardedIP != nil {
 				return *req.APIKeyACLTrustForwardedIP
@@ -1810,6 +1834,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		TurnstileEnabled:                                       updatedSettings.TurnstileEnabled,
 		TurnstileSiteKey:                                       updatedSettings.TurnstileSiteKey,
 		TurnstileSecretKeyConfigured:                           updatedSettings.TurnstileSecretKeyConfigured,
+		GeetestEnabled:                                         updatedSettings.GeetestEnabled,
+		GeetestCaptchaID:                                       updatedSettings.GeetestCaptchaID,
+		GeetestCaptchaKeyConfigured:                            updatedSettings.GeetestCaptchaKeyConfigured,
 		APIKeyACLTrustForwardedIP:                              updatedSettings.APIKeyACLTrustForwardedIP,
 		ForwardedClientIPHeaders:                               updatedSettings.ForwardedClientIPHeaders,
 		LinuxDoConnectEnabled:                                  updatedSettings.LinuxDoConnectEnabled,

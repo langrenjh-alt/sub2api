@@ -77,6 +77,17 @@
           />
         </div>
 
+        <!-- GeeTest Widget for Resend -->
+        <div v-if="geetestRequired && geetestCaptchaId && showResendGeetest">
+          <GeetestWidget
+            ref="geetestRef"
+            :captcha-id="geetestCaptchaId"
+            @verify="onGeetestVerify"
+            @invalid="onGeetestInvalid"
+            @error="onGeetestError"
+          />
+        </div>
+
         <!-- Submit Button -->
         <button type="submit" :disabled="isLoading || !verifyCode" class="btn btn-primary w-full">
           <svg
@@ -118,15 +129,22 @@
             type="button"
             @click="handleResendCode"
             :disabled="
-              isSendingCode || (turnstileEnabled && showResendTurnstile && !resendTurnstileToken)
+              isSendingCode ||
+              (turnstileEnabled && showResendTurnstile && !resendTurnstileToken) ||
+              (geetestRequired && showResendGeetest && !resendGeetestValidation)
             "
             class="text-sm text-primary-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:hover:text-primary-300"
           >
             <span v-if="isSendingCode">{{ t('auth.sendingCode') }}</span>
-            <span v-else-if="turnstileEnabled && !showResendTurnstile">
+            <span
+              v-else-if="
+                (turnstileEnabled && !showResendTurnstile) ||
+                (geetestRequired && !showResendGeetest)
+              "
+            >
               {{ t('auth.clickToResend') }}
             </span>
-            <span v-else>{{ t('auth.resendCode') }}</span>
+            <span v-else>{{ codeSent ? t('auth.resendCode') : t('auth.sendCode') }}</span>
           </button>
         </div>
       </form>
@@ -152,6 +170,7 @@ import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
+import GeetestWidget from '@/components/GeetestWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
   persistOAuthTokenContext,
@@ -173,6 +192,8 @@ import {
   loadAffiliateReferralCode,
   oauthAffiliatePayload
 } from '@/utils/oauthAffiliate'
+import { readGeetestValidation, toGeetestRequestFields } from '@/utils/geetest'
+import type { GeetestValidation } from '@/types'
 
 const { t, locale } = useI18n()
 
@@ -213,6 +234,7 @@ type PendingOAuthCreateAccountResponse = {
 const email = ref<string>('')
 const password = ref<string>('')
 const initialTurnstileToken = ref<string>('')
+const initialGeetestValidation = ref<GeetestValidation | null>(null)
 const promoCode = ref<string>('')
 const invitationCode = ref<string>('')
 const affCode = ref<string>('')
@@ -229,6 +251,8 @@ const hasRegisterData = ref<boolean>(false)
 // Public settings
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const siteName = ref<string>('Sub2API')
 const registrationEmailSuffixWhitelist = ref<string[]>([])
 
@@ -237,14 +261,22 @@ const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const resendTurnstileToken = ref<string>('')
 const showResendTurnstile = ref<boolean>(false)
 
+// GeeTest v4 for resend
+const geetestRef = ref<InstanceType<typeof GeetestWidget> | null>(null)
+const resendGeetestValidation = ref<GeetestValidation | null>(null)
+const showResendGeetest = ref<boolean>(false)
+
 const errors = ref({
   code: '',
-  turnstile: ''
+  turnstile: '',
+  geetest: ''
 })
 
 const validationToastMessage = computed(
-  () => errors.value.code || errors.value.turnstile || ''
+  () => errors.value.code || errors.value.turnstile || errors.value.geetest || ''
 )
+
+const geetestRequired = computed(() => geetestEnabled.value)
 
 watch(validationToastMessage, (value, previousValue) => {
   if (value && value !== previousValue) {
@@ -265,9 +297,11 @@ onMounted(async () => {
       email.value = registerData.email || ''
       password.value = registerData.password || ''
       initialTurnstileToken.value = registerData.turnstile_token || ''
+      initialGeetestValidation.value = readGeetestValidation(registerData)
       promoCode.value = registerData.promo_code || ''
       invitationCode.value = registerData.invitation_code || ''
       affCode.value = registerData.aff_code || loadAffiliateReferralCode()
+      codeSent.value = registerData.verification_code_sent === true
       pendingAuthToken.value = registerData.pending_auth_token || activePendingSession?.token || ''
       pendingAuthTokenField.value = registerData.pending_auth_token_field || activePendingSession?.token_field || 'pending_auth_token'
       pendingProvider.value = registerData.pending_provider || activePendingSession?.provider || ''
@@ -294,6 +328,8 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     siteName.value = settings.site_name || 'Sub2API'
     registrationEmailSuffixWhitelist.value = normalizeRegistrationEmailSuffixWhitelist(
       settings.registration_email_suffix_whitelist || []
@@ -303,8 +339,15 @@ onMounted(async () => {
   }
 
   // Auto-send verification code if we have valid data
-  if (hasRegisterData.value) {
-    await sendCode()
+  if (hasRegisterData.value && !codeSent.value) {
+    const needsTurnstile = turnstileEnabled.value && !initialTurnstileToken.value
+    const needsGeetest = geetestRequired.value && !initialGeetestValidation.value
+    if (needsTurnstile || needsGeetest) {
+      showResendTurnstile.value = needsTurnstile
+      showResendGeetest.value = needsGeetest
+    } else {
+      await sendCode()
+    }
   }
 })
 
@@ -353,6 +396,22 @@ function onTurnstileError(): void {
   errors.value.turnstile = t('auth.turnstileFailed')
 }
 
+// ==================== GeeTest Handlers ====================
+
+function onGeetestVerify(validation: GeetestValidation): void {
+  resendGeetestValidation.value = validation
+  errors.value.geetest = ''
+}
+
+function onGeetestInvalid(): void {
+  resendGeetestValidation.value = null
+}
+
+function onGeetestError(): void {
+  resendGeetestValidation.value = null
+  errors.value.geetest = t('auth.geetestFailed')
+}
+
 function isPendingOAuthFlow(): boolean {
   return Boolean(pendingProvider.value.trim())
 }
@@ -398,6 +457,8 @@ function persistPendingOAuthSession(provider: string, redirect?: string): void {
 async function sendCode(): Promise<void> {
   isSendingCode.value = true
   errorMessage.value = ''
+  let requestStarted = false
+  let requestSucceeded = false
 
   try {
     if (!shouldBypassRegistrationEmailPolicy() && !isRegistrationEmailSuffixAllowed(email.value, registrationEmailSuffixWhitelist.value)) {
@@ -410,11 +471,18 @@ async function sendCode(): Promise<void> {
       email: email.value,
       [pendingAuthTokenField.value]: pendingAuthToken.value || undefined,
       // 优先使用重发时新获取的 token（因为初始 token 可能已被使用）
-      turnstile_token: resendTurnstileToken.value || initialTurnstileToken.value || undefined
+      turnstile_token: resendTurnstileToken.value || initialTurnstileToken.value || undefined,
+      ...(geetestRequired.value
+        ? toGeetestRequestFields(
+            resendGeetestValidation.value || initialGeetestValidation.value
+          )
+        : {})
     } as Parameters<typeof sendVerifyCode>[0]
+    requestStarted = true
     const response = isPendingOAuthFlow()
       ? await sendPendingOAuthVerifyCode(requestPayload)
       : await sendVerifyCode(requestPayload)
+    requestSucceeded = true
 
     const pendingSendCodeSession = isPendingOAuthFlow()
       ? getPendingOAuthSendCodeSessionResponse(response as PendingOAuthSendVerifyCodeResponse)
@@ -435,9 +503,6 @@ async function sendCode(): Promise<void> {
     startCountdown(response.countdown)
 
     // Reset turnstile state（token 已使用，清除以避免重复使用）
-    initialTurnstileToken.value = ''
-    showResendTurnstile.value = false
-    resendTurnstileToken.value = ''
   } catch (error: unknown) {
     errorMessage.value = buildAuthErrorMessage(error, {
       fallback: t('auth.sendCodeFailed')
@@ -445,22 +510,68 @@ async function sendCode(): Promise<void> {
 
     appStore.showError(errorMessage.value)
   } finally {
+    if (requestStarted) {
+      clearConsumedCaptchaProofs(requestSucceeded)
+      showResendTurnstile.value = !requestSucceeded && turnstileEnabled.value
+      showResendGeetest.value = !requestSucceeded && geetestRequired.value
+    }
     isSendingCode.value = false
+  }
+}
+
+function clearConsumedCaptchaProofs(markCodeSent: boolean): void {
+  initialTurnstileToken.value = ''
+  initialGeetestValidation.value = null
+  resendTurnstileToken.value = ''
+  resendGeetestValidation.value = null
+  const turnstile = turnstileRef.value as { reset?: () => void } | null
+  const geetest = geetestRef.value as { reset?: () => void } | null
+  turnstile?.reset?.()
+  geetest?.reset?.()
+
+  const raw = sessionStorage.getItem('register_data')
+  if (!raw) {
+    return
+  }
+  try {
+    const stored = JSON.parse(raw) as Record<string, unknown>
+    delete stored.turnstile_token
+    delete stored.geetest_lot_number
+    delete stored.geetest_captcha_output
+    delete stored.geetest_pass_token
+    delete stored.geetest_gen_time
+    if (markCodeSent) {
+      stored.verification_code_sent = true
+    } else {
+      delete stored.verification_code_sent
+    }
+    sessionStorage.setItem('register_data', JSON.stringify(stored))
+  } catch {
+    sessionStorage.removeItem('register_data')
   }
 }
 
 // ==================== Handlers ====================
 
 async function handleResendCode(): Promise<void> {
-  // If turnstile is enabled and we haven't shown it yet, show it
-  if (turnstileEnabled.value && !showResendTurnstile.value) {
-    showResendTurnstile.value = true
+  // Tokens are single use, so every resend requires a fresh enabled challenge.
+  if (
+    (turnstileEnabled.value && !showResendTurnstile.value) ||
+    (geetestRequired.value && !showResendGeetest.value)
+  ) {
+    showResendTurnstile.value = turnstileEnabled.value
+    showResendGeetest.value = geetestRequired.value
     return
   }
 
   // If turnstile is enabled but no token yet, wait
   if (turnstileEnabled.value && !resendTurnstileToken.value) {
     errors.value.turnstile = t('auth.completeVerification')
+    return
+  }
+
+  if (geetestRequired.value && !resendGeetestValidation.value) {
+    errors.value.geetest = t('auth.completeVerification')
     return
   }
 

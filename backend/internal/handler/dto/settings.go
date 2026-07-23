@@ -55,6 +55,9 @@ type SystemSettings struct {
 	TurnstileEnabled             bool     `json:"turnstile_enabled"`
 	TurnstileSiteKey             string   `json:"turnstile_site_key"`
 	TurnstileSecretKeyConfigured bool     `json:"turnstile_secret_key_configured"`
+	GeetestEnabled               bool     `json:"geetest_enabled"`
+	GeetestCaptchaID             string   `json:"geetest_captcha_id"`
+	GeetestCaptchaKeyConfigured  bool     `json:"geetest_captcha_key_configured"`
 	APIKeyACLTrustForwardedIP    bool     `json:"api_key_acl_trust_forwarded_ip"`
 	ForwardedClientIPHeaders     []string `json:"forwarded_client_ip_headers"`
 
@@ -326,6 +329,8 @@ type PublicSettings struct {
 	LoginAgreementDocuments          []LoginAgreementDocument `json:"login_agreement_documents"`
 	TurnstileEnabled                 bool                     `json:"turnstile_enabled"`
 	TurnstileSiteKey                 string                   `json:"turnstile_site_key"`
+	GeetestEnabled                   bool                     `json:"geetest_enabled"`
+	GeetestCaptchaID                 string                   `json:"geetest_captcha_id"`
 	SiteName                         string                   `json:"site_name"`
 	SiteLogo                         string                   `json:"site_logo"`
 	SiteSubtitle                     string                   `json:"site_subtitle"`

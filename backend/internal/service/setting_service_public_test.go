@@ -11,7 +11,8 @@ import (
 )
 
 type settingPublicRepoStub struct {
-	values map[string]string
+	values    map[string]string
+	requested []string
 }
 
 func (s *settingPublicRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
@@ -27,6 +28,7 @@ func (s *settingPublicRepoStub) Set(ctx context.Context, key, value string) erro
 }
 
 func (s *settingPublicRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
+	s.requested = append(s.requested, keys...)
 	out := make(map[string]string, len(keys))
 	for _, key := range keys {
 		if value, ok := s.values[key]; ok {
@@ -89,6 +91,23 @@ func TestSettingService_GetPublicSettings_ExposesForceEmailOnThirdPartySignup(t 
 	settings, err := svc.GetPublicSettings(context.Background())
 	require.NoError(t, err)
 	require.True(t, settings.ForceEmailOnThirdPartySignup)
+}
+
+func TestSettingService_GetPublicSettings_ExposesGeetestClientConfig(t *testing.T) {
+	repo := &settingPublicRepoStub{
+		values: map[string]string{
+			SettingKeyGeetestEnabled:    "true",
+			SettingKeyGeetestCaptchaID:  "captcha-id",
+			SettingKeyGeetestCaptchaKey: "must-not-be-requested",
+		},
+	}
+	svc := NewSettingService(repo, &config.Config{})
+
+	settings, err := svc.GetPublicSettings(context.Background())
+	require.NoError(t, err)
+	require.True(t, settings.GeetestEnabled)
+	require.Equal(t, "captcha-id", settings.GeetestCaptchaID)
+	require.NotContains(t, repo.requested, SettingKeyGeetestCaptchaKey)
 }
 
 func TestSettingService_GetPublicSettings_ExposesAllowUserViewErrorRequests(t *testing.T) {

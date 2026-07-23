@@ -89,10 +89,25 @@
           />
         </div>
 
+        <!-- GeeTest Widget -->
+        <div v-if="geetestEnabled && geetestCaptchaId">
+          <GeetestWidget
+            ref="geetestRef"
+            :captcha-id="geetestCaptchaId"
+            @verify="onGeetestVerify"
+            @invalid="onGeetestInvalid"
+            @error="onGeetestError"
+          />
+        </div>
+
         <!-- Submit Button -->
         <button
           type="submit"
-          :disabled="authActionDisabled || (turnstileEnabled && !turnstileToken)"
+          :disabled="
+            authActionDisabled ||
+            (turnstileEnabled && !turnstileToken) ||
+            (geetestEnabled && !geetestValidation)
+          "
           class="btn btn-primary w-full"
         >
           <svg
@@ -211,11 +226,13 @@ import LoginAgreementPrompt from '@/components/auth/LoginAgreementPrompt.vue'
 import TotpLoginModal from '@/components/auth/TotpLoginModal.vue'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
+import GeetestWidget from '@/components/GeetestWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import { getPublicSettings, isTotp2FARequired, isWeChatWebOAuthEnabled } from '@/api/auth'
-import type { LoginAgreementDocument, TotpLoginResponse } from '@/types'
+import type { GeetestValidation, LoginAgreementDocument, TotpLoginResponse } from '@/types'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import { clearAllAffiliateReferralCodes } from '@/utils/oauthAffiliate'
+import { toGeetestRequestFields } from '@/utils/geetest'
 
 const { t } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
@@ -236,6 +253,8 @@ const publicSettingsLoaded = ref<boolean>(false)
 // Public settings
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const linuxdoOAuthEnabled = ref<boolean>(false)
 const dingtalkOAuthEnabled = ref<boolean>(false)
 const wechatOAuthEnabled = ref<boolean>(false)
@@ -257,6 +276,10 @@ const showAgreementModal = ref<boolean>(false)
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const turnstileToken = ref<string>('')
 
+// GeeTest v4
+const geetestRef = ref<InstanceType<typeof GeetestWidget> | null>(null)
+const geetestValidation = ref<GeetestValidation | null>(null)
+
 // 2FA state
 const show2FAModal = ref<boolean>(false)
 const totpTempToken = ref<string>('')
@@ -271,11 +294,12 @@ const formData = reactive({
 const errors = reactive({
   email: '',
   password: '',
-  turnstile: ''
+  turnstile: '',
+  geetest: ''
 })
 
 const validationToastMessage = computed(
-  () => errors.email || errors.password || errors.turnstile || ''
+  () => errors.email || errors.password || errors.turnstile || errors.geetest || ''
 )
 
 const agreementGateActive = computed(
@@ -318,6 +342,8 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
     dingtalkOAuthEnabled.value = settings.dingtalk_oauth_enabled ?? false
     wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
@@ -417,6 +443,22 @@ function onTurnstileError(): void {
   errors.turnstile = t('auth.turnstileFailed')
 }
 
+// ==================== GeeTest Handlers ====================
+
+function onGeetestVerify(validation: GeetestValidation): void {
+  geetestValidation.value = validation
+  errors.geetest = ''
+}
+
+function onGeetestInvalid(): void {
+  geetestValidation.value = null
+}
+
+function onGeetestError(): void {
+  geetestValidation.value = null
+  errors.geetest = t('auth.geetestFailed')
+}
+
 // ==================== Validation ====================
 
 function validateForm(): boolean {
@@ -424,6 +466,7 @@ function validateForm(): boolean {
   errors.email = ''
   errors.password = ''
   errors.turnstile = ''
+  errors.geetest = ''
 
   let isValid = true
 
@@ -459,6 +502,11 @@ function validateForm(): boolean {
     isValid = false
   }
 
+  if (geetestEnabled.value && !geetestValidation.value) {
+    errors.geetest = t('auth.completeVerification')
+    isValid = false
+  }
+
   return isValid
 }
 
@@ -480,12 +528,21 @@ async function handleLogin(): Promise<void> {
     const response = await authStore.login({
       email: formData.email,
       password: formData.password,
-      turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined
+      turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined,
+      ...(geetestEnabled.value ? toGeetestRequestFields(geetestValidation.value) : {})
     })
 
     // Check if 2FA is required
     if (isTotp2FARequired(response)) {
       const totpResponse = response as TotpLoginResponse
+      if (turnstileRef.value) {
+        turnstileRef.value.reset()
+        turnstileToken.value = ''
+      }
+      if (geetestRef.value) {
+        geetestRef.value.reset()
+        geetestValidation.value = null
+      }
       totpTempToken.value = totpResponse.temp_token || ''
       totpUserEmailMasked.value = totpResponse.user_email_masked || ''
       show2FAModal.value = true
@@ -505,6 +562,10 @@ async function handleLogin(): Promise<void> {
     if (turnstileRef.value) {
       turnstileRef.value.reset()
       turnstileToken.value = ''
+    }
+    if (geetestRef.value) {
+      geetestRef.value.reset()
+      geetestValidation.value = null
     }
 
     errorMessage.value = extractI18nErrorMessage(error, t, 'auth.errors', t('auth.loginFailed'))

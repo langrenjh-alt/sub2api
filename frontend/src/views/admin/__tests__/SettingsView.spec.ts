@@ -367,6 +367,9 @@ const baseSettingsResponse = {
   turnstile_enabled: false,
   turnstile_site_key: "",
   turnstile_secret_key_configured: false,
+  geetest_enabled: false,
+  geetest_captcha_id: "",
+  geetest_captcha_key_configured: false,
   api_key_acl_trust_forwarded_ip: true,
   forwarded_client_ip_headers: [],
   linuxdo_connect_enabled: false,
@@ -708,6 +711,41 @@ describe("admin SettingsView payment visible method controls", () => {
       expect.objectContaining({
         api_key_acl_trust_forwarded_ip: true,
         forwarded_client_ip_headers: ["Cf-Connecting-Ip", "X-Client-Ip"],
+      }),
+    );
+  });
+
+  it("loads and saves GeeTest v4 settings", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      geetest_enabled: false,
+      geetest_captcha_id: "existing-captcha-id",
+      geetest_captcha_key_configured: true,
+    });
+    const wrapper = mountView();
+
+    await flushPromises();
+    await openSecurityTab(wrapper);
+
+    const card = wrapper
+      .findAll(".card")
+      .find((node) => node.text().includes("admin.settings.geetest.title"));
+    expect(card).toBeDefined();
+
+    await card!.get('input[type="checkbox"]').setValue(true);
+    const credentialInputs = card!.findAll('input[type="text"], input[type="password"]');
+    expect(credentialInputs).toHaveLength(2);
+    await credentialInputs[0].setValue("new-captcha-id");
+    await credentialInputs[1].setValue("new-captcha-key");
+
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        geetest_enabled: true,
+        geetest_captcha_id: "new-captcha-id",
+        geetest_captcha_key: "new-captcha-key",
       }),
     );
   });

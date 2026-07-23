@@ -408,6 +408,66 @@ func (s *SettingService) GetTurnstileSecretKey(ctx context.Context) string {
 	return value
 }
 
+// GetTurnstileConfig reads the security-critical Turnstile settings in one
+// query. Storage failures are returned so authentication paths fail closed.
+func (s *SettingService) GetTurnstileConfig(ctx context.Context) (enabled bool, secretKey string, err error) {
+	if s == nil || s.settingRepo == nil {
+		return false, "", errors.New("setting repository is not configured")
+	}
+	values, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyTurnstileEnabled,
+		SettingKeyTurnstileSecretKey,
+	})
+	if err != nil {
+		return false, "", fmt.Errorf("load Turnstile settings: %w", err)
+	}
+	return values[SettingKeyTurnstileEnabled] == "true",
+		strings.TrimSpace(values[SettingKeyTurnstileSecretKey]),
+		nil
+}
+
+func (s *SettingService) IsGeetestEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestEnabled)
+	return err == nil && value == "true"
+}
+
+func (s *SettingService) GetGeetestCaptchaID(ctx context.Context) string {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestCaptchaID)
+	if err != nil {
+		return ""
+	}
+	return value
+}
+
+func (s *SettingService) GetGeetestCaptchaKey(ctx context.Context) string {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestCaptchaKey)
+	if err != nil {
+		return ""
+	}
+	return value
+}
+
+// GetGeetestConfig reads the security-critical GEETEST settings in one query.
+// A missing setting means the feature is disabled; storage failures are returned
+// so authentication paths can fail closed instead of silently bypassing checks.
+func (s *SettingService) GetGeetestConfig(ctx context.Context) (enabled bool, captchaID, captchaKey string, err error) {
+	if s == nil || s.settingRepo == nil {
+		return false, "", "", errors.New("setting repository is not configured")
+	}
+	values, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyGeetestEnabled,
+		SettingKeyGeetestCaptchaID,
+		SettingKeyGeetestCaptchaKey,
+	})
+	if err != nil {
+		return false, "", "", fmt.Errorf("load GEETEST settings: %w", err)
+	}
+	return values[SettingKeyGeetestEnabled] == "true",
+		strings.TrimSpace(values[SettingKeyGeetestCaptchaID]),
+		strings.TrimSpace(values[SettingKeyGeetestCaptchaKey]),
+		nil
+}
+
 // IsIdentityPatchEnabled 检查是否启用身份补丁（Claude -> Gemini systemInstruction 注入）
 func (s *SettingService) IsIdentityPatchEnabled(ctx context.Context) bool {
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyEnableIdentityPatch)

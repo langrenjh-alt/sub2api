@@ -117,6 +117,8 @@ describe('EmailVerifyView', () => {
     getPublicSettingsMock.mockResolvedValue({
       turnstile_enabled: false,
       turnstile_site_key: '',
+      geetest_enabled: false,
+      geetest_captcha_id: '',
       site_name: 'Sub2API',
       registration_email_suffix_whitelist: [],
     })
@@ -452,5 +454,116 @@ describe('EmailVerifyView', () => {
     })
     expect(apiClientPostMock).not.toHaveBeenCalled()
     expect(pushMock).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('forwards the registration GeeTest proof when sending the initial email code', async () => {
+    getPublicSettingsMock.mockResolvedValue({
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id',
+      site_name: 'Sub2API',
+      registration_email_suffix_whitelist: [],
+    })
+    sessionStorage.setItem(
+      'register_data',
+      JSON.stringify({
+        email: 'normal@example.com',
+        password: 'secret-456',
+        geetest_lot_number: 'lot-number',
+        geetest_captcha_output: 'captcha-output',
+        geetest_pass_token: 'pass-token',
+        geetest_gen_time: '1700000000',
+      })
+    )
+
+    mount(EmailVerifyView, {
+      global: {
+        stubs: {
+          AuthLayout: { template: '<div><slot /><slot name="footer" /></div>' },
+          Icon: true,
+          TurnstileWidget: true,
+          GeetestWidget: true,
+          transition: false,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(sendVerifyCodeMock).toHaveBeenCalledWith({
+      email: 'normal@example.com',
+      geetest_lot_number: 'lot-number',
+      geetest_captcha_output: 'captcha-output',
+      geetest_pass_token: 'pass-token',
+      geetest_gen_time: '1700000000',
+    })
+    expect(JSON.parse(sessionStorage.getItem('register_data') || '{}')).toEqual({
+      email: 'normal@example.com',
+      password: 'secret-456',
+      verification_code_sent: true,
+    })
+  })
+
+  it('requires a fresh GeeTest proof before resending the email code', async () => {
+    getPublicSettingsMock.mockResolvedValue({
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id',
+      site_name: 'Sub2API',
+      registration_email_suffix_whitelist: [],
+    })
+    sendVerifyCodeMock.mockResolvedValue({ countdown: 0 })
+    sessionStorage.setItem(
+      'register_data',
+      JSON.stringify({
+        email: 'normal@example.com',
+        password: 'secret-456',
+        geetest_lot_number: 'initial-lot',
+        geetest_captcha_output: 'initial-output',
+        geetest_pass_token: 'initial-pass',
+        geetest_gen_time: '1700000000',
+      })
+    )
+    const wrapper = mount(EmailVerifyView, {
+      global: {
+        stubs: {
+          AuthLayout: { template: '<div><slot /><slot name="footer" /></div>' },
+          Icon: true,
+          TurnstileWidget: true,
+          GeetestWidget: {
+            template: `<button data-testid="resend-geetest" @click="$emit('verify', {
+              lot_number: 'fresh-lot',
+              captcha_output: 'fresh-output',
+              pass_token: 'fresh-pass',
+              gen_time: '1700000001'
+            })">verify</button>`,
+          },
+          transition: false,
+        },
+      },
+    })
+
+    await flushPromises()
+    expect(sendVerifyCodeMock).toHaveBeenCalledTimes(1)
+
+    const resendButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('auth.clickToResend'))
+    expect(resendButton).toBeDefined()
+    await resendButton!.trigger('click')
+    await wrapper.get('[data-testid="resend-geetest"]').trigger('click')
+    await resendButton!.trigger('click')
+    await flushPromises()
+
+    expect(sendVerifyCodeMock).toHaveBeenCalledTimes(2)
+    expect(sendVerifyCodeMock).toHaveBeenLastCalledWith({
+      email: 'normal@example.com',
+      geetest_lot_number: 'fresh-lot',
+      geetest_captcha_output: 'fresh-output',
+      geetest_pass_token: 'fresh-pass',
+      geetest_gen_time: '1700000001',
+    })
   })
 })

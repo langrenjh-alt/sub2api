@@ -111,13 +111,27 @@ export interface AdminUser extends User {
   current_concurrency?: number
 }
 
-export interface LoginRequest {
+export interface GeetestValidation {
+  lot_number: string
+  captcha_output: string
+  pass_token: string
+  gen_time: string
+}
+
+export interface GeetestRequestFields {
+  geetest_lot_number?: string
+  geetest_captcha_output?: string
+  geetest_pass_token?: string
+  geetest_gen_time?: string
+}
+
+export interface LoginRequest extends GeetestRequestFields {
   email: string
   password: string
   turnstile_token?: string
 }
 
-export interface RegisterRequest {
+export interface RegisterRequest extends GeetestRequestFields {
   email: string
   password: string
   verify_code?: string
@@ -153,7 +167,7 @@ export interface AffiliateTransferResponse {
   balance: number
 }
 
-export interface SendVerifyCodeRequest {
+export interface SendVerifyCodeRequest extends GeetestRequestFields {
   email: string
   turnstile_token?: string
   pending_auth_token?: string
@@ -202,6 +216,8 @@ export interface PublicSettings {
   login_agreement_documents?: LoginAgreementDocument[]
   turnstile_enabled: boolean
   turnstile_site_key: string
+  geetest_enabled?: boolean
+  geetest_captcha_id?: string
   site_name: string
   site_logo: string
   site_subtitle: string

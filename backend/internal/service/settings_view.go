@@ -41,6 +41,10 @@ type SystemSettings struct {
 	TurnstileSiteKey             string
 	TurnstileSecretKey           string
 	TurnstileSecretKeyConfigured bool
+	GeetestEnabled               bool
+	GeetestCaptchaID             string
+	GeetestCaptchaKey            string
+	GeetestCaptchaKeyConfigured  bool
 	APIKeyACLTrustForwardedIP    bool
 	ForwardedClientIPHeaders     []string
 
@@ -292,6 +296,8 @@ type PublicSettings struct {
 	LoginAgreementDocuments          []LoginAgreementDocument
 	TurnstileEnabled                 bool
 	TurnstileSiteKey                 string
+	GeetestEnabled                   bool
+	GeetestCaptchaID                 string
 	SiteName                         string
 	SiteLogo                         string
 	SiteSubtitle                     string

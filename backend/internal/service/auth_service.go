@@ -74,6 +74,7 @@ type AuthService struct {
 	settingService        *SettingService
 	emailService          *EmailService
 	turnstileService      *TurnstileService
+	geetestService        *GeetestService
 	emailQueueService     *EmailQueueService
 	promoService          *PromoService
 	affiliateService      *AffiliateService
@@ -125,6 +126,41 @@ func NewAuthService(
 	}
 }
 
+func ProvideAuthService(
+	entClient *dbent.Client,
+	userRepo UserRepository,
+	redeemRepo RedeemCodeRepository,
+	refreshTokenCache RefreshTokenCache,
+	cfg *config.Config,
+	settingService *SettingService,
+	emailService *EmailService,
+	turnstileService *TurnstileService,
+	emailQueueService *EmailQueueService,
+	promoService *PromoService,
+	defaultSubAssigner DefaultSubscriptionAssigner,
+	affiliateService *AffiliateService,
+	userPlatformQuotaRepo UserPlatformQuotaRepository,
+	geetestService *GeetestService,
+) *AuthService {
+	service := NewAuthService(
+		entClient,
+		userRepo,
+		redeemRepo,
+		refreshTokenCache,
+		cfg,
+		settingService,
+		emailService,
+		turnstileService,
+		emailQueueService,
+		promoService,
+		defaultSubAssigner,
+		affiliateService,
+		userPlatformQuotaRepo,
+	)
+	service.geetestService = geetestService
+	return service
+}
+
 func (s *AuthService) EntClient() *dbent.Client {
 	if s == nil {
 		return nil
@@ -172,8 +208,11 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		invitationRedeemCode = redeemCode
 	}
 
-	// 检查是否需要邮件验证
-	if s.settingService != nil && s.settingService.IsEmailVerifyEnabled(ctx) {
+	// A supplied code must always be consumed. If email verification is disabled
+	// between the handler's captcha decision and this transaction, the purpose
+	// requirement below prevents another verification flow's code from bypassing it.
+	emailVerifyEnabled := s.settingService != nil && s.settingService.IsEmailVerifyEnabled(ctx)
+	if emailVerifyEnabled || strings.TrimSpace(verifyCode) != "" {
 		// 如果邮件验证已开启但邮件服务未配置，拒绝注册
 		// 这是一个配置错误，不应该允许绕过验证
 		if s.emailService == nil {
@@ -183,8 +222,24 @@ func (s *AuthService) RegisterWithVerification(ctx context.Context, email, passw
 		if verifyCode == "" {
 			return "", nil, ErrEmailVerifyRequired
 		}
-		// 验证邮箱验证码
-		if err := s.emailService.VerifyCode(ctx, email, verifyCode); err != nil {
+		geetestRequired, err := s.isGeetestRequired(ctx)
+		if err != nil {
+			return "", nil, ErrGeetestServiceUnavailable
+		}
+		turnstileRequired, err := s.isTurnstileProofRequired(ctx)
+		if err != nil {
+			return "", nil, ErrTurnstileNotConfigured
+		}
+		requirements := VerificationCodeRequirements{
+			RequireTurnstile: turnstileRequired,
+			RequireGeetest:   geetestRequired,
+		}
+		if !emailVerifyEnabled || turnstileRequired || geetestRequired {
+			requirements.Purpose = VerificationCodePurposeRegistration
+		}
+		// Verify and atomically consume the registration-scoped code and its
+		// captcha attestations.
+		if err := s.emailService.VerifyCodeWithRequirements(ctx, email, verifyCode, requirements); err != nil {
 			return "", nil, fmt.Errorf("verify code: %w", err)
 		}
 	}
@@ -317,12 +372,23 @@ func (s *AuthService) SendVerifyCode(ctx context.Context, email string, locale .
 		siteName = s.settingService.GetSiteName(ctx)
 	}
 
-	return s.emailService.SendVerifyCode(ctx, email, siteName, firstEmailLocale(locale))
+	return s.emailService.SendVerifyCodeWithOptions(ctx, email, siteName, VerificationCodeOptions{
+		Purpose: VerificationCodePurposeRegistration,
+	}, firstEmailLocale(locale))
 }
 
 // SendVerifyCodeAsync 异步发送邮箱验证码并返回倒计时
-func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, locale ...string) (*SendVerifyCodeResult, error) {
+func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email, turnstileToken, remoteIP string, geetestChallenge GeetestChallenge, locale ...string) (*SendVerifyCodeResult, error) {
 	logger.LegacyPrintf("service.auth", "[Auth] SendVerifyCodeAsync called for email: %s", email)
+
+	turnstileVerified, err := s.VerifyTurnstileWithState(ctx, turnstileToken, remoteIP)
+	if err != nil {
+		return nil, err
+	}
+	geetestVerified, err := s.VerifyGeetestWithState(ctx, geetestChallenge)
+	if err != nil {
+		return nil, err
+	}
 
 	// 检查是否开放注册（默认关闭）
 	if s.settingService == nil || !s.settingService.IsRegistrationEnabled(ctx) {
@@ -362,7 +428,11 @@ func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, loc
 
 	// 异步发送
 	logger.LegacyPrintf("service.auth", "[Auth] Enqueueing verify code for: %s", email)
-	if err := s.emailQueueService.EnqueueVerifyCode(email, siteName, firstEmailLocale(locale)); err != nil {
+	if err := s.emailQueueService.EnqueueVerifyCodeWithOptions(email, siteName, VerificationCodeOptions{
+		Purpose:           VerificationCodePurposeRegistration,
+		TurnstileVerified: turnstileVerified,
+		GeetestVerified:   geetestVerified,
+	}, firstEmailLocale(locale)); err != nil {
 		logger.LegacyPrintf("service.auth", "[Auth] Failed to enqueue: %v", err)
 		return nil, fmt.Errorf("enqueue verify code: %w", err)
 	}
@@ -371,6 +441,20 @@ func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email string, loc
 	return &SendVerifyCodeResult{
 		Countdown: 60, // 60秒倒计时
 	}, nil
+}
+
+func (s *AuthService) isTurnstileProofRequired(ctx context.Context) (bool, error) {
+	if s == nil {
+		return false, nil
+	}
+	if s.cfg != nil && s.cfg.Server.Mode == "release" && s.cfg.Turnstile.Required {
+		return true, nil
+	}
+	if s.settingService == nil {
+		return false, nil
+	}
+	enabled, _, err := s.settingService.GetTurnstileConfig(ctx)
+	return enabled, err
 }
 
 // VerifyTurnstileForRegister 在注册场景下验证 Turnstile。
@@ -386,34 +470,46 @@ func (s *AuthService) VerifyTurnstileForRegister(ctx context.Context, token, rem
 
 // VerifyTurnstile 验证Turnstile token
 func (s *AuthService) VerifyTurnstile(ctx context.Context, token string, remoteIP string) error {
+	_, err := s.VerifyTurnstileWithState(ctx, token, remoteIP)
+	return err
+}
+
+// VerifyTurnstileWithState verifies Turnstile and reports whether this exact
+// call performed a successful verification. This avoids deriving an attestation
+// from a later settings read that may observe a different configuration.
+func (s *AuthService) VerifyTurnstileWithState(ctx context.Context, token string, remoteIP string) (bool, error) {
 	required := s.cfg != nil && s.cfg.Server.Mode == "release" && s.cfg.Turnstile.Required
 
-	if required {
-		if s.settingService == nil {
-			logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but settings service is not configured")
-			return ErrTurnstileNotConfigured
-		}
-		enabled := s.settingService.IsTurnstileEnabled(ctx)
-		secretConfigured := s.settingService.GetTurnstileSecretKey(ctx) != ""
-		if !enabled || !secretConfigured {
-			logger.LegacyPrintf("service.auth", "[Auth] Turnstile required but not configured (enabled=%v, secret_configured=%v)", enabled, secretConfigured)
-			return ErrTurnstileNotConfigured
-		}
+	if required && s.settingService == nil {
+		logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but settings service is not configured")
+		return false, ErrTurnstileNotConfigured
 	}
 
 	if s.turnstileService == nil {
-		if required {
-			logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but service not configured")
-			return ErrTurnstileNotConfigured
+		if s.settingService == nil {
+			if required {
+				logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but service not configured")
+				return false, ErrTurnstileNotConfigured
+			}
+			return false, nil
 		}
-		return nil // 服务未配置则跳过验证
+		enabled, _, err := s.settingService.GetTurnstileConfig(ctx)
+		if err != nil || enabled || required {
+			logger.LegacyPrintf("service.auth", "[Auth] Turnstile service not configured (enabled=%v, settings_error=%v)", enabled, err)
+			return false, ErrTurnstileNotConfigured
+		}
+		return false, nil // 服务未配置则跳过验证
 	}
 
-	if !required && s.settingService != nil && s.settingService.IsTurnstileEnabled(ctx) && s.settingService.GetTurnstileSecretKey(ctx) == "" {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile enabled but secret key not configured")
+	verified, err := s.turnstileService.VerifyTokenWithState(ctx, token, remoteIP)
+	if err != nil {
+		return false, err
 	}
-
-	return s.turnstileService.VerifyToken(ctx, token, remoteIP)
+	if required && !verified {
+		logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but not enabled")
+		return false, ErrTurnstileNotConfigured
+	}
+	return verified, nil
 }
 
 // IsTurnstileEnabled 检查是否启用Turnstile验证

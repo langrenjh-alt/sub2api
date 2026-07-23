@@ -159,6 +159,68 @@ func TestSettingHandler_GetSettings_InjectsAuthSourceDefaults(t *testing.T) {
 	require.Len(t, subscriptions, 1)
 }
 
+func TestSettingHandler_UpdateSettings_RequiresCompleteGeetestConfig(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name string
+		body map[string]any
+	}{
+		{
+			name: "missing captcha id",
+			body: map[string]any{"geetest_enabled": true, "geetest_captcha_key": "key"},
+		},
+		{
+			name: "missing captcha key",
+			body: map[string]any{"geetest_enabled": true, "geetest_captcha_id": "id"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &settingHandlerRepoStub{values: map[string]string{}}
+			svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 1}})
+			handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+			rawBody, err := json.Marshal(tt.body)
+			require.NoError(t, err)
+
+			rec := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rec)
+			c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+			c.Request.Header.Set("Content-Type", "application/json")
+			handler.UpdateSettings(c)
+
+			require.Equal(t, http.StatusBadRequest, rec.Code)
+			require.Nil(t, repo.lastUpdates)
+		})
+	}
+}
+
+func TestSettingHandler_UpdateSettings_PreservesExistingGeetestCaptchaKey(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	repo := &settingHandlerRepoStub{values: map[string]string{
+		service.SettingKeyGeetestCaptchaKey: "existing-key",
+	}}
+	svc := service.NewSettingService(repo, &config.Config{Default: config.DefaultConfig{UserConcurrency: 1}})
+	handler := NewSettingHandler(svc, nil, nil, nil, nil, nil, nil)
+	rawBody, err := json.Marshal(map[string]any{
+		"geetest_enabled":    true,
+		"geetest_captcha_id": "captcha-id",
+	})
+	require.NoError(t, err)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPut, "/api/v1/admin/settings", bytes.NewReader(rawBody))
+	c.Request.Header.Set("Content-Type", "application/json")
+	handler.UpdateSettings(c)
+
+	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
+	require.Equal(t, "true", repo.lastUpdates[service.SettingKeyGeetestEnabled])
+	require.Equal(t, "captcha-id", repo.lastUpdates[service.SettingKeyGeetestCaptchaID])
+	require.Equal(t, "existing-key", repo.lastUpdates[service.SettingKeyGeetestCaptchaKey])
+}
+
 func TestSettingHandler_UpdateSettings_PreservesOmittedAuthSourceDefaults(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &settingHandlerRepoStub{

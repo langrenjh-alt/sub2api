@@ -161,6 +161,11 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	if settings.TurnstileSecretKey != "" {
 		updates[SettingKeyTurnstileSecretKey] = settings.TurnstileSecretKey
 	}
+	updates[SettingKeyGeetestEnabled] = strconv.FormatBool(settings.GeetestEnabled)
+	updates[SettingKeyGeetestCaptchaID] = settings.GeetestCaptchaID
+	if settings.GeetestCaptchaKey != "" {
+		updates[SettingKeyGeetestCaptchaKey] = settings.GeetestCaptchaKey
+	}
 	updates[SettingKeyAPIKeyACLTrustForwardedIP] = strconv.FormatBool(settings.APIKeyACLTrustForwardedIP)
 	forwardedClientIPHeadersJSON, err := json.Marshal(settings.ForwardedClientIPHeaders)
 	if err != nil {

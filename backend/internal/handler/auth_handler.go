@@ -55,12 +55,30 @@ type RegisterRequest struct {
 	PromoCode      string `json:"promo_code"`      // 注册优惠码
 	InvitationCode string `json:"invitation_code"` // 邀请码
 	AffCode        string `json:"aff_code"`        // 邀请返利码
+	GeetestChallengeRequest
+}
+
+type GeetestChallengeRequest struct {
+	GeetestLotNumber     string `json:"geetest_lot_number"`
+	GeetestCaptchaOutput string `json:"geetest_captcha_output"`
+	GeetestPassToken     string `json:"geetest_pass_token"`
+	GeetestGenTime       string `json:"geetest_gen_time"`
+}
+
+func (r GeetestChallengeRequest) challenge() service.GeetestChallenge {
+	return service.GeetestChallenge{
+		LotNumber:     r.GeetestLotNumber,
+		CaptchaOutput: r.GeetestCaptchaOutput,
+		PassToken:     r.GeetestPassToken,
+		GenTime:       r.GeetestGenTime,
+	}
 }
 
 // SendVerifyCodeRequest 发送验证码请求
 type SendVerifyCodeRequest struct {
 	Email          string `json:"email" binding:"required,email"`
 	TurnstileToken string `json:"turnstile_token"`
+	GeetestChallengeRequest
 }
 
 // SendVerifyCodeResponse 发送验证码响应
@@ -74,6 +92,7 @@ type LoginRequest struct {
 	Email          string `json:"email" binding:"required,email"`
 	Password       string `json:"password" binding:"required"`
 	TurnstileToken string `json:"turnstile_token"`
+	GeetestChallengeRequest
 }
 
 // AuthResponse 认证响应格式（匹配前端期望）
@@ -170,6 +189,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		response.ErrorFrom(c, err)
 		return
 	}
+	if err := h.authService.VerifyGeetestForRegister(c.Request.Context(), req.challenge(), req.VerifyCode); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
 
 	_, user, err := h.authService.RegisterWithVerification(
 		c.Request.Context(),
@@ -197,13 +220,14 @@ func (h *AuthHandler) SendVerifyCode(c *gin.Context) {
 		return
 	}
 
-	// Turnstile 验证
-	if err := h.authService.VerifyTurnstile(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c)); err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
-	result, err := h.authService.SendVerifyCodeAsync(c.Request.Context(), req.Email, c.GetHeader("Accept-Language"))
+	result, err := h.authService.SendVerifyCodeAsync(
+		c.Request.Context(),
+		req.Email,
+		req.TurnstileToken,
+		ip.GetClientIP(c),
+		req.challenge(),
+		c.GetHeader("Accept-Language"),
+	)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -226,6 +250,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Turnstile 验证
 	if err := h.authService.VerifyTurnstile(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c)); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if err := h.authService.VerifyGeetest(c.Request.Context(), req.challenge()); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

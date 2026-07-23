@@ -163,6 +163,11 @@ const (
 	SettingKeyTurnstileSiteKey   = "turnstile_site_key"   // Turnstile Site Key
 	SettingKeyTurnstileSecretKey = "turnstile_secret_key" // Turnstile Secret Key
 
+	// GEETEST v4 设置
+	SettingKeyGeetestEnabled    = "geetest_enabled"
+	SettingKeyGeetestCaptchaID  = "geetest_captcha_id"
+	SettingKeyGeetestCaptchaKey = "geetest_captcha_key"
+
 	// API Key IP 访问控制设置
 	SettingKeyAPIKeyACLTrustForwardedIP = "api_key_acl_trust_forwarded_ip" // API Key IP 白/黑名单是否信任转发 IP
 	SettingKeyForwardedClientIPHeaders  = "forwarded_client_ip_headers"    // 自定义 CDN 客户端 IP 请求头（JSON 数组）

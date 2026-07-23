@@ -313,6 +313,24 @@ func TestEnhanceCSPPolicy(t *testing.T) {
 		assert.Equal(t, 1, count)
 	})
 
+	t.Run("adds_geetest_runtime_domains", func(t *testing.T) {
+		policy := "default-src 'self'; script-src 'self' __CSP_NONCE__"
+		enhanced := enhanceCSPPolicy(policy)
+
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "style-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "style-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "img-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "img-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "font-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "font-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestSecondaryFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestMonitorDomain))
+	})
+
 	t.Run("handles_policy_without_script_src", func(t *testing.T) {
 		policy := "default-src 'self'"
 		enhanced := enhanceCSPPolicy(policy)

@@ -45,39 +45,61 @@ func NewTurnstileService(settingService *SettingService, verifier TurnstileVerif
 
 // VerifyToken 验证 Turnstile token
 func (s *TurnstileService) VerifyToken(ctx context.Context, token string, remoteIP string) error {
-	// 检查是否启用 Turnstile
-	if !s.settingService.IsTurnstileEnabled(ctx) {
-		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Disabled, skipping verification")
-		return nil
+	_, err := s.VerifyTokenWithState(ctx, token, remoteIP)
+	return err
+}
+
+// VerifyTokenWithState verifies a Turnstile token and reports whether this call
+// actually performed a successful verification. A disabled integration returns
+// false without an error so callers can persist an accurate attestation.
+func (s *TurnstileService) VerifyTokenWithState(ctx context.Context, token string, remoteIP string) (bool, error) {
+	if s == nil || s.settingService == nil {
+		return false, ErrTurnstileNotConfigured
 	}
 
-	// 获取 Secret Key
-	secretKey := s.settingService.GetTurnstileSecretKey(ctx)
+	enabled, secretKey, err := s.settingService.GetTurnstileConfig(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.turnstile", "[Turnstile] Failed to load settings: %v", err)
+		return false, ErrTurnstileNotConfigured
+	}
+	if !enabled {
+		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Disabled, skipping verification")
+		return false, nil
+	}
+
 	if secretKey == "" {
 		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Secret key not configured")
-		return ErrTurnstileNotConfigured
+		return false, ErrTurnstileNotConfigured
+	}
+	if s.verifier == nil {
+		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Verifier not configured")
+		return false, ErrTurnstileNotConfigured
 	}
 
 	// 如果 token 为空，返回错误
 	if token == "" {
 		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Token is empty")
-		return ErrTurnstileVerificationFailed
+		return false, ErrTurnstileVerificationFailed
 	}
 
 	logger.LegacyPrintf("service.turnstile", "[Turnstile] Verifying token for IP: %s", remoteIP)
 	result, err := s.verifier.VerifyToken(ctx, secretKey, token, remoteIP)
 	if err != nil {
 		logger.LegacyPrintf("service.turnstile", "[Turnstile] Request failed: %v", err)
-		return fmt.Errorf("send request: %w", err)
+		return false, fmt.Errorf("send request: %w", err)
+	}
+	if result == nil {
+		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Verifier returned an empty response")
+		return false, ErrTurnstileVerificationFailed
 	}
 
 	if !result.Success {
 		logger.LegacyPrintf("service.turnstile", "[Turnstile] Verification failed, error codes: %v", result.ErrorCodes)
-		return ErrTurnstileVerificationFailed
+		return false, ErrTurnstileVerificationFailed
 	}
 
 	logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Verification successful")
-	return nil
+	return true, nil
 }
 
 // IsEnabled 检查 Turnstile 是否启用

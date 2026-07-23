@@ -147,6 +147,18 @@ export default {
         secretKeyHint: '服务端验证密钥（请保密）',
         secretKeyConfiguredHint: '密钥已配置，留空以保留当前值。'
       },
+      geetest: {
+        title: 'GEETEST 验证 4.0',
+        description: '用于登录和注册的行为式机器人防护',
+        enable: '启用 GEETEST',
+        enableHint: '要求完成 GEETEST 验证 4.0',
+        captchaId: 'Captcha ID',
+        captchaKey: 'Captcha Key',
+        captchaIdHint: '从 GEETEST 后台获取',
+        console: 'GEETEST 后台',
+        captchaKeyHint: '服务端签名密钥（请保密）',
+        captchaKeyConfiguredHint: 'Captcha Key 已配置，留空以保留当前值。'
+      },
       apiKeyAcl: {
         title: 'API Key IP 访问控制',
         description: '控制 API Key 白/黑名单、操作审计日志与会话 IP/UA 绑定使用哪个客户端 IP 判断',

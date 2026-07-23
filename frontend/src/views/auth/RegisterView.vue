@@ -193,6 +193,17 @@
           />
         </div>
 
+        <!-- GeeTest Widget -->
+        <div v-if="geetestEnabled && geetestCaptchaId">
+          <GeetestWidget
+            ref="geetestRef"
+            :captcha-id="geetestCaptchaId"
+            @verify="onGeetestVerify"
+            @invalid="onGeetestInvalid"
+            @error="onGeetestError"
+          />
+        </div>
+
         <LoginAgreementPrompt
           v-if="loginAgreementEnabled"
           :accepted="agreementAccepted"
@@ -208,7 +219,11 @@
         <!-- Submit Button -->
         <button
           type="submit"
-          :disabled="registrationActionDisabled || (turnstileEnabled && !turnstileToken)"
+          :disabled="
+            registrationActionDisabled ||
+            (turnstileEnabled && !turnstileToken) ||
+            (geetestEnabled && !geetestValidation)
+          "
           class="btn btn-primary w-full"
         >
           <svg
@@ -309,6 +324,7 @@ import EmailOAuthButtons from '@/components/auth/EmailOAuthButtons.vue'
 import LoginAgreementPrompt from '@/components/auth/LoginAgreementPrompt.vue'
 import Icon from '@/components/icons/Icon.vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
+import GeetestWidget from '@/components/GeetestWidget.vue'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
   getPublicSettings,
@@ -327,7 +343,8 @@ import {
   loadAffiliateReferralCode,
   resolveAffiliateReferralCode
 } from '@/utils/oauthAffiliate'
-import type { LoginAgreementDocument } from '@/types'
+import { toGeetestRequestFields } from '@/utils/geetest'
+import type { GeetestValidation, LoginAgreementDocument } from '@/types'
 
 const { t, locale } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
@@ -353,6 +370,8 @@ const promoCodeEnabled = ref<boolean>(true)
 const invitationCodeEnabled = ref<boolean>(false)
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const siteName = ref<string>('Sub2API')
 const linuxdoOAuthEnabled = ref<boolean>(false)
 const wechatOAuthEnabled = ref<boolean>(false)
@@ -372,6 +391,10 @@ const showAgreementModal = ref<boolean>(false)
 // Turnstile
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const turnstileToken = ref<string>('')
+
+// GeeTest v4
+const geetestRef = ref<InstanceType<typeof GeetestWidget> | null>(null)
+const geetestValidation = ref<GeetestValidation | null>(null)
 
 // Promo code validation
 const promoValidating = ref<boolean>(false)
@@ -404,6 +427,7 @@ const errors = reactive({
   email: '',
   password: '',
   turnstile: '',
+  geetest: '',
   invitation_code: ''
 })
 
@@ -414,6 +438,7 @@ const validationToastMessage = computed(() =>
   errors.invitation_code ||
   (promoValidation.invalid ? promoValidation.message : '') ||
   errors.turnstile ||
+  errors.geetest ||
   ''
 )
 
@@ -461,6 +486,8 @@ onMounted(async () => {
     invitationCodeEnabled.value = settings.invitation_code_enabled
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     siteName.value = settings.site_name || 'Sub2API'
     linuxdoOAuthEnabled.value = settings.linuxdo_oauth_enabled
     wechatOAuthEnabled.value = isWeChatWebOAuthEnabled(settings)
@@ -724,6 +751,22 @@ function onTurnstileError(): void {
   errors.turnstile = t('auth.turnstileFailed')
 }
 
+// ==================== GeeTest Handlers ====================
+
+function onGeetestVerify(validation: GeetestValidation): void {
+  geetestValidation.value = validation
+  errors.geetest = ''
+}
+
+function onGeetestInvalid(): void {
+  geetestValidation.value = null
+}
+
+function onGeetestError(): void {
+  geetestValidation.value = null
+  errors.geetest = t('auth.geetestFailed')
+}
+
 // ==================== Validation ====================
 
 function validateEmail(email: string): boolean {
@@ -752,6 +795,7 @@ function validateForm(): boolean {
   errors.email = ''
   errors.password = ''
   errors.turnstile = ''
+  errors.geetest = ''
   errors.invitation_code = ''
 
   let isValid = true
@@ -798,6 +842,11 @@ function validateForm(): boolean {
   // Turnstile validation
   if (turnstileEnabled.value && !turnstileToken.value) {
     errors.turnstile = t('auth.completeVerification')
+    isValid = false
+  }
+
+  if (geetestEnabled.value && !geetestValidation.value) {
+    errors.geetest = t('auth.completeVerification')
     isValid = false
   }
 
@@ -870,6 +919,7 @@ async function handleRegister(): Promise<void> {
           email: formData.email,
           password: formData.password,
           turnstile_token: turnstileToken.value,
+          ...toGeetestRequestFields(geetestValidation.value),
           promo_code: formData.promo_code || undefined,
           invitation_code: formData.invitation_code || undefined,
           ...(affCode ? { aff_code: affCode } : {})
@@ -886,6 +936,7 @@ async function handleRegister(): Promise<void> {
       email: formData.email,
       password: formData.password,
       turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined,
+      ...(geetestEnabled.value ? toGeetestRequestFields(geetestValidation.value) : {}),
       promo_code: formData.promo_code || undefined,
       invitation_code: formData.invitation_code || undefined,
       ...(affCode ? { aff_code: affCode } : {})
@@ -902,6 +953,10 @@ async function handleRegister(): Promise<void> {
     if (turnstileRef.value) {
       turnstileRef.value.reset()
       turnstileToken.value = ''
+    }
+    if (geetestRef.value) {
+      geetestRef.value.reset()
+      geetestValidation.value = null
     }
 
     // Handle registration error

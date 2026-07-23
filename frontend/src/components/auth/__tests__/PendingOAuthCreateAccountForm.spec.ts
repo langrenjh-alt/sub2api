@@ -42,7 +42,9 @@ describe('PendingOAuthCreateAccountForm', () => {
     showError.mockReset()
     getPublicSettings.mockResolvedValue({
       turnstile_enabled: false,
-      turnstile_site_key: ''
+      turnstile_site_key: '',
+      geetest_enabled: false,
+      geetest_captcha_id: ''
     })
   })
 
@@ -234,5 +236,96 @@ describe('PendingOAuthCreateAccountForm', () => {
       email: 'user@example.com',
       turnstile_token: 'turnstile-token'
     })
+  })
+
+  it('requires and submits GeeTest v4 validation when enabled', async () => {
+    getPublicSettings.mockResolvedValue({
+      email_verify_enabled: true,
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id'
+    })
+    sendPendingOAuthVerifyCode.mockResolvedValue({
+      message: 'sent',
+      countdown: 60
+    })
+
+    const wrapper = mount(PendingOAuthCreateAccountForm, {
+      props: {
+        testIdPrefix: 'linuxdo',
+        initialEmail: '',
+        isSubmitting: false
+      },
+      global: {
+        stubs: {
+          GeetestWidget: {
+            template: `<button data-testid="geetest-verify" @click="$emit('verify', {
+              lot_number: 'lot-number',
+              captcha_output: 'captcha-output',
+              pass_token: 'pass-token',
+              gen_time: '1700000000'
+            })">verify</button>`
+          }
+        }
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-testid="linuxdo-create-account-email"]').setValue('user@example.com')
+    expect(wrapper.get('[data-testid="linuxdo-create-account-send-code"]').attributes('disabled')).toBeDefined()
+
+    await wrapper.get('[data-testid="geetest-verify"]').trigger('click')
+    await wrapper.get('[data-testid="linuxdo-create-account-send-code"]').trigger('click')
+    await flushPromises()
+
+    expect(sendPendingOAuthVerifyCode).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      geetest_lot_number: 'lot-number',
+      geetest_captcha_output: 'captcha-output',
+      geetest_pass_token: 'pass-token',
+      geetest_gen_time: '1700000000'
+    })
+  })
+
+  it('discards a GeeTest proof after a failed send-code request', async () => {
+    getPublicSettings.mockResolvedValue({
+      email_verify_enabled: true,
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id'
+    })
+    sendPendingOAuthVerifyCode.mockRejectedValue(new Error('send failed'))
+
+    const wrapper = mount(PendingOAuthCreateAccountForm, {
+      props: {
+        testIdPrefix: 'linuxdo',
+        initialEmail: 'user@example.com',
+        isSubmitting: false
+      },
+      global: {
+        stubs: {
+          GeetestWidget: {
+            template: `<button data-testid="geetest-verify" @click="$emit('verify', {
+              lot_number: 'lot-number',
+              captcha_output: 'captcha-output',
+              pass_token: 'pass-token',
+              gen_time: '1700000000'
+            })">verify</button>`
+          }
+        }
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-testid="geetest-verify"]').trigger('click')
+    await wrapper.get('[data-testid="linuxdo-create-account-send-code"]').trigger('click')
+    await flushPromises()
+
+    expect(sendPendingOAuthVerifyCode).toHaveBeenCalledTimes(1)
+    expect(
+      wrapper.get('[data-testid="linuxdo-create-account-send-code"]').attributes('disabled')
+    ).toBeDefined()
   })
 })

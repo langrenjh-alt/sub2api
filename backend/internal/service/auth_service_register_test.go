@@ -355,6 +355,49 @@ func TestAuthService_Register_EmailVerifyInvalid(t *testing.T) {
 	require.ErrorContains(t, err, "verify code")
 }
 
+func TestAuthService_Register_RejectsCodeWithoutGeetestRegistrationProof(t *testing.T) {
+	repo := &userRepoStub{}
+	cache := &emailCacheStub{
+		data: &VerificationCodeData{
+			Code:            "123456",
+			Attempts:        0,
+			Purpose:         VerificationCodePurposeEmailBinding,
+			GeetestVerified: false,
+		},
+	}
+	service := newAuthService(repo, map[string]string{
+		SettingKeyRegistrationEnabled: "true",
+		SettingKeyEmailVerifyEnabled:  "true",
+		SettingKeyGeetestEnabled:      "true",
+		SettingKeyGeetestCaptchaID:    "captcha-id",
+		SettingKeyGeetestCaptchaKey:   "captcha-key",
+	}, cache, nil)
+
+	_, _, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "123456", "", "", "")
+	require.ErrorIs(t, err, ErrInvalidVerifyCode)
+	require.ErrorContains(t, err, "verify code")
+}
+
+func TestAuthService_Register_ConsumesSuppliedCodeWhenEmailVerifyWasDisabled(t *testing.T) {
+	repo := &userRepoStub{}
+	cache := &emailCacheStub{
+		data: &VerificationCodeData{
+			Code:      "123456",
+			Purpose:   VerificationCodePurposeEmailBinding,
+			ExpiresAt: time.Now().Add(time.Minute),
+		},
+	}
+	service := newAuthService(repo, map[string]string{
+		SettingKeyRegistrationEnabled: "true",
+		SettingKeyEmailVerifyEnabled:  "false",
+	}, cache, nil)
+
+	_, _, err := service.RegisterWithVerification(context.Background(), "user@test.com", "password", "123456", "", "", "")
+
+	require.ErrorIs(t, err, ErrInvalidVerifyCode)
+	require.ErrorContains(t, err, "verify code")
+}
+
 func TestAuthService_Register_EmailExists(t *testing.T) {
 	repo := &userRepoStub{exists: true}
 	service := newAuthService(repo, map[string]string{

@@ -17,11 +17,12 @@ const (
 
 // EmailTask 邮件发送任务
 type EmailTask struct {
-	Email    string
-	SiteName string
-	TaskType string // "verify_code" or "password_reset"
-	ResetURL string // Only used for password_reset task type
-	Locale   string // Optional Accept-Language locale hint
+	Email               string
+	SiteName            string
+	TaskType            string // "verify_code" or "password_reset"
+	ResetURL            string // Only used for password_reset task type
+	Locale              string // Optional Accept-Language locale hint
+	VerificationOptions VerificationCodeOptions
 }
 
 // EmailQueueService 异步邮件队列服务
@@ -83,7 +84,7 @@ func (s *EmailQueueService) processTask(workerID int, task EmailTask) {
 
 	switch task.TaskType {
 	case TaskTypeVerifyCode:
-		if err := s.emailService.SendVerifyCode(ctx, task.Email, task.SiteName, task.Locale); err != nil {
+		if err := s.emailService.SendVerifyCodeWithOptions(ctx, task.Email, task.SiteName, task.VerificationOptions, task.Locale); err != nil {
 			logger.LegacyPrintf("service.email_queue", "[EmailQueue] Worker %d failed to send verify code to %s: %v", workerID, task.Email, err)
 		} else {
 			logger.LegacyPrintf("service.email_queue", "[EmailQueue] Worker %d sent verify code to %s", workerID, task.Email)
@@ -101,11 +102,16 @@ func (s *EmailQueueService) processTask(workerID int, task EmailTask) {
 
 // EnqueueVerifyCode 将验证码发送任务加入队列
 func (s *EmailQueueService) EnqueueVerifyCode(email, siteName string, locale ...string) error {
+	return s.EnqueueVerifyCodeWithOptions(email, siteName, VerificationCodeOptions{}, locale...)
+}
+
+func (s *EmailQueueService) EnqueueVerifyCodeWithOptions(email, siteName string, options VerificationCodeOptions, locale ...string) error {
 	task := EmailTask{
-		Email:    email,
-		SiteName: siteName,
-		TaskType: TaskTypeVerifyCode,
-		Locale:   firstEmailLocale(locale),
+		Email:               email,
+		SiteName:            siteName,
+		TaskType:            TaskTypeVerifyCode,
+		Locale:              firstEmailLocale(locale),
+		VerificationOptions: options,
 	}
 
 	select {

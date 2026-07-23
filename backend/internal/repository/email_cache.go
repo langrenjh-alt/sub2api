@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -75,6 +77,83 @@ func (c *emailCache) SetVerificationCode(ctx context.Context, email string, data
 func (c *emailCache) DeleteVerificationCode(ctx context.Context, email string) error {
 	key := verifyCodeKey(email)
 	return c.rdb.Del(ctx, key).Err()
+}
+
+func (c *emailCache) ConsumeVerificationCode(ctx context.Context, email string, req service.VerificationCodeConsumeRequest) (service.VerificationCodeConsumeStatus, error) {
+	if c == nil || c.rdb == nil {
+		return service.VerificationCodeConsumeMissing, errors.New("email cache is not configured")
+	}
+	if req.MaxAttempts <= 0 {
+		return service.VerificationCodeConsumeInvalid, errors.New("invalid verification attempt limit")
+	}
+
+	key := verifyCodeKey(email)
+	for attempt := 0; attempt < 5; attempt++ {
+		status := service.VerificationCodeConsumeMissing
+		err := c.rdb.Watch(ctx, func(tx *redis.Tx) error {
+			value, err := tx.Get(ctx, key).Result()
+			if errors.Is(err, redis.Nil) {
+				status = service.VerificationCodeConsumeMissing
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+
+			var data service.VerificationCodeData
+			if err := json.Unmarshal([]byte(value), &data); err != nil {
+				return err
+			}
+			if data.Attempts >= req.MaxAttempts {
+				status = service.VerificationCodeConsumeMaxAttempts
+				return nil
+			}
+			if (req.Purpose != "" && data.Purpose != req.Purpose) ||
+				(req.RequireTurnstile && !data.TurnstileVerified) ||
+				(req.RequireGeetest && !data.GeetestVerified) {
+				status = service.VerificationCodeConsumeRequirementsMismatch
+				return nil
+			}
+
+			if subtle.ConstantTimeCompare([]byte(data.Code), []byte(req.Code)) != 1 {
+				data.Attempts++
+				ttl, err := tx.PTTL(ctx, key).Result()
+				if err != nil {
+					return err
+				}
+				if ttl <= 0 {
+					status = service.VerificationCodeConsumeMissing
+					return nil
+				}
+				encoded, err := json.Marshal(&data)
+				if err != nil {
+					return err
+				}
+				_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+					pipe.Set(ctx, key, encoded, ttl)
+					return nil
+				})
+				if data.Attempts >= req.MaxAttempts {
+					status = service.VerificationCodeConsumeMaxAttempts
+				} else {
+					status = service.VerificationCodeConsumeInvalid
+				}
+				return err
+			}
+
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.Del(ctx, key)
+				return nil
+			})
+			status = service.VerificationCodeConsumeSuccess
+			return err
+		}, key)
+		if errors.Is(err, redis.TxFailedErr) {
+			continue
+		}
+		return status, err
+	}
+	return service.VerificationCodeConsumeInvalid, errors.New("verification code changed concurrently")
 }
 
 // Password reset token methods

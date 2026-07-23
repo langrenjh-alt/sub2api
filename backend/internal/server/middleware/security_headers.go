@@ -18,6 +18,18 @@ const (
 	NonceTemplate = "__CSP_NONCE__"
 	// CloudflareInsightsDomain is the domain for Cloudflare Web Analytics
 	CloudflareInsightsDomain = "https://static.cloudflareinsights.com"
+	// GeeTestStaticDomain hosts the GeeTest v4 loader and runtime assets.
+	GeeTestStaticDomain = "https://static.geetest.com"
+	// GeeTestFallbackStaticDomain hosts GeeTest's fallback runtime assets.
+	GeeTestFallbackStaticDomain = "https://static.geevisit.com"
+	// GeeTestAPIDomain serves the GeeTest v4 JSONP bootstrap response.
+	GeeTestAPIDomain = "https://gcaptcha4.geetest.com"
+	// GeeTestFallbackAPIDomain is the first GeeTest JSONP bootstrap fallback.
+	GeeTestFallbackAPIDomain = "https://gcaptcha4.geevisit.com"
+	// GeeTestSecondaryFallbackAPIDomain is the second GeeTest JSONP bootstrap fallback.
+	GeeTestSecondaryFallbackAPIDomain = "https://gcaptcha4.gsensebot.com"
+	// GeeTestMonitorDomain receives GeeTest v4 JSONP monitoring requests.
+	GeeTestMonitorDomain = "https://monitor.geetest.com"
 	// StripeDomain is the domain for Stripe.js SDK
 	StripeDomain = "https://*.stripe.com"
 	// AirwallexStaticDomain 是 Airwallex 生产环境 SDK 脚本域名。
@@ -35,6 +47,18 @@ var requiredCSPDirectiveValues = []struct {
 	value     string
 }{
 	{"script-src", CloudflareInsightsDomain},
+	{"script-src", GeeTestStaticDomain},
+	{"script-src", GeeTestFallbackStaticDomain},
+	{"style-src", GeeTestStaticDomain},
+	{"style-src", GeeTestFallbackStaticDomain},
+	{"img-src", GeeTestStaticDomain},
+	{"img-src", GeeTestFallbackStaticDomain},
+	{"font-src", GeeTestStaticDomain},
+	{"font-src", GeeTestFallbackStaticDomain},
+	{"script-src", GeeTestAPIDomain},
+	{"script-src", GeeTestFallbackAPIDomain},
+	{"script-src", GeeTestSecondaryFallbackAPIDomain},
+	{"script-src", GeeTestMonitorDomain},
 	{"script-src", StripeDomain},
 	{"frame-src", StripeDomain},
 	{"script-src", AirwallexStaticDomain},

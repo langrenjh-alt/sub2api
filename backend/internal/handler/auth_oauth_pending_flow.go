@@ -80,6 +80,7 @@ type sendPendingOAuthVerifyCodeRequest struct {
 	TurnstileToken    string `json:"turnstile_token,omitempty"`
 	PendingAuthToken  string `json:"pending_auth_token,omitempty"`
 	PendingOAuthToken string `json:"pending_oauth_token,omitempty"`
+	GeetestChallengeRequest
 }
 
 func (r bindPendingOAuthLoginRequest) adoptionDecision() oauthAdoptionDecisionRequest {
@@ -564,11 +565,6 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.VerifyTurnstile(c.Request.Context(), req.TurnstileToken, ip.GetClientIP(c)); err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
 	_, session, _, err := readPendingOAuthBrowserSession(c, h)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -599,7 +595,14 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authService.SendPendingOAuthVerifyCode(c.Request.Context(), req.Email, c.GetHeader("Accept-Language"))
+	result, err := h.authService.SendPendingOAuthVerifyCode(
+		c.Request.Context(),
+		req.Email,
+		req.TurnstileToken,
+		ip.GetClientIP(c),
+		req.challenge(),
+		c.GetHeader("Accept-Language"),
+	)
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return

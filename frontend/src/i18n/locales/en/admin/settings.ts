@@ -147,6 +147,18 @@ export default {
         secretKeyHint: 'Server-side verification key (keep this secret)',
         secretKeyConfiguredHint: 'Secret key configured. Leave empty to keep the current value.'
       },
+      geetest: {
+        title: 'GeeTest CAPTCHA v4',
+        description: 'Behavior-based bot protection for login and registration',
+        enable: 'Enable GeeTest',
+        enableHint: 'Require GeeTest CAPTCHA v4 verification',
+        captchaId: 'Captcha ID',
+        captchaKey: 'Captcha Key',
+        captchaIdHint: 'Get this from the GeeTest console',
+        console: 'GeeTest Console',
+        captchaKeyHint: 'Server-side signing key (keep this secret)',
+        captchaKeyConfiguredHint: 'Captcha key configured. Leave empty to keep the current value.'
+      },
       apiKeyAcl: {
         title: 'API Key IP Access Control',
         description:

@@ -25,6 +25,15 @@
         @error="onTurnstileError"
       />
     </div>
+    <div v-if="emailVerifyEnabled && geetestEnabled && geetestCaptchaId" class="space-y-2">
+      <GeetestWidget
+        ref="geetestRef"
+        :captcha-id="geetestCaptchaId"
+        @verify="onGeetestVerify"
+        @invalid="onGeetestInvalid"
+        @error="onGeetestError"
+      />
+    </div>
     <div v-if="emailVerifyEnabled" class="flex gap-3">
       <input
         v-model="verifyCode"
@@ -40,7 +49,14 @@
         :data-testid="`${testIdPrefix}-create-account-send-code`"
         type="button"
         class="btn btn-secondary shrink-0"
-        :disabled="isSubmitting || isSendingCode || countdown > 0 || !email.trim() || (turnstileEnabled && !turnstileToken)"
+        :disabled="
+          isSubmitting ||
+          isSendingCode ||
+          countdown > 0 ||
+          !email.trim() ||
+          (turnstileEnabled && !turnstileToken) ||
+          (geetestEnabled && !geetestValidation)
+        "
         @click="handleSendCode"
       >
         {{
@@ -91,8 +107,11 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
+import GeetestWidget from '@/components/GeetestWidget.vue'
 import { getPublicSettings, sendPendingOAuthVerifyCode } from '@/api/auth'
 import { useAppStore } from '@/stores'
+import { toGeetestRequestFields } from '@/utils/geetest'
+import type { GeetestValidation } from '@/types'
 
 export type PendingOAuthCreateAccountPayload = {
   email: string
@@ -130,6 +149,10 @@ const turnstileEnabled = ref(false)
 const turnstileSiteKey = ref('')
 const turnstileToken = ref('')
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
+const geetestEnabled = ref(false)
+const geetestCaptchaId = ref('')
+const geetestValidation = ref<GeetestValidation | null>(null)
+const geetestRef = ref<InstanceType<typeof GeetestWidget> | null>(null)
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
@@ -189,7 +212,8 @@ function getRequestErrorMessage(error: unknown, fallback: string): string {
 
 function resetTurnstile() {
   turnstileToken.value = ''
-  turnstileRef.value?.reset()
+  const instance = turnstileRef.value as { reset?: () => void } | null
+  instance?.reset?.()
 }
 
 function onTurnstileVerify(token: string) {
@@ -207,6 +231,26 @@ function onTurnstileError() {
   sendCodeError.value = t('auth.turnstileFailed')
 }
 
+function resetGeetest() {
+  geetestValidation.value = null
+  const instance = geetestRef.value as { reset?: () => void } | null
+  instance?.reset?.()
+}
+
+function onGeetestVerify(validation: GeetestValidation) {
+  geetestValidation.value = validation
+  sendCodeError.value = ''
+}
+
+function onGeetestInvalid() {
+  geetestValidation.value = null
+}
+
+function onGeetestError() {
+  geetestValidation.value = null
+  sendCodeError.value = t('auth.geetestFailed')
+}
+
 async function handleSendCode() {
   const trimmedEmail = email.value.trim()
   if (!trimmedEmail) {
@@ -218,6 +262,11 @@ async function handleSendCode() {
     return
   }
 
+  if (geetestEnabled.value && !geetestValidation.value) {
+    sendCodeError.value = t('auth.completeVerification')
+    return
+  }
+
   isSendingCode.value = true
   sendCodeError.value = ''
   sendCodeSuccess.value = false
@@ -225,16 +274,20 @@ async function handleSendCode() {
   try {
     const response = await sendPendingOAuthVerifyCode({
       email: trimmedEmail,
-      turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined
+      turnstile_token: turnstileEnabled.value ? turnstileToken.value : undefined,
+      ...(geetestEnabled.value ? toGeetestRequestFields(geetestValidation.value) : {})
     })
     sendCodeSuccess.value = true
     startCountdown(response.countdown)
-    if (turnstileEnabled.value) {
-      resetTurnstile()
-    }
   } catch (error: unknown) {
     sendCodeError.value = getRequestErrorMessage(error, t('auth.sendCodeFailed'))
   } finally {
+    if (turnstileEnabled.value) {
+      resetTurnstile()
+    }
+    if (geetestEnabled.value) {
+      resetGeetest()
+    }
     isSendingCode.value = false
   }
 }
@@ -264,11 +317,15 @@ onMounted(async () => {
     emailVerifyEnabled.value = settings.email_verify_enabled !== false
     turnstileEnabled.value = settings.turnstile_enabled === true
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
   } catch {
     invitationCodeEnabled.value = false
     emailVerifyEnabled.value = true
     turnstileEnabled.value = false
     turnstileSiteKey.value = ''
+    geetestEnabled.value = false
+    geetestCaptchaId.value = ''
   }
 })
 

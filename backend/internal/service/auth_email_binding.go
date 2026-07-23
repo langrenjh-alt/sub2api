@@ -37,7 +37,10 @@ func (s *AuthService) BindEmailIdentity(
 	if strings.TrimSpace(password) == "" {
 		return nil, ErrPasswordRequired
 	}
-	if err := s.VerifyOAuthEmailCode(ctx, normalizedEmail, verifyCode); err != nil {
+	if s.emailService == nil {
+		return nil, ErrServiceUnavailable
+	}
+	if err := s.emailService.VerifyCode(ctx, normalizedEmail, strings.TrimSpace(verifyCode)); err != nil {
 		return nil, err
 	}
 	if err := s.validateRegistrationEmailPolicy(ctx, normalizedEmail); err != nil {
@@ -134,7 +137,9 @@ func (s *AuthService) SendEmailIdentityBindCode(ctx context.Context, userID int6
 	if s.settingService != nil {
 		siteName = s.settingService.GetSiteName(ctx)
 	}
-	return s.emailService.SendVerifyCode(ctx, normalizedEmail, siteName, firstEmailLocale(locale))
+	return s.emailService.SendVerifyCodeWithOptions(ctx, normalizedEmail, siteName, VerificationCodeOptions{
+		Purpose: VerificationCodePurposeEmailBinding,
+	}, firstEmailLocale(locale))
 }
 
 func normalizeEmailForIdentityBinding(email string) (string, error) {
