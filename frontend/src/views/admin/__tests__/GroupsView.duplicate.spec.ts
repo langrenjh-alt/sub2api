@@ -31,6 +31,7 @@ vi.mock('@/api/admin', () => ({
       getModelsListCandidates,
       getUsageSummary,
       getCapacitySummary,
+      getLiveCapability: () => Promise.resolve({ supported: false }),
       getAll: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),

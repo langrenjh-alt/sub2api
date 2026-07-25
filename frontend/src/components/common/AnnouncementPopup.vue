@@ -101,6 +101,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useAnnouncementStore } from '@/stores/announcements'
 import { formatRelativeWithDateTime } from '@/utils/format'
+import { acquireBodyScrollLock } from '@/utils/bodyScrollLock'
 import AnnouncementCommentsPanel from '@/components/common/AnnouncementCommentsPanel.vue'
 import type { Announcement, UserAnnouncement } from '@/types'
 import '@/styles/announcement-markdown.css'
@@ -149,19 +150,17 @@ function handleDismiss() {
   announcementStore.dismissPopup()
 }
 
-let previousBodyOverflow: string | null = null
+let releaseBodyScrollLock: (() => void) | null = null
 
 function lockBodyScroll() {
-  if (previousBodyOverflow === null) {
-    previousBodyOverflow = document.body.style.overflow
+  if (!releaseBodyScrollLock) {
+    releaseBodyScrollLock = acquireBodyScrollLock()
   }
-  document.body.style.overflow = 'hidden'
 }
 
 function restoreBodyScroll() {
-  if (previousBodyOverflow === null) return
-  document.body.style.overflow = previousBodyOverflow
-  previousBodyOverflow = null
+  releaseBodyScrollLock?.()
+  releaseBodyScrollLock = null
 }
 
 // Preserve any existing scroll lock owned by another overlay.

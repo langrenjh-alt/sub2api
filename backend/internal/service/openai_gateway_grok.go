@@ -1099,6 +1099,15 @@ func applyGrokCLIHeaders(headers http.Header) {
 	headers.Set("X-Grok-Client-Mode", "interactive")
 }
 
+func shouldSkipGrokPoolErrorState(account *Account, statusCode int) bool {
+	if account == nil || !account.IsPoolMode() {
+		return false
+	}
+	// Pool services own member failover for upstream 5xx responses. Configured
+	// retryable errors are retried on the same pool instead of cooling it down.
+	return statusCode >= http.StatusInternalServerError || account.IsPoolModeRetryableStatus(statusCode)
+}
+
 func (s *OpenAIGatewayService) updateGrokUsageSnapshot(ctx context.Context, account *Account, snapshot *xai.QuotaSnapshot) {
 	if s == nil || account == nil || account.ID <= 0 || snapshot == nil {
 		return
@@ -1357,7 +1366,7 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 	}
 	now := time.Now()
 	s.updateGrokUsageSnapshot(ctx, account, parseGrokQuotaSnapshot(headers, statusCode, now))
-	if account.IsPoolMode() {
+	if shouldSkipGrokPoolErrorState(account, statusCode) {
 		slog.Info("grok_pool_mode_account_state_skipped", "account_id", account.ID, "status_code", statusCode)
 		return
 	}
@@ -1382,7 +1391,7 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 }
 
 func (s *OpenAIGatewayService) tempUnscheduleGrok(ctx context.Context, account *Account, cooldown time.Duration, reason string) {
-	if s == nil || account == nil || account.IsPoolMode() {
+	if s == nil || account == nil {
 		return
 	}
 	until := time.Now().Add(cooldown)
@@ -1393,6 +1402,13 @@ func (s *OpenAIGatewayService) tempUnscheduleGrok(ctx context.Context, account *
 	if s.accountRepo != nil {
 		stateCtx, cancel := openAIAccountStateContext(ctx)
 		defer cancel()
-		_ = s.accountRepo.SetTempUnschedulable(stateCtx, account.ID, until, reason)
+		if err := s.accountRepo.SetTempUnschedulable(stateCtx, account.ID, until, reason); err != nil {
+			slog.Error("grok_temp_unschedulable_persist_failed",
+				"account_id", account.ID,
+				"until", until,
+				"reason", reason,
+				"error", err,
+			)
+		}
 	}
 }

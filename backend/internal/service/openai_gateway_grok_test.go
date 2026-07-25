@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -2627,6 +2628,49 @@ func TestHandleGrokAccountUpstreamError402RecoversAfterCooldownExpiry(t *testing
 
 	require.False(t, svc.isOpenAIAccountRuntimeBlocked(account))
 	require.True(t, account.IsSchedulable())
+}
+
+func TestHandleGrokAccountUpstreamErrorPoolMode402UsesCooldown(t *testing.T) {
+	account := &Account{
+		ID: 613, Platform: PlatformGrok, Type: AccountTypeAPIKey,
+		Status: StatusActive, Schedulable: true,
+		Credentials: map[string]any{
+			"pool_mode": true,
+		},
+	}
+	repo := &grokQuotaAccountRepo{}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+	before := time.Now()
+
+	svc.handleGrokAccountUpstreamError(context.Background(), account, http.StatusPaymentRequired, nil, nil)
+
+	require.True(t, svc.isOpenAIAccountRuntimeBlocked(account))
+	require.Equal(t, 1, repo.tempUnschedCalls)
+	require.Equal(t, account.ID, repo.lastTempUnschedID)
+	require.Equal(t, "grok payment required", repo.lastTempUnschedReason)
+	require.WithinDuration(t, before.Add(30*time.Minute), repo.lastTempUnschedUntil, time.Second)
+	require.Zero(t, repo.rateLimitedCalls)
+}
+
+func TestTempUnscheduleGrokPersistenceFailureKeepsRuntimeBlock(t *testing.T) {
+	account := &Account{
+		ID: 614, Platform: PlatformGrok, Type: AccountTypeAPIKey,
+		Status: StatusActive, Schedulable: true,
+	}
+	repo := &grokQuotaAccountRepo{tempUnschedErr: fmt.Errorf("persist cooldown failed")}
+	svc := &OpenAIGatewayService{accountRepo: repo}
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
+	svc.tempUnscheduleGrok(context.Background(), account, 30*time.Minute, "grok payment required")
+
+	require.Equal(t, 1, repo.tempUnschedCalls)
+	require.Equal(t, account.ID, repo.lastTempUnschedID)
+	require.True(t, svc.isOpenAIAccountRuntimeBlocked(account))
+	require.Contains(t, logs.String(), "grok_temp_unschedulable_persist_failed")
+	require.Contains(t, logs.String(), "persist cooldown failed")
 }
 
 func TestHandleGrokAccountUpstreamError429UsesLatestExhaustedWindowReset(t *testing.T) {
