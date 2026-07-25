@@ -38,7 +38,16 @@ export default {
         quickActions: 'Quick Actions',
         status: 'Status',
         compatibility: 'Compatibility',
+        ratesAndStatus: 'Rates and Status',
         accessSteps: 'Access Steps',
+      },
+      homepageStatus: {
+        title: 'Group Rates and Channel Status',
+        description: 'Review public group billing rates and the last 7 days of uptime for enabled channel monitors.',
+        groups: 'Group Rates',
+        monitors: 'Channel Status',
+        rate: 'Rate',
+        uptime7d: '7D Uptime',
       },
       accessSteps: {
         connect: {

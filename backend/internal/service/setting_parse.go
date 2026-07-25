@@ -186,6 +186,8 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		// Channel monitor defaults (enabled, 60s)
 		SettingKeyChannelMonitorEnabled:                "true",
 		SettingKeyChannelMonitorDefaultIntervalSeconds: "60",
+		SettingKeyHomepageStatusEnabled:                "false",
+		SettingKeyHomepageStatusGroupIDs:               "[]",
 
 		// Available channels feature (default disabled; opt-in)
 		SettingKeyAvailableChannelsEnabled: "false",
@@ -763,6 +765,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.ChannelMonitorDefaultIntervalSeconds = parseChannelMonitorInterval(
 		settings[SettingKeyChannelMonitorDefaultIntervalSeconds],
 	)
+	result.HomepageStatusEnabled = settings[SettingKeyHomepageStatusEnabled] == "true"
+	result.HomepageStatusGroupIDs = parseHomepageStatusGroupIDs(settings[SettingKeyHomepageStatusGroupIDs])
 
 	// Available channels feature (default: disabled; strict true)
 	result.AvailableChannelsEnabled = settings[SettingKeyAvailableChannelsEnabled] == "true"

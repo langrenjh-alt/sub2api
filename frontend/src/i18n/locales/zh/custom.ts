@@ -42,7 +42,16 @@ export default {
         quickActions: '快捷操作',
         status: '状态',
         compatibility: '兼容性',
+        ratesAndStatus: '倍率与状态',
         accessSteps: '接入步骤',
+      },
+      homepageStatus: {
+        title: '分组倍率与渠道状态',
+        description: '查看当前公开分组的计费倍率，以及已启用渠道最近 7 天的可用率。',
+        groups: '分组倍率',
+        monitors: '渠道状态',
+        rate: '倍率',
+        uptime7d: '7 日可用率',
       },
       accessSteps: {
         connect: {

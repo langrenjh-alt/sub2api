@@ -666,6 +666,14 @@ func ProvideBillingCacheService(
 	return NewBillingCacheService(cache, userRepo, subRepo, apiKeyRepo, rpmCache, rateRepo, cfg, userPlatformQuotaRepo)
 }
 
+func ProvideHomepageStatusService(
+	groupRepo GroupRepository,
+	monitorRepo ChannelMonitorRepository,
+	settingService *SettingService,
+) *HomepageStatusService {
+	return NewHomepageStatusService(groupRepo, monitorRepo, settingService)
+}
+
 // ProvideAPIKeyService wires APIKeyService and connects rate-limit cache invalidation.
 func ProvideAPIKeyService(
 	apiKeyRepo APIKeyRepository,
@@ -741,6 +749,7 @@ var ProviderSet = wire.NewSet(
 	ProvideUpstreamBillingProbeService,
 	ProvideOllamaCloudUsageService,
 	ProvideSettingService,
+	ProvideHomepageStatusService,
 	NewDataManagementService,
 	ProvideBackupService,
 	ProvideOpsSystemLogSink,

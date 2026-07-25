@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent, nextTick } from 'vue'
+import { defineComponent, nextTick, reactive } from 'vue'
 
 const checkAuth = vi.fn()
 const fetchPublicSettings = vi.fn()
+const { getHomepageStatus, refreshHomeParallax } = vi.hoisted(() => ({
+  getHomepageStatus: vi.fn(),
+  refreshHomeParallax: vi.fn(),
+}))
 
 const authState = {
   isAuthenticated: false,
@@ -11,7 +15,7 @@ const authState = {
   checkAuth,
 }
 
-const appState = {
+const appState = reactive({
   cachedPublicSettings: null as null | Record<string, unknown>,
   siteName: 'Sub2API',
   siteLogo: '',
@@ -19,7 +23,7 @@ const appState = {
   docUrl: 'https://docs.example.com',
   publicSettingsLoaded: true,
   fetchPublicSettings,
-}
+})
 
 vi.mock('vue-i18n', async () => {
   const actual = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
@@ -55,6 +59,9 @@ vi.mock('@/components/icons/Icon.vue', () => ({
 vi.mock('@/components/home/GatewayField.vue', () => ({
   default: defineComponent({
     name: 'GatewayFieldStub',
+    methods: {
+      setScrollProgress() {},
+    },
     template: '<canvas class="gateway-field-stub" />',
   }),
 }))
@@ -73,6 +80,14 @@ vi.mock('@/router/setupRedirect', () => ({
 
 vi.mock('@/api/auth', () => ({
   getPublicSettings: vi.fn(),
+}))
+
+vi.mock('@/api/homepageStatus', () => ({
+  getHomepageStatus,
+}))
+
+vi.mock('@/composables/useHomeParallax', () => ({
+  useHomeParallax: () => ({ refresh: refreshHomeParallax }),
 }))
 
 vi.mock('vue-router', async () => {
@@ -96,6 +111,14 @@ describe('HomeView', () => {
     document.documentElement.classList.remove('dark')
     checkAuth.mockReset()
     fetchPublicSettings.mockReset()
+    fetchPublicSettings.mockResolvedValue(undefined)
+    getHomepageStatus.mockReset()
+    refreshHomeParallax.mockReset()
+    getHomepageStatus.mockResolvedValue({
+      enabled: false,
+      groups: [],
+      monitors: [],
+    })
     appState.cachedPublicSettings = null
     appState.siteName = 'Sub2API'
     appState.siteLogo = ''
@@ -186,6 +209,86 @@ describe('HomeView', () => {
     expect(wrapper.find('.geist-home').exists()).toBe(true)
   })
 
+  it('renders configured group rates and enabled channel uptime', async () => {
+    getHomepageStatus.mockResolvedValueOnce({
+      enabled: true,
+      groups: [
+        { id: 7, name: 'Premium', platform: 'openai', rate_multiplier: 1.25 },
+      ],
+      monitors: [
+        {
+          id: 12,
+          name: 'Primary OpenAI',
+          provider: 'openai',
+          status: 'operational',
+          uptime_7d: 99.456,
+        },
+        {
+          id: 13,
+          name: 'New Channel',
+          provider: 'anthropic',
+          status: 'unknown',
+          uptime_7d: null,
+        },
+      ],
+    })
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(getHomepageStatus).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="homepage-status-section"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="homepage-status-group-7"]').text()).toContain('Premium')
+    expect(wrapper.find('[data-testid="homepage-status-group-7"]').text()).toContain('1.25x')
+
+    const operationalMonitor = wrapper.find('[data-testid="homepage-status-monitor-12"]')
+    expect(operationalMonitor.text()).toContain('Primary OpenAI')
+    expect(operationalMonitor.text()).toContain('monitorCommon.status.operational')
+    expect(operationalMonitor.text()).toContain('99.46%')
+    expect(operationalMonitor.find('.is-operational').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="homepage-status-monitor-13"]').text()).toContain('--')
+    expect(refreshHomeParallax).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    { name: 'disabled', enabled: false, groups: [{ id: 1, name: 'Hidden', platform: 'openai', rate_multiplier: 1 }], monitors: [] },
+    { name: 'empty', enabled: true, groups: [], monitors: [] },
+  ])('does not render the homepage status section when the response is $name', async (response) => {
+    getHomepageStatus.mockResolvedValueOnce(response)
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="homepage-status-section"]').exists()).toBe(false)
+  })
+
+  it('keeps the product homepage usable when the status request fails', async () => {
+    getHomepageStatus.mockRejectedValueOnce(new Error('status unavailable'))
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(getHomepageStatus).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.geist-home').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="homepage-status-section"]').exists()).toBe(false)
+    expect(refreshHomeParallax).not.toHaveBeenCalled()
+  })
+
+  it('aborts an in-flight status request when the homepage unmounts', async () => {
+    let requestSignal: AbortSignal | undefined
+    getHomepageStatus.mockImplementationOnce(({ signal }: { signal?: AbortSignal }) => {
+      requestSignal = signal
+      return new Promise(() => {})
+    })
+
+    const wrapper = mount(HomeView)
+    await nextTick()
+
+    expect(requestSignal?.aborted).toBe(false)
+    wrapper.unmount()
+    expect(requestSignal?.aborted).toBe(true)
+  })
+
   it('renders custom home_content without the shell', async () => {
     appState.cachedPublicSettings = {
       home_content: '<p class="custom-home">Custom content</p>',
@@ -197,6 +300,7 @@ describe('HomeView', () => {
     expect(wrapper.find('.geist-home').exists()).toBe(false)
     expect(wrapper.find('.home-topbar').exists()).toBe(false)
     expect(wrapper.find('.custom-home').exists()).toBe(true)
+    expect(getHomepageStatus).not.toHaveBeenCalled()
   })
 
   it('renders home_content URLs as iframe content', async () => {
@@ -211,5 +315,23 @@ describe('HomeView', () => {
     expect(iframe.exists()).toBe(true)
     expect(iframe.attributes('src')).toBe('https://example.com/embed')
     expect(wrapper.find('.geist-home').exists()).toBe(false)
+    expect(getHomepageStatus).not.toHaveBeenCalled()
+  })
+
+  it('waits for public settings and skips status loading when they provide custom content', async () => {
+    appState.publicSettingsLoaded = false
+    fetchPublicSettings.mockImplementationOnce(async () => {
+      appState.cachedPublicSettings = {
+        home_content: '<p class="loaded-custom-home">Loaded custom content</p>',
+      }
+      appState.publicSettingsLoaded = true
+    })
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(fetchPublicSettings).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.loaded-custom-home').exists()).toBe(true)
+    expect(getHomepageStatus).not.toHaveBeenCalled()
   })
 })

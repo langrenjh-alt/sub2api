@@ -531,6 +531,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.ChannelMonitorDefaultIntervalSeconds != after.ChannelMonitorDefaultIntervalSeconds {
 		changed = append(changed, "channel_monitor_default_interval_seconds")
 	}
+	if before.HomepageStatusEnabled != after.HomepageStatusEnabled {
+		changed = append(changed, "homepage_status_enabled")
+	}
+	if !equalInt64Slice(before.HomepageStatusGroupIDs, after.HomepageStatusGroupIDs) {
+		changed = append(changed, "homepage_status_group_ids")
+	}
 	if before.AvailableChannelsEnabled != after.AvailableChannelsEnabled {
 		changed = append(changed, "available_channels_enabled")
 	}
@@ -715,6 +721,18 @@ func equalLoginAgreementDocuments(a, b []service.LoginAgreementDocument) bool {
 }
 
 func equalIntSlice(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func equalInt64Slice(a, b []int64) bool {
 	if len(a) != len(b) {
 		return false
 	}

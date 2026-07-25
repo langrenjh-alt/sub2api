@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"html"
 	"net/http"
 	"strings"
@@ -17,7 +18,12 @@ import (
 type SettingHandler struct {
 	settingService           *service.SettingService
 	notificationEmailService *service.NotificationEmailService
+	homepageStatusService    homepageStatusSummaryService
 	version                  string
+}
+
+type homepageStatusSummaryService interface {
+	GetSummary(ctx context.Context) (*service.HomepageStatusSummary, error)
 }
 
 // NewSettingHandler 创建公开设置处理器
@@ -32,6 +38,10 @@ func NewSettingHandler(settingService *service.SettingService, version string) *
 // changing the constructor signature used by existing tests.
 func (h *SettingHandler) SetNotificationEmailService(notificationEmailService *service.NotificationEmailService) {
 	h.notificationEmailService = notificationEmailService
+}
+
+func (h *SettingHandler) SetHomepageStatusService(homepageStatusService homepageStatusSummaryService) {
+	h.homepageStatusService = homepageStatusService
 }
 
 // GetPublicSettings 获取公开设置

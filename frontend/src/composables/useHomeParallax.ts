@@ -12,6 +12,11 @@ export function useHomeParallax(
 ) {
   let context: gsap.Context | null = null
 
+  function refresh(): void {
+    if (!context) return
+    ScrollTrigger.refresh()
+  }
+
   onMounted(async () => {
     await nextTick()
     const root = rootRef.value
@@ -458,11 +463,14 @@ export function useHomeParallax(
       }
     }, root)
 
-    requestAnimationFrame(() => ScrollTrigger.refresh())
+    requestAnimationFrame(refresh)
   })
 
   onBeforeUnmount(() => {
     context?.revert()
+    context = null
     gatewayRef.value?.setScrollProgress(0)
   })
+
+  return { refresh }
 }

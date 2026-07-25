@@ -348,6 +348,12 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	if v := clampChannelMonitorInterval(settings.ChannelMonitorDefaultIntervalSeconds); v > 0 {
 		updates[SettingKeyChannelMonitorDefaultIntervalSeconds] = strconv.Itoa(v)
 	}
+	updates[SettingKeyHomepageStatusEnabled] = strconv.FormatBool(settings.HomepageStatusEnabled)
+	homepageGroupIDs, err := json.Marshal(normalizeHomepageStatusGroupIDs(settings.HomepageStatusGroupIDs))
+	if err != nil {
+		return nil, fmt.Errorf("marshal homepage status group ids: %w", err)
+	}
+	updates[SettingKeyHomepageStatusGroupIDs] = string(homepageGroupIDs)
 
 	// Available channels feature switch
 	updates[SettingKeyAvailableChannelsEnabled] = strconv.FormatBool(settings.AvailableChannelsEnabled)

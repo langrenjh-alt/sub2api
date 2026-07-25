@@ -657,6 +657,10 @@ export interface SystemSettings {
   channel_monitor_enabled: boolean;
   channel_monitor_default_interval_seconds: number;
 
+  // Public homepage group rates and channel uptime summary
+  homepage_status_enabled: boolean;
+  homepage_status_group_ids: number[];
+
   // Available Channels feature switch
   available_channels_enabled: boolean;
 
@@ -930,6 +934,10 @@ export interface UpdateSettingsRequest {
   // Channel Monitor feature switch
   channel_monitor_enabled?: boolean;
   channel_monitor_default_interval_seconds?: number;
+
+  // Public homepage group rates and channel uptime summary
+  homepage_status_enabled?: boolean;
+  homepage_status_group_ids?: number[];
 
   // Available Channels feature switch
   available_channels_enabled?: boolean;

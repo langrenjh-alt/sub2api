@@ -381,6 +381,13 @@ const (
 	// pre-filled when creating a new channel monitor from the admin UI. Range: [15, 3600].
 	SettingKeyChannelMonitorDefaultIntervalSeconds = "channel_monitor_default_interval_seconds"
 
+	// SettingKeyHomepageStatusEnabled controls the anonymous homepage summary.
+	// This is opt-in because enabling it exposes selected group rates and monitor uptime publicly.
+	SettingKeyHomepageStatusEnabled = "homepage_status_enabled"
+
+	// SettingKeyHomepageStatusGroupIDs stores the selected group IDs as a JSON array.
+	SettingKeyHomepageStatusGroupIDs = "homepage_status_group_ids"
+
 	// SettingKeyAvailableChannelsEnabled is a DB-backed soft switch for the "Available Channels"
 	// user-facing aggregate view. When false: user endpoint returns an empty list and the
 	// sidebar entry is hidden. Defaults to false (opt-in feature).

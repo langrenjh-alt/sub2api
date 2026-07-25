@@ -236,6 +236,80 @@
         </div>
       </section>
 
+      <section
+        v-if="showHomepageStatus"
+        id="homepage-status"
+        class="home-section home-shell home-homepage-status"
+        aria-labelledby="homepage-status-title"
+        data-testid="homepage-status-section"
+      >
+        <div class="home-section-heading">
+          <p class="home-kicker">{{ t('home.landing.sections.ratesAndStatus') }}</p>
+          <h2 id="homepage-status-title">{{ t('home.landing.homepageStatus.title') }}</h2>
+          <p>{{ t('home.landing.homepageStatus.description') }}</p>
+        </div>
+
+        <div
+          :class="[
+            'home-homepage-status-grid',
+            { 'is-single': homepageGroups.length === 0 || homepageMonitors.length === 0 },
+          ]"
+        >
+          <div v-if="homepageGroups.length > 0" class="home-homepage-status-panel">
+            <div class="home-homepage-status-label">
+              <span>{{ t('home.landing.homepageStatus.groups') }}</span>
+              <small>{{ homepageGroups.length.toString().padStart(2, '0') }}</small>
+            </div>
+            <div class="home-homepage-status-list">
+              <article
+                v-for="group in homepageGroups"
+                :key="group.id"
+                class="home-homepage-status-row home-homepage-group-row"
+                :data-testid="`homepage-status-group-${group.id}`"
+              >
+                <span class="home-homepage-status-indicator is-operational" aria-hidden="true"></span>
+                <div>
+                  <strong>{{ group.name }}</strong>
+                  <span>{{ group.platform }}</span>
+                </div>
+                <div class="home-homepage-status-value">
+                  <small>{{ t('home.landing.homepageStatus.rate') }}</small>
+                  <strong>{{ formatGroupRate(group.rate_multiplier) }}</strong>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div v-if="homepageMonitors.length > 0" class="home-homepage-status-panel">
+            <div class="home-homepage-status-label">
+              <span>{{ t('home.landing.homepageStatus.monitors') }}</span>
+              <small>{{ homepageMonitors.length.toString().padStart(2, '0') }}</small>
+            </div>
+            <div class="home-homepage-status-list">
+              <article
+                v-for="monitor in homepageMonitors"
+                :key="monitor.id"
+                class="home-homepage-status-row"
+                :data-testid="`homepage-status-monitor-${monitor.id}`"
+              >
+                <span
+                  :class="['home-homepage-status-indicator', `is-${normalizeMonitorStatus(monitor.status)}`]"
+                  aria-hidden="true"
+                ></span>
+                <div>
+                  <strong>{{ monitor.name }}</strong>
+                  <span>{{ monitor.provider }} / {{ monitorStatusLabel(monitor.status) }}</span>
+                </div>
+                <div class="home-homepage-status-value">
+                  <small>{{ t('home.landing.homepageStatus.uptime7d') }}</small>
+                  <strong>{{ formatMonitorUptime(monitor.uptime_7d) }}</strong>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="access" class="home-section home-section-dark">
         <div class="home-shell">
           <div class="home-section-heading home-section-heading-row">
@@ -319,7 +393,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
@@ -327,6 +401,11 @@ import GatewayField from '@/components/home/GatewayField.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useHomeParallax } from '@/composables/useHomeParallax'
+import {
+  getHomepageStatus,
+  type HomepageStatusResponse,
+} from '@/api/homepageStatus'
+import { formatMultiplier } from '@/utils/formatters'
 import { sanitizeUrl } from '@/utils/url'
 
 type IconName = InstanceType<typeof Icon>['$props']['name']
@@ -355,8 +434,11 @@ const appStore = useAppStore()
 const authStore = useAuthStore()
 const homeRootRef = ref<HTMLElement | null>(null)
 const gatewayFieldRef = ref<GatewayFieldHandle | null>(null)
+const homepageStatus = ref<HomepageStatusResponse | null>(null)
 
-useHomeParallax(homeRootRef, gatewayFieldRef)
+let homepageStatusController: AbortController | null = null
+
+const { refresh: refreshHomeParallax } = useHomeParallax(homeRootRef, gatewayFieldRef)
 
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const trimmedHomeContent = computed(() => homeContent.value.trim())
@@ -482,19 +564,81 @@ const statusItems = computed(() => [
   { label: t('nav.tickets'), detail: t('common.contactSupport'), active: appStore.cachedPublicSettings?.ticket_system_enabled === true },
 ])
 
+const homepageGroups = computed(() => homepageStatus.value?.groups ?? [])
+const homepageMonitors = computed(() => homepageStatus.value?.monitors ?? [])
+const showHomepageStatus = computed(() =>
+  homepageStatus.value?.enabled === true
+  && (homepageGroups.value.length > 0 || homepageMonitors.value.length > 0)
+)
+
+function formatGroupRate(value: number): string {
+  return Number.isFinite(value) ? `${formatMultiplier(value)}x` : '--'
+}
+
+function formatMonitorUptime(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return '--'
+  const normalized = Math.min(100, Math.max(0, value))
+  return `${Number(normalized.toFixed(2))}%`
+}
+
+function normalizeMonitorStatus(status: string): 'operational' | 'degraded' | 'failed' | 'error' | 'unknown' {
+  const normalized = status.trim().toLowerCase()
+  if (
+    normalized === 'operational'
+    || normalized === 'degraded'
+    || normalized === 'failed'
+    || normalized === 'error'
+  ) {
+    return normalized
+  }
+  return 'unknown'
+}
+
+function monitorStatusLabel(status: string): string {
+  return t(`monitorCommon.status.${normalizeMonitorStatus(status)}`)
+}
+
+async function loadHomepageStatus(): Promise<void> {
+  homepageStatusController?.abort()
+  const controller = new AbortController()
+  homepageStatusController = controller
+
+  try {
+    const response = await getHomepageStatus({ signal: controller.signal })
+    if (controller.signal.aborted || homepageStatusController !== controller) return
+    homepageStatus.value = response
+    await nextTick()
+    if (controller.signal.aborted || homepageStatusController !== controller) return
+    refreshHomeParallax()
+  } catch {
+    // This public summary is optional; keep the homepage usable if it is unavailable.
+  } finally {
+    if (homepageStatusController === controller) homepageStatusController = null
+  }
+}
+
 function updateFieldActivity() {
   fieldActive.value = document.visibilityState === 'visible'
     && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-onMounted(() => {
+onMounted(async () => {
   updateFieldActivity()
   document.addEventListener('visibilitychange', updateFieldActivity)
   authStore.checkAuth()
-  if (!appStore.publicSettingsLoaded) appStore.fetchPublicSettings()
+  if (!appStore.publicSettingsLoaded) {
+    try {
+      await appStore.fetchPublicSettings()
+    } catch {
+      return
+    }
+  }
+  if (!trimmedHomeContent.value) await loadHomepageStatus()
 })
 
 onBeforeUnmount(() => {
+  homepageStatusController?.abort()
+  homepageStatusController = null
   document.removeEventListener('visibilitychange', updateFieldActivity)
 })
 </script>
@@ -1018,6 +1162,31 @@ onBeforeUnmount(() => {
 .home-provider-row small { padding: 3px 7px; border: 1px solid var(--geist-border-100); border-radius: 999px; color: var(--geist-green); font-size: 10px; text-transform: uppercase; }
 .home-provider-row small.is-muted { color: var(--geist-foreground-400); }
 
+.home-homepage-status {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.5fr) minmax(0, 1.5fr);
+  gap: 80px;
+  border-top: 1px solid var(--geist-border-100);
+}
+.home-homepage-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; }
+.home-homepage-status-grid.is-single { grid-template-columns: 1fr; }
+.home-homepage-status-panel { min-width: 0; }
+.home-homepage-status-label { display: flex; align-items: center; justify-content: space-between; min-height: 28px; color: var(--geist-foreground-400); font-family: 'Geist Mono Variable', monospace; font-size: 10px; text-transform: uppercase; }
+.home-homepage-status-label small { color: var(--geist-foreground-400); font-size: 9px; }
+.home-homepage-status-list { border-top: 1px solid var(--geist-border-100); }
+.home-homepage-status-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; min-height: 68px; align-items: center; gap: 12px; border-bottom: 1px solid var(--geist-border-100); }
+.home-homepage-status-row > div:not(.home-homepage-status-value) { display: grid; min-width: 0; gap: 3px; }
+.home-homepage-status-row strong { overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
+.home-homepage-status-row div > span { overflow: hidden; color: var(--geist-foreground-300); font-size: 10px; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.home-homepage-status-indicator { width: 7px; height: 7px; border-radius: 999px; background: var(--geist-foreground-400); }
+.home-homepage-status-indicator.is-operational { background: var(--geist-green); }
+.home-homepage-status-indicator.is-degraded { background: #d9a441; }
+.home-homepage-status-indicator.is-failed,
+.home-homepage-status-indicator.is-error { background: #e15b64; }
+.home-homepage-status-value { display: grid; min-width: 78px; justify-items: end; gap: 4px; font-family: 'Geist Mono Variable', monospace; text-align: right; }
+.home-homepage-status-value small { color: var(--geist-foreground-400); font-size: 8px; text-transform: uppercase; }
+.home-homepage-status-value strong { font-size: 12px; font-weight: 560; }
+
 .home-section-dark { background: #050505; color: #ffffff; }
 .home-section-dark .home-section-heading p:not(.home-kicker) { color: #888888; }
 .home-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 52px; border-top: 1px solid #262626; border-bottom: 1px solid #262626; }
@@ -1104,6 +1273,7 @@ onBeforeUnmount(() => {
   .home-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-feature-layout,
   .home-compatibility,
+  .home-homepage-status,
   .home-status-section { grid-template-columns: 1fr; gap: 42px; }
   .home-feature-intro { position: static; }
   .home-hero-title { width: 62%; font-size: 86px; }
@@ -1160,6 +1330,7 @@ onBeforeUnmount(() => {
   .home-action-grid,
   .home-product-grid,
   .home-steps,
+  .home-homepage-status-grid,
   .home-status-list { grid-template-columns: 1fr; }
   .home-action { min-height: 96px; }
   .home-feature { min-height: 240px; border-left: 1px solid var(--geist-border-100); }

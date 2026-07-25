@@ -309,8 +309,10 @@ type UpdateSettingsRequest struct {
 	PaymentAlipayMobilePrecreateDeepLink *bool `json:"payment_alipay_mobile_precreate_deep_link"`
 
 	// Channel Monitor feature switch
-	ChannelMonitorEnabled                *bool `json:"channel_monitor_enabled"`
-	ChannelMonitorDefaultIntervalSeconds *int  `json:"channel_monitor_default_interval_seconds"`
+	ChannelMonitorEnabled                *bool    `json:"channel_monitor_enabled"`
+	ChannelMonitorDefaultIntervalSeconds *int     `json:"channel_monitor_default_interval_seconds"`
+	HomepageStatusEnabled                *bool    `json:"homepage_status_enabled"`
+	HomepageStatusGroupIDs               *[]int64 `json:"homepage_status_group_ids"`
 
 	// Available Channels feature switch (user-facing)
 	AvailableChannelsEnabled *bool `json:"available_channels_enabled"`
@@ -1626,6 +1628,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ChannelMonitorDefaultIntervalSeconds
 		}(),
+		HomepageStatusEnabled: func() bool {
+			if req.HomepageStatusEnabled != nil {
+				return *req.HomepageStatusEnabled
+			}
+			return previousSettings.HomepageStatusEnabled
+		}(),
+		HomepageStatusGroupIDs: func() []int64 {
+			if req.HomepageStatusGroupIDs != nil {
+				return append([]int64(nil), (*req.HomepageStatusGroupIDs)...)
+			}
+			return append([]int64(nil), previousSettings.HomepageStatusGroupIDs...)
+		}(),
 		AvailableChannelsEnabled: func() bool {
 			if req.AvailableChannelsEnabled != nil {
 				return *req.AvailableChannelsEnabled
@@ -2028,6 +2042,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 
 		ChannelMonitorEnabled:                updatedSettings.ChannelMonitorEnabled,
 		ChannelMonitorDefaultIntervalSeconds: updatedSettings.ChannelMonitorDefaultIntervalSeconds,
+		HomepageStatusEnabled:                updatedSettings.HomepageStatusEnabled,
+		HomepageStatusGroupIDs:               updatedSettings.HomepageStatusGroupIDs,
 
 		AvailableChannelsEnabled: updatedSettings.AvailableChannelsEnabled,
 

@@ -40,6 +40,21 @@ func TestAPIContracts(t *testing.T) {
 		wantJSON   string
 	}{
 		{
+			name:       "GET /api/v1/settings/homepage-status disabled",
+			method:     http.MethodGet,
+			path:       "/api/v1/settings/homepage-status",
+			wantStatus: http.StatusOK,
+			wantJSON: `{
+				"code": 0,
+				"message": "success",
+				"data": {
+					"enabled": false,
+					"groups": [],
+					"monitors": []
+				}
+			}`,
+		},
+		{
 			name:       "GET /api/v1/auth/me",
 			method:     http.MethodGet,
 			path:       "/api/v1/auth/me",
@@ -959,6 +974,8 @@ func TestAPIContracts(t *testing.T) {
 					"account_quota_notify_emails": [],
 					"channel_monitor_enabled": true,
 					"channel_monitor_default_interval_seconds": 60,
+					"homepage_status_enabled": false,
+					"homepage_status_group_ids": [],
 					"available_channels_enabled": false,
 					"ticket_system_enabled": false,
 					"risk_control_enabled": false,
@@ -1243,6 +1260,8 @@ func TestAPIContracts(t *testing.T) {
 					"account_quota_notify_emails": [],
 					"channel_monitor_enabled": true,
 					"channel_monitor_default_interval_seconds": 60,
+					"homepage_status_enabled": false,
+					"homepage_status_group_ids": [],
 					"available_channels_enabled": false,
 					"ticket_system_enabled": false,
 					"risk_control_enabled": false,
@@ -1409,6 +1428,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 
 	settingRepo := newStubSettingRepo()
 	settingService := service.NewSettingService(settingRepo, cfg)
+	homepageStatusService := service.NewHomepageStatusService(groupRepo, nil, settingService)
 
 	adminService := service.NewAdminService(userRepo, groupRepo, &accountRepo, proxyRepo, apiKeyRepo, redeemRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	authHandler := handler.NewAuthHandler(cfg, nil, userService, settingService, nil, redeemService, nil, nil)
@@ -1416,6 +1436,8 @@ func newContractDeps(t *testing.T) *contractDeps {
 	usageHandler := handler.NewUsageHandler(usageService, apiKeyService, nil, nil)
 	adminSettingHandler := adminhandler.NewSettingHandler(settingService, nil, nil, nil, nil, nil, nil)
 	adminAccountHandler := adminhandler.NewAccountHandler(adminService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	publicSettingHandler := handler.NewSettingHandler(settingService, "test")
+	publicSettingHandler.SetHomepageStatusService(homepageStatusService)
 
 	jwtAuth := func(c *gin.Context) {
 		c.Set(string(middleware.ContextKeyUser), middleware.AuthSubject{
@@ -1437,6 +1459,7 @@ func newContractDeps(t *testing.T) *contractDeps {
 	r := gin.New()
 
 	v1 := r.Group("/api/v1")
+	v1.GET("/settings/homepage-status", publicSettingHandler.GetHomepageStatus)
 
 	v1Auth := v1.Group("")
 	v1Auth.Use(jwtAuth)
