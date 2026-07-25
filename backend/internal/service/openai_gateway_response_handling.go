@@ -315,6 +315,9 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 			// EOF dispatches the final SSE event even without a trailing blank line.
 			completeGuardedEvent(true)
 		}
+		if sawTerminalEvent && !sawFailedEvent {
+			s.clearOpenAIProxyStreamDisconnect(account)
+		}
 		if !sawTerminalEvent && !openAIStreamClientOutputStarted(c, clientOutputStarted) && !eventShouldFlush {
 			return resultWithUsage(), s.newOpenAIStreamFailoverError(
 				c,
@@ -327,6 +330,9 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		}
 		flushPending("Client disconnected during final flush, returning collected usage")
 		if !sawTerminalEvent {
+			if openAIStreamClientOutputStarted(c, clientOutputStarted) && !clientDisconnected {
+				s.recordOpenAIProxyStreamDisconnect(account, errors.New("stream ended before terminal event"), upstreamRequestID)
+			}
 			return resultWithUsage(), fmt.Errorf("stream usage incomplete: missing terminal event")
 		}
 		if sawFailedEvent {
@@ -358,6 +364,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		}
 		if sawTerminalEvent {
 			if !sawFailedEvent {
+				s.clearOpenAIProxyStreamDisconnect(account)
 				logger.LegacyPrintf("service.openai_gateway", "Upstream scan ended after terminal event: %v", scanErr)
 			}
 			result, err := finalizeStream()
@@ -387,6 +394,7 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 		if clientDisconnected {
 			return resultWithUsage(), fmt.Errorf("stream usage incomplete after disconnect: %w", scanErr), true
 		}
+		s.recordOpenAIProxyStreamDisconnect(account, scanErr, upstreamRequestID)
 		sendErrorEvent("stream_read_error")
 		return resultWithUsage(), fmt.Errorf("stream read error: %w", scanErr), true
 	}
@@ -491,7 +499,12 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 				line = "data: " + data
 				eventType = strings.TrimSpace(gjson.GetBytes(dataBytes, "type").String())
 			}
-			restoredData, restoreErr := restoreOpenAIResponsesNamespacePayload(c, dataBytes)
+			restoredData, restoreErr := restoreGrokResponsesClientToolPayload(c, dataBytes)
+			if restoreErr != nil {
+				streamEarlyErr = fmt.Errorf("restore Grok Responses client tool response: %w", restoreErr)
+				return
+			}
+			restoredData, restoreErr = restoreOpenAIResponsesNamespacePayload(c, restoredData)
 			if restoreErr != nil {
 				streamEarlyErr = fmt.Errorf("restore OpenAI namespace response: %w", restoreErr)
 				return
@@ -1161,6 +1174,10 @@ func (s *OpenAIGatewayService) handleNonStreamingResponse(ctx context.Context, r
 	if originalModel != mappedModel {
 		body = s.replaceModelInResponseBody(body, mappedModel, originalModel)
 	}
+	body, err = restoreGrokResponsesClientToolPayload(c, body)
+	if err != nil {
+		return nil, fmt.Errorf("restore Grok Responses client tool response: %w", err)
+	}
 	body, err = restoreOpenAIResponsesNamespacePayload(c, body)
 	if err != nil {
 		return nil, fmt.Errorf("restore OpenAI namespace response: %w", err)
@@ -1234,7 +1251,11 @@ func (s *OpenAIGatewayService) handleSSEToJSON(resp *http.Response, c *gin.Conte
 		}
 		// Correct tool calls in final response
 		body = s.correctToolCallsInResponseBody(body)
-		restoredBody, restoreErr := restoreOpenAIResponsesNamespacePayload(c, body)
+		restoredBody, restoreErr := restoreGrokResponsesClientToolPayload(c, body)
+		if restoreErr != nil {
+			return nil, fmt.Errorf("restore Grok Responses client tool response: %w", restoreErr)
+		}
+		restoredBody, restoreErr = restoreOpenAIResponsesNamespacePayload(c, restoredBody)
 		if restoreErr != nil {
 			return nil, fmt.Errorf("restore OpenAI namespace response: %w", restoreErr)
 		}
