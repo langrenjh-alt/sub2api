@@ -218,7 +218,8 @@ func TestSettingHandler_UpdateSettings_PreservesExistingGeetestCaptchaKey(t *tes
 	require.Equal(t, http.StatusOK, rec.Code, rec.Body.String())
 	require.Equal(t, "true", repo.lastUpdates[service.SettingKeyGeetestEnabled])
 	require.Equal(t, "captcha-id", repo.lastUpdates[service.SettingKeyGeetestCaptchaID])
-	require.Equal(t, "existing-key", repo.lastUpdates[service.SettingKeyGeetestCaptchaKey])
+	require.NotContains(t, repo.lastUpdates, service.SettingKeyGeetestCaptchaKey)
+	require.Equal(t, "existing-key", repo.values[service.SettingKeyGeetestCaptchaKey])
 }
 
 func TestSettingHandler_UpdateSettings_PreservesOmittedAuthSourceDefaults(t *testing.T) {
