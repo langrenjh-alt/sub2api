@@ -377,8 +377,7 @@ onBeforeUnmount(() => {
 }
 
 .app-header-inner {
-  max-width: 1680px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .header-action,

@@ -15,7 +15,7 @@
 
       <!-- Main Content -->
       <main class="app-content relative px-4 py-5 md:px-6 md:py-6 lg:px-8">
-        <div class="mx-auto w-full max-w-[1600px]">
+        <div class="w-full">
           <slot />
         </div>
       </main>
