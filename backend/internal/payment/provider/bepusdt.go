@@ -75,7 +75,7 @@ func (b *BEpusdt) CreatePayment(ctx context.Context, req payment.CreatePaymentRe
 	payload := map[string]any{
 		"order_id":     req.OrderID,
 		"notify_url":   b.config["notifyUrl"],
-		"redirect_url": b.config["returnUrl"],
+		"redirect_url": firstNonEmptyBEpusdt(req.ReturnURL, b.config["returnUrl"]),
 		"amount":       json.Number(req.Amount),
 		"name":         req.Subject,
 	}
@@ -111,6 +111,15 @@ func (b *BEpusdt) CreatePayment(ctx context.Context, req payment.CreatePaymentRe
 		return nil, fmt.Errorf("bepusdt create response missing trade_id or payment_url")
 	}
 	return &payment.CreatePaymentResponse{TradeNo: data.TradeID, PayURL: data.PaymentURL}, nil
+}
+
+func firstNonEmptyBEpusdt(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func (b *BEpusdt) QueryOrder(_ context.Context, tradeNo string) (*payment.QueryOrderResponse, error) {
@@ -239,6 +248,13 @@ func bepusdtValueString(value any) string {
 	case string:
 		return v
 	case json.Number:
+		// BEpusdt parses JSON into float64 before calculating its signature.
+		// Normalize JSON numbers the same way fmt.Sprintf("%v", float64)
+		// does on the BEpusdt side (e.g. 10.00 -> "10", 10.50 -> "10.5").
+		parsed, err := strconv.ParseFloat(v.String(), 64)
+		if err == nil {
+			return strconv.FormatFloat(parsed, 'f', -1, 64)
+		}
 		return v.String()
 	case float64:
 		return strconv.FormatFloat(v, 'f', -1, 64)

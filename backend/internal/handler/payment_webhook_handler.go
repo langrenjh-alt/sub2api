@@ -223,6 +223,8 @@ func writeSuccessResponse(c *gin.Context, providerKey string) {
 		c.JSON(http.StatusOK, wxpaySuccessResponse{Code: wxpaySuccessCode, Message: wxpaySuccessMessage})
 	case payment.TypeStripe, payment.TypeAirwallex:
 		c.String(http.StatusOK, "")
+	case payment.TypeBEpusdt:
+		c.String(http.StatusOK, "ok")
 	default:
 		c.String(http.StatusOK, "success")
 	}
