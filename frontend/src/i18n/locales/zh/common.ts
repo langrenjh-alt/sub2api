@@ -190,6 +190,7 @@ export default {
     github: 'GitHub',
     mySubscriptions: '我的订阅',
     buySubscription: '充值/订阅',
+    usdtRecharge: 'USDT充值',
     docs: '文档',
     myOrders: '我的订单',
     orderManagement: '订单管理',
