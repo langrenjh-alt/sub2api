@@ -44,6 +44,16 @@ export default {
           enabled: 'Enable Available Channels',
           enabledHint: 'When off, the sidebar entry is hidden and the endpoint returns an empty list.',
         },
+        modelPlaza: {
+          title: 'Model Plaza',
+          description: 'A public page showcasing available models and pricing by group. Disabled by default.',
+          enabled: 'Enable Model Plaza',
+          enabledHint: 'When enabled, an entry appears in the header and the page is reachable at /model-plaza.',
+          requireAuth: 'Require sign-in to access',
+          requireAuthHint: 'When on, anonymous visitors are redirected to the login page; when off, the page is public and anonymous visitors only see non-exclusive groups.',
+          priceDescription: 'Pricing notes (Markdown)',
+          priceDescriptionHint: 'Rendered at the top of the plaza page. Use it for billing rules, exchange rates, promotions, etc.',
+        },
         riskControl: {
           title: 'Risk Control',
           description: 'Enable the content moderation menu and gateway audit entry point. Disabled by default.',
@@ -141,6 +151,14 @@ export default {
           'Please configure TOTP_ENCRYPTION_KEY in environment variables first. Generate a key with: openssl rand -hex 32'
       },
       security: {
+        passkey: 'Passkey Sign-in',
+        passkeyHint: 'Allow passwordless sign-in and user-managed passkeys when the relying party configuration is valid.',
+        passkeyConfigured: 'WebAuthn relying party configuration is valid.',
+        passkeyNotConfigured: 'Configure a valid RP ID and allowed HTTPS origins before enabling passkey sign-in.',
+        passkeyRPID: 'RP ID',
+        passkeyOrigins: 'Allowed HTTPS origins',
+        passkeyValueNotConfigured: 'Not configured',
+        passkeyDeploymentHint: 'Ask the server operator to set webauthn.enabled to true, configure webauthn.rp_id (domain only) and webauthn.rp_origins (full HTTPS origins), then restart the service.',
         stepUp: 'Step-up 2FA for Sensitive Operations',
         stepUpHint: 'When enabled, sensitive operations (account/proxy export, backup creation and download, S3 config changes, promoting admins) require a recent TOTP verification (valid for 15 minutes). Your own account must have 2FA enabled before turning this on; turning it off also requires step-up verification.',
         stepUpEnableRequiresTotp: 'Enable 2FA (TOTP) for your own account in Profile before turning on step-up verification.',
@@ -557,6 +575,8 @@ export default {
         homeContentPlaceholder: 'Enter custom content for the home page. Supports Markdown & HTML. If a URL is entered, it will be displayed as an iframe.',
         homeContentHint: 'Customize the home page content. Supports Markdown/HTML. If you enter a URL (starting with http:// or https://), it will be used as an iframe src to embed an external page. When set, the default status information will no longer be displayed.',
         homeContentIframeWarning: '⚠️ iframe mode note: Some websites have X-Frame-Options or CSP security policies that prevent embedding in iframes. If the page appears blank or shows an error, please verify the target website allows embedding, or consider using HTML mode to build your own content.',
+        compactHome: 'Compact Home Page',
+        compactHomeHint: 'Show a restrained site identity page when no custom home page content is set.',
         hideCcsImportButton: 'Hide CCS Import Button',
         hideCcsImportButtonHint: 'When enabled, the "Import to CCS" button will be hidden on the API Keys page'
       },

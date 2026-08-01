@@ -1578,6 +1578,65 @@
                 />
               </div>
 
+              <!-- Passkey sign-in -->
+              <div
+                class="border-t border-gray-100 pt-4 dark:border-dark-700"
+                data-testid="passkey-settings"
+              >
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">{{
+                      t("admin.settings.security.passkey")
+                    }}</label>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.security.passkeyHint") }}
+                    </p>
+                  </div>
+                  <Toggle
+                    v-model="form.passkey_enabled"
+                    data-testid="passkey-toggle"
+                    :disabled="!form.passkey_configured"
+                  />
+                </div>
+                <div
+                  class="mt-3 rounded-lg border px-3 py-2 text-sm"
+                  :class="
+                    form.passkey_configured
+                      ? 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-300'
+                      : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300'
+                  "
+                  data-testid="passkey-config-status"
+                >
+                  <p class="font-medium">
+                    {{
+                      form.passkey_configured
+                        ? t("admin.settings.security.passkeyConfigured")
+                        : t("admin.settings.security.passkeyNotConfigured")
+                    }}
+                  </p>
+                  <p class="mt-1 break-all">
+                    {{ t("admin.settings.security.passkeyRPID") }}:
+                    {{
+                      form.passkey_rp_id ||
+                      t("admin.settings.security.passkeyValueNotConfigured")
+                    }}
+                  </p>
+                  <p class="mt-1 break-all">
+                    {{ t("admin.settings.security.passkeyOrigins") }}:
+                    {{
+                      form.passkey_rp_origins.length > 0
+                        ? form.passkey_rp_origins.join(", ")
+                        : t(
+                            "admin.settings.security.passkeyValueNotConfigured",
+                          )
+                    }}
+                  </p>
+                  <p v-if="!form.passkey_configured" class="mt-2">
+                    {{ t("admin.settings.security.passkeyDeploymentHint") }}
+                  </p>
+                </div>
+              </div>
+
               <!-- 敏感操作 step-up 2FA -->
               <div
                 class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -5994,6 +6053,19 @@
                 </p>
               </div>
 
+              <!-- Compact Home Page -->
+              <div class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700">
+                <div>
+                  <label class="font-medium text-gray-900 dark:text-white">{{
+                    t("admin.settings.site.compactHome")
+                  }}</label>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.site.compactHomeHint") }}
+                  </p>
+                </div>
+                <Toggle v-model="form.compact_home_enabled" data-testid="compact-home-toggle" />
+              </div>
+
               <!-- Hide CCS Import Button -->
               <div
                 class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-dark-700"
@@ -6654,6 +6726,12 @@
                 <span aria-hidden="true">&rarr;</span>
               </router-link>
             </p>
+            <h2 class="mt-6 text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.features.modelPlaza.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.features.modelPlaza.description') }}
+            </p>
           </div>
           <div class="space-y-5 p-6">
             <div class="flex items-center justify-between">
@@ -6666,6 +6744,43 @@
                 </p>
               </div>
               <Toggle v-model="form.ticket_system_enabled" />
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.features.modelPlaza.enabled') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.features.modelPlaza.enabledHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.model_plaza_enabled" />
+            </div>
+
+            <div v-if="form.model_plaza_enabled" class="flex items-center justify-between">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.features.modelPlaza.requireAuth') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.features.modelPlaza.requireAuthHint') }}
+                </p>
+              </div>
+              <Toggle v-model="form.model_plaza_require_auth" />
+            </div>
+
+            <div v-if="form.model_plaza_enabled">
+              <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {{ t('admin.settings.features.modelPlaza.priceDescription') }}
+              </label>
+              <p class="mb-2 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.settings.features.modelPlaza.priceDescriptionHint') }}
+              </p>
+              <textarea
+                v-model="form.model_plaza_description"
+                rows="6"
+                class="input font-mono text-sm"
+              ></textarea>
             </div>
           </div>
         </div>
@@ -8930,6 +9045,10 @@ const form = reactive<SettingsForm>({
   password_reset_enabled: false,
   totp_enabled: false,
   totp_encryption_key_configured: false,
+  passkey_enabled: false,
+  passkey_configured: false,
+  passkey_rp_id: "",
+  passkey_rp_origins: [],
   session_binding_enabled: false,
   step_up_enabled: false,
   audit_log_retention_days: 180,
@@ -8955,6 +9074,7 @@ const form = reactive<SettingsForm>({
   contact_info: "",
   doc_url: "",
   home_content: "",
+  compact_home_enabled: false,
   backend_mode_enabled: false,
   hide_ccs_import_button: false,
   payment_enabled: false,
@@ -9169,6 +9289,10 @@ const form = reactive<SettingsForm>({
   homepage_status_group_ids: [] as number[],
   // Available Channels feature switch
   available_channels_enabled: false,
+  // Model Plaza feature switches + description
+  model_plaza_enabled: false,
+  model_plaza_require_auth: false,
+  model_plaza_description: '',
   // Affiliate (邀请返利) feature switch
   affiliate_enabled: false,
   // Allow user view error requests
@@ -10486,6 +10610,7 @@ async function saveSettings() {
       invitation_code_enabled: form.invitation_code_enabled,
       password_reset_enabled: form.password_reset_enabled,
       totp_enabled: form.totp_enabled,
+      passkey_enabled: form.passkey_enabled,
       session_binding_enabled: form.session_binding_enabled,
       step_up_enabled: form.step_up_enabled,
       // 清空数字框时 v-model.number 会得到空串，后端 int 字段解析空串会 400 拒绝整次保存；
@@ -10517,6 +10642,7 @@ async function saveSettings() {
       contact_info: form.contact_info,
       doc_url: form.doc_url,
       home_content: form.home_content,
+      compact_home_enabled: form.compact_home_enabled,
       backend_mode_enabled: form.backend_mode_enabled,
       hide_ccs_import_button: form.hide_ccs_import_button,
       table_default_page_size: form.table_default_page_size,
@@ -10757,6 +10883,10 @@ async function saveSettings() {
       ),
       // Available Channels feature switch
       available_channels_enabled: form.available_channels_enabled,
+      // Model Plaza feature switches + description
+      model_plaza_enabled: form.model_plaza_enabled,
+      model_plaza_require_auth: form.model_plaza_require_auth,
+      model_plaza_description: form.model_plaza_description,
       // Affiliate (邀请返利) feature switch
       affiliate_enabled: form.affiliate_enabled,
       allow_user_view_error_requests: form.allow_user_view_error_requests,
