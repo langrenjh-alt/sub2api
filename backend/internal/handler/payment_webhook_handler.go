@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/payment"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -28,6 +29,11 @@ const maxWebhookBodySize = 1 << 20
 
 // webhookLogTruncateLen is the maximum length of raw body logged on verify failure.
 const webhookLogTruncateLen = 200
+
+// bepusdtWebhookFulfillmentTimeout bounds detached fulfillment work after the
+// webhook has already been acknowledged. The provider only needs a fast 200;
+// balance crediting must not remain coupled to the provider HTTP client timeout.
+const bepusdtWebhookFulfillmentTimeout = 2 * time.Minute
 
 // NewPaymentWebhookHandler creates a new PaymentWebhookHandler.
 func NewPaymentWebhookHandler(paymentService *service.PaymentService, registry *payment.Registry) *PaymentWebhookHandler {
@@ -123,6 +129,30 @@ func (h *PaymentWebhookHandler) handleNotify(c *gin.Context, providerKey string)
 
 	// nil notification means irrelevant event (e.g. Stripe non-payment event); return success.
 	if notification == nil {
+		writeSuccessResponse(c, resolvedProviderKey)
+		return
+	}
+
+	// BEpusdt requires the merchant endpoint to acknowledge successful callbacks
+	// promptly. HandlePaymentNotification also performs balance/subscription
+	// fulfillment, which may involve database/Redis work and can exceed the
+	// provider's HTTP client timeout. Detach that work from the request context
+	// and acknowledge after signature/order validation has completed.
+	if resolvedProviderKey == payment.TypeBEpusdt && notification.Status == payment.NotificationStatusSuccess {
+		notificationCopy := *notification
+		fulfillmentBase := context.WithoutCancel(c.Request.Context())
+		go func() {
+			fulfillCtx, cancel := context.WithTimeout(fulfillmentBase, bepusdtWebhookFulfillmentTimeout)
+			defer cancel()
+			if err := h.paymentService.HandlePaymentNotification(fulfillCtx, &notificationCopy, resolvedProviderKey); err != nil {
+				slog.Error("[Payment Webhook] detached BEpusdt fulfillment failed",
+					"provider", resolvedProviderKey,
+					"outTradeNo", notificationCopy.OrderID,
+					"tradeNo", notificationCopy.TradeNo,
+					"error", err,
+				)
+			}
+		}()
 		writeSuccessResponse(c, resolvedProviderKey)
 		return
 	}
