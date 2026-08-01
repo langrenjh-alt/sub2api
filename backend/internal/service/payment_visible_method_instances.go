@@ -48,6 +48,14 @@ func enabledVisibleMethodsForProvider(providerKey, supportedTypes string) []stri
 		for _, supportedType := range splitTypes(supportedTypes) {
 			addMethod(supportedType)
 		}
+	case payment.TypeBEpusdt:
+		if strings.TrimSpace(supportedTypes) == "" {
+			addMethod(payment.TypeBEpusdt)
+			break
+		}
+		for _, supportedType := range splitTypes(supportedTypes) {
+			addMethod(supportedType)
+		}
 	}
 
 	methods := make([]string, 0, len(methodSet))

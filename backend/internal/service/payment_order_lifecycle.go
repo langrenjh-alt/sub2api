@@ -356,6 +356,8 @@ func recoverablePaymentOrderProviderPredicate() predicate.PaymentOrder {
 		paymentorder.ProviderKeyHasPrefix(payment.TypeAlipay+"_"),
 		paymentorder.ProviderKeyEQ(payment.TypeEasyPay),
 		paymentorder.ProviderKeyHasPrefix(payment.TypeEasyPay+"_"),
+		paymentorder.ProviderKeyEQ(payment.TypeBEpusdt),
+		paymentorder.ProviderKeyHasPrefix(payment.TypeBEpusdt+"_"),
 		paymentorder.And(
 			paymentorder.Or(paymentorder.ProviderKeyIsNil(), paymentorder.ProviderKeyEQ("")),
 			paymentorder.Or(
@@ -365,6 +367,8 @@ func recoverablePaymentOrderProviderPredicate() predicate.PaymentOrder {
 				paymentorder.PaymentTypeHasPrefix(payment.TypeAlipay+"_"),
 				paymentorder.PaymentTypeEQ(payment.TypeEasyPay),
 				paymentorder.PaymentTypeHasPrefix(payment.TypeEasyPay+"_"),
+				paymentorder.PaymentTypeEQ(payment.TypeBEpusdt),
+				paymentorder.PaymentTypeHasPrefix(payment.TypeBEpusdt+"_"),
 			),
 		),
 	)

@@ -14,6 +14,11 @@ func paymentProviderConfigCurrency(providerKey string, cfg map[string]string) st
 		if err == nil {
 			return currency
 		}
+	case payment.TypeBEpusdt:
+		currency, err := payment.NormalizePaymentCurrency(cfg["fiat"])
+		if err == nil {
+			return currency
+		}
 	}
 	return payment.DefaultPaymentCurrency
 }
