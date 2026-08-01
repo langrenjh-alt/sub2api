@@ -55,6 +55,13 @@ func TestWriteSuccessResponse(t *testing.T) {
 			wantBody:        "",
 		},
 		{
+			name:            "bepusdt returns ok body",
+			providerKey:     payment.TypeBEpusdt,
+			wantCode:        http.StatusOK,
+			wantContentType: "text/plain",
+			wantBody:        "ok",
+		},
+		{
 			name:            "easypay returns plain text success",
 			providerKey:     "easypay",
 			wantCode:        http.StatusOK,
