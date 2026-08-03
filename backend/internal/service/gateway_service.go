@@ -666,7 +666,8 @@ type sseStreamErrorEventError struct {
 
 func (e *sseStreamErrorEventError) Error() string { return "have error in stream" }
 
-// TempUnscheduleRetryableError 对 RetryableOnSameAccount 类型的 failover 错误触发临时封禁。
+// TempUnscheduleRetryableError 对 Google 配置错误触发临时封禁。
+// 空流式响应属于上游瞬态故障，只进行同账号重试，不改变账号调度状态。
 // 由 handler 层在同账号重试全部用尽、切换账号时调用。
 func (s *GatewayService) TempUnscheduleRetryableError(ctx context.Context, accountID int64, failoverErr *UpstreamFailoverError) {
 	if failoverErr == nil || !failoverErr.RetryableOnSameAccount {
@@ -676,8 +677,6 @@ func (s *GatewayService) TempUnscheduleRetryableError(ctx context.Context, accou
 	switch failoverErr.StatusCode {
 	case http.StatusBadRequest:
 		tempUnscheduleGoogleConfigError(ctx, s.accountRepo, accountID, "[handler]")
-	case http.StatusBadGateway:
-		tempUnscheduleEmptyResponse(ctx, s.accountRepo, accountID, "[handler]")
 	}
 }
 

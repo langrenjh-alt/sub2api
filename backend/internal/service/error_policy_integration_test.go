@@ -290,6 +290,19 @@ func TestRetryLoop_ErrorPolicy_TempUnschedulable(t *testing.T) {
 	})
 }
 
+func TestTempUnscheduleRetryableError_EmptyStreamResponseDoesNotUnschedule(t *testing.T) {
+	repo := &epAccountRepo{}
+	svc := &GatewayService{accountRepo: repo}
+
+	svc.TempUnscheduleRetryableError(context.Background(), 200, &UpstreamFailoverError{
+		StatusCode:             http.StatusBadGateway,
+		ResponseBody:           []byte(`{"error":"empty stream response from upstream"}`),
+		RetryableOnSameAccount: true,
+	})
+
+	require.Zero(t, repo.tempCalls, "empty stream responses must not mark the account temporarily unschedulable")
+}
+
 // ---------------------------------------------------------------------------
 // TestRetryLoop_ErrorPolicy_NilRateLimitService
 // ---------------------------------------------------------------------------
