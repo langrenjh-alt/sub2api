@@ -38,8 +38,11 @@ const (
 	// frame proves that replay is no longer safe. Keep that private preamble
 	// bounded so an upstream that never produces output cannot grow memory
 	// without limit.
-	openAIWSIngressPreambleMaxEvents = 64
-	openAIWSIngressPreambleMaxBytes  = 256 * 1024
+	openAIWSIngressPreambleMaxEvents     = 64
+	openAIWSIngressPreambleMaxBytes      = 256 * 1024
+	openAIWSReplayInputMaxItems          = 4096
+	openAIWSReplayInputMaxBytes          = 4 * 1024 * 1024
+	openAIWSClientDisconnectDrainTimeout = 1200 * time.Millisecond
 
 	openAIWSEventFlushBatchSizeDefault    = 4
 	openAIWSEventFlushIntervalDefault     = 25 * time.Millisecond
@@ -69,6 +72,29 @@ func openAIWSIngressPreambleWithinLimit(eventCount, bufferedBytes, incomingBytes
 		return false
 	}
 	return bufferedBytes <= openAIWSIngressPreambleMaxBytes-incomingBytes
+}
+
+func flushOpenAIWSIngressPreamble(
+	events *[][]byte,
+	bufferedBytes *int,
+	write func([]byte) error,
+) error {
+	if events == nil || bufferedBytes == nil {
+		return nil
+	}
+	// The turn can outlive the flush by minutes. Detach the backing array before
+	// I/O and clear each slot so flushed frame payloads become collectible.
+	pending := *events
+	*events = nil
+	*bufferedBytes = 0
+	for i, event := range pending {
+		pending[i] = nil
+		if err := write(event); err != nil {
+			clear(pending[i+1:])
+			return err
+		}
+	}
+	return nil
 }
 
 var openAIWSIngressPreflightPingIdle = 20 * time.Second

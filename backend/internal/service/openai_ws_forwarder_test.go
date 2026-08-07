@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,6 +81,12 @@ func TestOpenAIWSResponseEventStartsSemanticOutputPayload(t *testing.T) {
 			eventType: "response.created",
 			payload:   `{"type":"response.created","response":{"id":"resp_1"}}`,
 			want:      false,
+		},
+		{
+			name:      "error is committed",
+			eventType: "error",
+			payload:   `{"type":"error","error":{"type":"invalid_request_error","message":"request was rejected"}}`,
+			want:      true,
 		},
 		{
 			name:      "empty message item lifecycle",
@@ -171,6 +178,65 @@ func TestOpenAIWSIngressPreambleWithinLimit(t *testing.T) {
 			require.Equal(t, tt.wantWithinReplayGate, openAIWSIngressPreambleWithinLimit(tt.eventCount, tt.bufferedBytes, tt.incomingBytes))
 		})
 	}
+}
+
+func TestFlushOpenAIWSIngressPreambleReleasesReferences(t *testing.T) {
+	events := [][]byte{
+		[]byte(`{"type":"response.created"}`),
+		[]byte(`{"type":"response.in_progress"}`),
+	}
+	bufferedBytes := len(events[0]) + len(events[1])
+	var written [][]byte
+
+	err := flushOpenAIWSIngressPreamble(&events, &bufferedBytes, func(event []byte) error {
+		written = append(written, append([]byte(nil), event...))
+		return nil
+	})
+
+	require.NoError(t, err)
+	require.Len(t, written, 2)
+	require.Nil(t, events, "flushed event references must not remain reachable for the rest of the turn")
+	require.Zero(t, bufferedBytes)
+}
+
+func TestFlushOpenAIWSIngressPreambleReleasesReferencesOnWriteError(t *testing.T) {
+	events := [][]byte{
+		[]byte(`{"type":"response.created"}`),
+		[]byte(`{"type":"response.in_progress"}`),
+	}
+	bufferedBytes := len(events[0]) + len(events[1])
+	wantErr := errors.New("client write failed")
+
+	err := flushOpenAIWSIngressPreamble(&events, &bufferedBytes, func([]byte) error {
+		return wantErr
+	})
+
+	require.ErrorIs(t, err, wantErr)
+	require.Nil(t, events, "failed flushes must not retain event references after the turn exits")
+	require.Zero(t, bufferedBytes)
+}
+
+func TestOpenAIWSObservedUsageFromPayload(t *testing.T) {
+	payload := []byte(`{"type":"response.failed","response":{"usage":{"input_tokens":17,"output_tokens":3,"input_tokens_details":{"cached_tokens":5}}}}`)
+	usage := openAIWSObservedUsageFromPayload(payload)
+	require.NotNil(t, usage)
+	require.Equal(t, 17, usage.InputTokens)
+	require.Equal(t, 5, usage.CacheReadInputTokens)
+	require.Equal(t, 3, usage.OutputTokens)
+	require.Nil(t, openAIWSObservedUsageFromPayload([]byte(`{"type":"response.failed"}`)))
+}
+
+func TestOpenAIWSResponseFailedFailoverCarriesObservedUsage(t *testing.T) {
+	svc := &OpenAIGatewayService{}
+	account := &Account{ID: 1, Platform: PlatformOpenAI, Name: "capacity"}
+	payload := []byte(`{"type":"response.failed","response":{"error":{"type":"invalid_request_error","message":"Selected model is at capacity. Please try a different model."},"usage":{"input_tokens":17,"output_tokens":3}}}`)
+
+	failoverErr := svc.newOpenAIWSResponseFailedFailoverError(context.Background(), nil, account, "gpt-5.1", nil, payload)
+	require.NotNil(t, failoverErr)
+	require.True(t, failoverErr.IsOpenAIModelCapacity())
+	require.NotNil(t, failoverErr.ObservedUsage)
+	require.Equal(t, 17, failoverErr.ObservedUsage.InputTokens)
+	require.Equal(t, 3, failoverErr.ObservedUsage.OutputTokens)
 }
 
 // TestOpenAIWSCyberPolicyMark_ResponseFailed covers the response.failed

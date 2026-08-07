@@ -616,7 +616,10 @@ type GatewayFailureReason string
 // trigger account failover. Additive metadata keeps existing composite literals
 // source-compatible and preserves their legacy retry-next-account behavior.
 type UpstreamFailoverError struct {
-	StatusCode               int
+	StatusCode int
+	// ObservedUsage records usage reported on a failed WS attempt. It is
+	// diagnostic metadata and must not be billed again after failover succeeds.
+	ObservedUsage            *OpenAIUsage
 	ResponseBody             []byte      // 上游响应体，用于错误透传规则匹配
 	ResponseHeaders          http.Header // 上游响应头，用于透传 cf-ray/cf-mitigated/content-type 等诊断信息
 	ForceCacheBilling        bool        // Antigravity 粘性会话切换时设为 true

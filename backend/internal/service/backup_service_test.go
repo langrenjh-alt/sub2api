@@ -8,11 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -659,6 +661,163 @@ func TestStartBackup_ShuttingDown(t *testing.T) {
 	_, err := svc.StartBackup(context.Background(), "manual", 14)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "shutting down")
+}
+
+func TestBackupService_ScheduledBackupUsesDistributedLock(t *testing.T) {
+	repo := newMockSettingRepo()
+	seedS3Config(t, repo)
+	lockCache := &fakeLeaderLockCache{}
+
+	dumperA := &blockingDumper{blockCh: make(chan struct{}), data: []byte("node-a")}
+	storeA := newMockObjectStore()
+	storeB := newMockObjectStore()
+	svcA := newTestBackupService(repo, dumperA, storeA)
+	svcB := newTestBackupService(repo, &mockDumper{dumpData: []byte("node-b")}, storeB)
+	svcA.SetLeaderLock(lockCache, nil)
+	svcB.SetLeaderLock(lockCache, nil)
+
+	doneA := make(chan struct{})
+	go func() {
+		svcA.runScheduledBackup()
+		close(doneA)
+	}()
+
+	require.Eventually(t, func() bool {
+		return lockCache.heldBy(backupLeaderLockKey) != ""
+	}, time.Second, 10*time.Millisecond, "first instance should hold the backup lock")
+
+	doneB := make(chan struct{})
+	go func() {
+		svcB.runScheduledBackup()
+		close(doneB)
+	}()
+	select {
+	case <-doneB:
+	case <-time.After(time.Second):
+		t.Fatal("second instance did not skip the scheduled backup")
+	}
+
+	storeB.mu.Lock()
+	require.Empty(t, storeB.objects, "non-owner must not upload a backup")
+	storeB.mu.Unlock()
+
+	close(dumperA.blockCh)
+	select {
+	case <-doneA:
+	case <-time.After(time.Second):
+		t.Fatal("first instance did not finish the scheduled backup")
+	}
+	require.Empty(t, lockCache.heldBy(backupLeaderLockKey), "lock must be released after the job")
+}
+
+func TestBackupService_UsesPostgresAdvisoryLockWithoutRedis(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	lockID := hashAdvisoryLockID(backupLeaderLockKey)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT pg_try_advisory_lock($1)")).
+		WithArgs(lockID).
+		WillReturnRows(sqlmock.NewRows([]string{"pg_try_advisory_lock"}).AddRow(true))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT pg_advisory_unlock($1)")).
+		WithArgs(lockID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	repo := newMockSettingRepo()
+	svc := newTestBackupService(repo, &mockDumper{}, newMockObjectStore())
+	svc.SetLeaderLock(nil, db)
+
+	finish, err := svc.beginBackup(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, finish)
+	finish()
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestBackupService_AcquiresPostgresAndRedisLocks(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	lockID := hashAdvisoryLockID(backupLeaderLockKey)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT pg_try_advisory_lock($1)")).
+		WithArgs(lockID).
+		WillReturnRows(sqlmock.NewRows([]string{"pg_try_advisory_lock"}).AddRow(true))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT pg_advisory_unlock($1)")).
+		WithArgs(lockID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	lockCache := &fakeLeaderLockCache{}
+	repo := newMockSettingRepo()
+	svc := newTestBackupService(repo, &mockDumper{}, newMockObjectStore())
+	svc.SetLeaderLock(lockCache, db)
+
+	finish, err := svc.beginBackup(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, svc.instanceID, lockCache.heldBy(backupLeaderLockKey))
+	finish()
+	require.Empty(t, lockCache.heldBy(backupLeaderLockKey))
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestBackupService_FailsClosedWhenRedisErrorsAfterPostgresLock(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	lockID := hashAdvisoryLockID(backupLeaderLockKey)
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT pg_try_advisory_lock($1)")).
+		WithArgs(lockID).
+		WillReturnRows(sqlmock.NewRows([]string{"pg_try_advisory_lock"}).AddRow(true))
+	mock.ExpectExec(regexp.QuoteMeta("SELECT pg_advisory_unlock($1)")).
+		WithArgs(lockID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	repo := newMockSettingRepo()
+	svc := newTestBackupService(repo, &mockDumper{}, newMockObjectStore())
+	svc.SetLeaderLock(&fakeLeaderLockCache{acquireErr: context.DeadlineExceeded}, db)
+
+	finish, err := svc.beginBackup(context.Background())
+	require.ErrorIs(t, err, ErrBackupLockUnavailable)
+	require.Nil(t, finish)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestBackupService_RebuildsStoreWhenSharedS3ConfigChanges(t *testing.T) {
+	repo := newMockSettingRepo()
+	seedS3Config(t, repo)
+
+	stores := []*mockObjectStore{newMockObjectStore(), newMockObjectStore()}
+	created := 0
+	factory := func(_ context.Context, _ *BackupS3Config) (BackupObjectStore, error) {
+		store := stores[created]
+		created++
+		return store, nil
+	}
+	cfg := &config.Config{
+		Database: config.DatabaseConfig{Host: "localhost", Port: 5432, User: "test", DBName: "testdb"},
+		Totp:     config.TotpConfig{EncryptionKeyConfigured: true},
+	}
+	svc := NewBackupService(repo, cfg, &plainEncryptor{}, factory, &mockDumper{})
+
+	cfgA, err := svc.loadS3Config(context.Background())
+	require.NoError(t, err)
+	gotA, err := svc.getOrCreateStore(context.Background(), cfgA)
+	require.NoError(t, err)
+
+	cfgB := *cfgA
+	cfgB.Bucket = "rotated-bucket"
+	cfgB.AccessKeyID = "ROTATED"
+	raw, err := json.Marshal(cfgB)
+	require.NoError(t, err)
+	require.NoError(t, repo.Set(context.Background(), settingKeyBackupS3Config, string(raw)))
+
+	cfgBLoaded, err := svc.loadS3Config(context.Background())
+	require.NoError(t, err)
+	gotB, err := svc.getOrCreateStore(context.Background(), cfgBLoaded)
+	require.NoError(t, err)
+	require.NotSame(t, gotA, gotB, "a shared config change must invalidate the process-local S3 client")
+	require.Equal(t, 2, created)
 }
 
 func TestRecoverStaleRecords(t *testing.T) {

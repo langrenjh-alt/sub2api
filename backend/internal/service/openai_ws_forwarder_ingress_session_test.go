@@ -4214,3 +4214,74 @@ func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_ClientDisconnect
 		t.Fatal("未收到断连后的 turn 结果回调")
 	}
 }
+
+func TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_ClientDisconnectDrainIsBounded(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	cfg := newOpenAIWSV2TestConfig()
+	cfg.Security.URLAllowlist.Enabled = false
+	cfg.Security.URLAllowlist.AllowInsecureHTTP = true
+	cfg.Gateway.OpenAIWS.MinIdlePerAccount = 0
+	cfg.Gateway.OpenAIWS.ReadTimeoutSeconds = 30
+
+	captureConn := &openAIWSCaptureConn{
+		readDelays: []time.Duration{250 * time.Millisecond, 30 * time.Second},
+		events: [][]byte{
+			[]byte(`{"type":"response.created","response":{"id":"resp_disconnect_bounded","model":"gpt-5.1"}}`),
+			[]byte(`{"type":"response.in_progress","response":{"id":"resp_disconnect_bounded","model":"gpt-5.1"}}`),
+		},
+	}
+	pool := newOpenAIWSConnPool(cfg)
+	pool.setClientDialerForTest(&openAIWSCaptureDialer{conn: captureConn})
+	svc := &OpenAIGatewayService{
+		cfg: cfg, httpUpstream: &httpUpstreamRecorder{}, cache: &stubGatewayCache{},
+		openaiWSResolver: NewOpenAIWSProtocolResolver(cfg), toolCorrector: NewCodexToolCorrector(), openaiWSPool: pool,
+	}
+	account := &Account{
+		ID: 116, Name: "openai-ingress-client-disconnect-bounded", Platform: PlatformOpenAI,
+		Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true, Concurrency: 1,
+		Credentials: map[string]any{"api_key": "sk-test"},
+		Extra:       map[string]any{"responses_websockets_v2_enabled": true},
+	}
+
+	serverErrCh := make(chan error, 1)
+	wsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := coderws.Accept(w, r, &coderws.AcceptOptions{CompressionMode: coderws.CompressionContextTakeover})
+		if err != nil {
+			serverErrCh <- err
+			return
+		}
+		defer func() { _ = conn.CloseNow() }()
+		readCtx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		_, firstMessage, readErr := conn.Read(readCtx)
+		cancel()
+		if readErr != nil {
+			serverErrCh <- readErr
+			return
+		}
+		rec := httptest.NewRecorder()
+		ginCtx, _ := gin.CreateTestContext(rec)
+		ginCtx.Request = r.Clone(r.Context())
+		serverErrCh <- svc.ProxyResponsesWebSocketFromClient(r.Context(), ginCtx, conn, account, "sk-test", firstMessage, nil)
+	}))
+	defer wsServer.Close()
+
+	dialCtx, cancelDial := context.WithTimeout(context.Background(), 3*time.Second)
+	clientConn, _, err := coderws.Dial(dialCtx, "ws"+strings.TrimPrefix(wsServer.URL, "http"), nil)
+	cancelDial()
+	require.NoError(t, err)
+	writeCtx, cancelWrite := context.WithTimeout(context.Background(), 3*time.Second)
+	require.NoError(t, clientConn.Write(writeCtx, coderws.MessageText, []byte(`{"type":"response.create","model":"gpt-5.1","stream":false}`)))
+	cancelWrite()
+	require.NoError(t, clientConn.CloseNow())
+
+	started := time.Now()
+	select {
+	case relayErr := <-serverErrCh:
+		var closeErr *OpenAIWSClientCloseError
+		require.ErrorAs(t, relayErr, &closeErr)
+		require.Equal(t, coderws.StatusNormalClosure, closeErr.StatusCode())
+		require.Less(t, time.Since(started), 3*time.Second)
+	case <-time.After(4 * time.Second):
+		t.Fatal("client disconnect drain did not release the upstream lease")
+	}
+}

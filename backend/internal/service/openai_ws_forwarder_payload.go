@@ -601,6 +601,9 @@ func buildOpenAIWSReplayInputSequence(
 	if currentErr != nil {
 		return nil, false, currentErr
 	}
+	if err := validateOpenAIWSReplayInputItems(currentItems, currentExists); err != nil {
+		return nil, false, err
+	}
 	if !hasPreviousResponseID {
 		return cloneOpenAIWSRawMessages(currentItems), currentExists, nil
 	}
@@ -608,15 +611,52 @@ func buildOpenAIWSReplayInputSequence(
 		return cloneOpenAIWSRawMessages(currentItems), currentExists, nil
 	}
 	if !currentExists || len(currentItems) == 0 {
+		if err := validateOpenAIWSReplayInputItems(previousFullInput, true); err != nil {
+			return nil, false, err
+		}
 		return cloneOpenAIWSRawMessages(previousFullInput), true, nil
 	}
 	if openAIWSRawItemsHasPrefix(currentItems, previousFullInput) {
 		return cloneOpenAIWSRawMessages(currentItems), true, nil
 	}
+	if len(previousFullInput) > openAIWSReplayInputMaxItems-len(currentItems) {
+		return nil, false, fmt.Errorf("%w: items=%d", errOpenAIWSReplayInputTooLarge, len(previousFullInput)+len(currentItems))
+	}
+	previousBytes, previousOK := openAIWSReplayInputBytes(previousFullInput)
+	currentBytes, currentOK := openAIWSReplayInputBytes(currentItems)
+	if !previousOK || !currentOK || previousBytes > openAIWSReplayInputMaxBytes-currentBytes {
+		return nil, false, fmt.Errorf("%w: bytes exceed %d", errOpenAIWSReplayInputTooLarge, openAIWSReplayInputMaxBytes)
+	}
 	merged := make([]json.RawMessage, 0, len(previousFullInput)+len(currentItems))
 	merged = append(merged, cloneOpenAIWSRawMessages(previousFullInput)...)
 	merged = append(merged, cloneOpenAIWSRawMessages(currentItems)...)
 	return merged, true, nil
+}
+
+var errOpenAIWSReplayInputTooLarge = errors.New("openai websocket replay input exceeds limit")
+
+func openAIWSReplayInputBytes(items []json.RawMessage) (int, bool) {
+	if len(items) > openAIWSReplayInputMaxItems {
+		return 0, false
+	}
+	total := 0
+	for _, item := range items {
+		if len(item) > openAIWSReplayInputMaxBytes || total > openAIWSReplayInputMaxBytes-len(item) {
+			return 0, false
+		}
+		total += len(item)
+	}
+	return total, true
+}
+
+func validateOpenAIWSReplayInputItems(items []json.RawMessage, exists bool) error {
+	if !exists {
+		return nil
+	}
+	if _, ok := openAIWSReplayInputBytes(items); !ok {
+		return fmt.Errorf("%w: items=%d", errOpenAIWSReplayInputTooLarge, len(items))
+	}
+	return nil
 }
 
 func setOpenAIWSPayloadInputSequence(

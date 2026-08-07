@@ -25,6 +25,10 @@ const (
 	openAIWSAcquireCleanupInterval = 3 * time.Second
 	openAIWSBackgroundPingInterval = 30 * time.Second
 	openAIWSBackgroundSweepTicker  = 30 * time.Second
+	// Empty account pools otherwise retain the last acquire request (including
+	// Account and credential headers) forever in sync.Map. Keep idle pools long
+	// enough for normal reuse, then evict the whole pool when no work remains.
+	openAIWSAccountPoolIdleTTL = 10 * time.Minute
 
 	openAIWSPrewarmFailureWindow   = 30 * time.Second
 	openAIWSPrewarmFailureSuppress = 2
@@ -552,6 +556,8 @@ type openAIWSAccountPool struct {
 	generation    uint64
 	lastCleanupAt time.Time
 	lastAcquire   *openAIWSAcquireRequest
+	lastAcquireAt time.Time
+	acquireRefs   atomic.Int32
 	prewarmActive bool
 	prewarmUntil  time.Time
 	prewarmFails  int
@@ -604,8 +610,9 @@ type openAIWSConnPool struct {
 	// 通过接口解耦底层 WS 客户端实现，默认使用 coder/websocket。
 	clientDialer openAIWSClientDialer
 
-	accounts sync.Map // key: int64(accountID), value: *openAIWSAccountPool
-	seq      atomic.Uint64
+	accounts   sync.Map // key: int64(accountID), value: *openAIWSAccountPool
+	accountsMu sync.Mutex
+	seq        atomic.Uint64
 
 	metrics openAIWSPoolMetrics
 
@@ -795,10 +802,17 @@ func (p *openAIWSConnPool) runBackgroundCleanupSweep(now time.Time) {
 		return
 	}
 	type cleanupResult struct {
-		evicted []*openAIWSConn
+		accountID int64
+		account   *openAIWSAccountPool
+		evicted   []*openAIWSConn
+		remove    bool
 	}
 	results := make([]cleanupResult, 0)
-	p.accounts.Range(func(_ any, value any) bool {
+	p.accounts.Range(func(key, value any) bool {
+		accountID, ok := key.(int64)
+		if !ok || accountID <= 0 {
+			return true
+		}
 		ap, ok := value.(*openAIWSAccountPool)
 		if !ok || ap == nil {
 			return true
@@ -810,14 +824,24 @@ func (p *openAIWSConnPool) runBackgroundCleanupSweep(now time.Time) {
 		}
 		evicted := p.cleanupAccountLocked(ap, now, maxConns)
 		ap.lastCleanupAt = now
+		remove := p.accountPoolEvictableLocked(ap, now)
 		ap.mu.Unlock()
-		if len(evicted) > 0 {
-			results = append(results, cleanupResult{evicted: evicted})
+		if len(evicted) > 0 || remove {
+			results = append(results, cleanupResult{accountID: accountID, account: ap, evicted: evicted, remove: remove})
 		}
 		return true
 	})
 	for _, result := range results {
 		closeOpenAIWSConns(result.evicted)
+		if result.remove {
+			p.accountsMu.Lock()
+			result.account.mu.Lock()
+			if current, ok := p.accounts.Load(result.accountID); ok && current == result.account && p.accountPoolEvictableLocked(result.account, now) {
+				p.accounts.Delete(result.accountID)
+			}
+			result.account.mu.Unlock()
+			p.accountsMu.Unlock()
+		}
 	}
 }
 
@@ -844,10 +868,12 @@ retryAcquire:
 		return nil, errOpenAIWSConnQueueFull
 	}
 	var evicted []*openAIWSConn
-	ap := p.getOrCreateAccountPool(accountID)
+	ap := p.acquireAccountPool(accountID)
+	defer ap.acquireRefs.Add(-1)
 	ap.mu.Lock()
 	ap.lastAcquire = cloneOpenAIWSAcquireRequestPtr(&req)
 	now := time.Now()
+	ap.lastAcquireAt = now
 	if ap.lastCleanupAt.IsZero() || now.Sub(ap.lastCleanupAt) >= openAIWSAcquireCleanupInterval {
 		evicted = p.cleanupAccountLocked(ap, now, effectiveMaxConns)
 		ap.lastCleanupAt = now
@@ -1193,6 +1219,28 @@ func (p *openAIWSConnPool) getOrCreateAccountPool(accountID int64) *openAIWSAcco
 	if p == nil || accountID <= 0 {
 		return nil
 	}
+	p.accountsMu.Lock()
+	defer p.accountsMu.Unlock()
+	return p.getOrCreateAccountPoolLocked(accountID)
+}
+
+func (p *openAIWSConnPool) acquireAccountPool(accountID int64) *openAIWSAccountPool {
+	if p == nil || accountID <= 0 {
+		return nil
+	}
+	p.accountsMu.Lock()
+	ap := p.getOrCreateAccountPoolLocked(accountID)
+	if ap != nil {
+		ap.acquireRefs.Add(1)
+	}
+	p.accountsMu.Unlock()
+	return ap
+}
+
+func (p *openAIWSConnPool) getOrCreateAccountPoolLocked(accountID int64) *openAIWSAccountPool {
+	if p == nil || accountID <= 0 {
+		return nil
+	}
 	if existing, ok := p.accounts.Load(accountID); ok {
 		if ap, typed := existing.(*openAIWSAccountPool); typed && ap != nil {
 			return ap
@@ -1328,6 +1376,26 @@ func (p *openAIWSConnPool) cleanupAccountLocked(ap *openAIWSAccountPool, now tim
 	}
 
 	return evicted
+}
+
+func (p *openAIWSConnPool) accountPoolEvictableLocked(ap *openAIWSAccountPool, now time.Time) bool {
+	if ap == nil {
+		return false
+	}
+	if len(ap.conns) > 0 || ap.creating > 0 || ap.prewarmActive || len(ap.pinnedConns) > 0 || ap.acquireRefs.Load() > 0 {
+		return false
+	}
+	_, waiters := accountPoolLoadLocked(ap)
+	if waiters > 0 {
+		return false
+	}
+	if ap.lastAcquire == nil {
+		return true
+	}
+	if ap.lastAcquireAt.IsZero() || openAIWSAccountPoolIdleTTL <= 0 {
+		return false
+	}
+	return now.Sub(ap.lastAcquireAt) >= openAIWSAccountPoolIdleTTL
 }
 
 func (p *openAIWSConnPool) pickLeastBusyConnLocked(ap *openAIWSAccountPool, preferredConnID, betaFeatures string) *openAIWSConn {

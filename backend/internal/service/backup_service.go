@@ -3,6 +3,7 @@ package service
 import (
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,13 +27,19 @@ const (
 	settingKeyBackupSchedule = "backup_schedule"
 	settingKeyBackupRecords  = "backup_records"
 
-	maxBackupRecords = 100
+	maxBackupRecords    = 100
+	backupLeaderLockKey = "backup:scheduler:leader"
+	// Backup execution is bounded by 30 minutes. Keep the Redis crash-safety
+	// TTL above that bound so another instance cannot enter while the first job
+	// is still dumping or uploading.
+	backupLeaderLockTTL = 45 * time.Minute
 )
 
 var (
 	ErrBackupS3NotConfigured = infraerrors.BadRequest("BACKUP_S3_NOT_CONFIGURED", "backup S3 storage is not configured")
 	ErrBackupNotFound        = infraerrors.NotFound("BACKUP_NOT_FOUND", "backup record not found")
 	ErrBackupInProgress      = infraerrors.Conflict("BACKUP_IN_PROGRESS", "a backup is already in progress")
+	ErrBackupLockUnavailable = infraerrors.ServiceUnavailable("BACKUP_LOCK_UNAVAILABLE", "backup coordination is temporarily unavailable")
 	ErrRestoreInProgress     = infraerrors.Conflict("RESTORE_IN_PROGRESS", "a restore is already in progress")
 	ErrBackupRecordsCorrupt  = infraerrors.InternalServer("BACKUP_RECORDS_CORRUPT", "backup records data is corrupted")
 	ErrBackupS3ConfigCorrupt = infraerrors.InternalServer("BACKUP_S3_CONFIG_CORRUPT", "backup S3 config data is corrupted")
@@ -127,6 +134,9 @@ type BackupService struct {
 	encryptionKeyConfigured bool
 	storeFactory            BackupObjectStoreFactory
 	dumper                  DBDumper
+	lockCache               LeaderLockCache
+	db                      *sql.DB
+	instanceID              string
 
 	opMu      sync.Mutex // 保护 backingUp/restoring 标志
 	backingUp bool
@@ -163,9 +173,104 @@ func NewBackupService(
 		encryptionKeyConfigured: cfg.Totp.EncryptionKeyConfigured,
 		storeFactory:            storeFactory,
 		dumper:                  dumper,
+		instanceID:              uuid.NewString(),
 		bgCtx:                   bgCtx,
 		bgCancel:                bgCancel,
 	}
+}
+
+// SetLeaderLock injects the shared Redis lock and PostgreSQL advisory lock used
+// to serialize backup execution across application instances.
+func (s *BackupService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
+	if s == nil {
+		return
+	}
+	s.lockCache = lockCache
+	s.db = db
+}
+
+func (s *BackupService) tryAcquireBackupLeaderLock(ctx context.Context) (func(), bool, error) {
+	if s.db == nil {
+		release, acquired := tryAcquireSingletonLeaderLock(
+			ctx,
+			s.lockCache,
+			nil,
+			backupLeaderLockKey,
+			s.instanceID,
+			backupLeaderLockTTL,
+		)
+		return release, acquired, nil
+	}
+
+	// PostgreSQL is the authoritative lock. When Redis is also configured, every
+	// contender must acquire both locks in this order. This fails closed during
+	// a partial Redis outage instead of allowing one node to hold Redis while a
+	// different node independently falls back to PostgreSQL.
+	dbRelease, acquired, err := tryAcquireDBAdvisoryLockWithError(ctx, s.db, hashAdvisoryLockID(backupLeaderLockKey))
+	if err != nil {
+		return nil, false, fmt.Errorf("acquire PostgreSQL backup lock: %w", err)
+	}
+	if !acquired {
+		return nil, false, nil
+	}
+	if s.lockCache == nil {
+		return dbRelease, true, nil
+	}
+
+	redisAcquired, err := s.lockCache.TryAcquireLeaderLock(ctx, backupLeaderLockKey, s.instanceID, backupLeaderLockTTL)
+	if err != nil {
+		dbRelease()
+		return nil, false, fmt.Errorf("acquire Redis backup lock: %w", err)
+	}
+	if !redisAcquired {
+		dbRelease()
+		return nil, false, nil
+	}
+
+	return func() {
+		releaseCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = s.lockCache.ReleaseLeaderLock(releaseCtx, backupLeaderLockKey, s.instanceID)
+		dbRelease()
+	}, true, nil
+}
+
+// beginBackup combines the process-local guard with the cross-instance lock.
+// The returned function must be held until dump/upload (and scheduled cleanup)
+// has fully completed.
+func (s *BackupService) beginBackup(ctx context.Context) (func(), error) {
+	if s.shuttingDown.Load() {
+		return nil, infraerrors.ServiceUnavailable("SERVER_SHUTTING_DOWN", "server is shutting down")
+	}
+
+	s.opMu.Lock()
+	if s.backingUp {
+		s.opMu.Unlock()
+		return nil, ErrBackupInProgress
+	}
+	s.backingUp = true
+	s.opMu.Unlock()
+
+	releaseLeader, acquired, lockErr := s.tryAcquireBackupLeaderLock(ctx)
+	if lockErr != nil {
+		s.opMu.Lock()
+		s.backingUp = false
+		s.opMu.Unlock()
+		return nil, fmt.Errorf("%w: %v", ErrBackupLockUnavailable, lockErr)
+	}
+	if !acquired {
+		s.opMu.Lock()
+		s.backingUp = false
+		s.opMu.Unlock()
+		return nil, ErrBackupInProgress
+	}
+
+	return func() {
+		releaseLeader()
+		s.opMu.Lock()
+		s.backingUp = false
+		s.opMu.Unlock()
+	}, nil
 }
 
 // Start 启动定时备份调度器并清理孤立记录
@@ -174,7 +279,7 @@ func (s *BackupService) Start() {
 	s.cronSched.Start()
 
 	// 清理重启后孤立的 running 记录
-	s.recoverStaleRecords()
+	s.recoverStaleRecordsAsLeader()
 
 	// 加载已有的定时配置
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -192,6 +297,23 @@ func (s *BackupService) Start() {
 }
 
 // recoverStaleRecords 启动时将孤立的 running 记录标记为 failed
+func (s *BackupService) recoverStaleRecordsAsLeader() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	release, acquired, err := s.tryAcquireBackupLeaderLock(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.backup", "[Backup] stale-record recovery lock failed: %v", err)
+		return
+	}
+	if !acquired {
+		logger.LegacyPrintf("service.backup", "[Backup] stale-record recovery skipped: another instance owns the backup lock")
+		return
+	}
+	defer release()
+	s.recoverStaleRecords()
+}
+
 func (s *BackupService) recoverStaleRecords() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -422,6 +544,17 @@ func (s *BackupService) runScheduledBackup() {
 	ctx, cancel := context.WithTimeout(s.bgCtx, 30*time.Minute)
 	defer cancel()
 
+	finishBackup, err := s.beginBackup(ctx)
+	if err != nil {
+		if errors.Is(err, ErrBackupInProgress) {
+			logger.LegacyPrintf("service.backup", "[Backup] scheduled backup skipped: another instance is already running a backup")
+		} else {
+			logger.LegacyPrintf("service.backup", "[Backup] scheduled backup lock failed: %v", err)
+		}
+		return
+	}
+	defer finishBackup()
+
 	// 读取定时备份配置中的过期天数
 	schedule, _ := s.GetSchedule(ctx)
 	expireDays := 14 // 默认14天过期
@@ -430,7 +563,7 @@ func (s *BackupService) runScheduledBackup() {
 	}
 
 	logger.LegacyPrintf("service.backup", "[Backup] 开始执行定时备份, 过期天数: %d", expireDays)
-	record, err := s.CreateBackup(ctx, "scheduled", expireDays)
+	record, err := s.createBackup(ctx, "scheduled", expireDays)
 	if err != nil {
 		if errors.Is(err, ErrBackupInProgress) {
 			logger.LegacyPrintf("service.backup", "[Backup] 定时备份跳过: 已有备份正在进行中")
@@ -455,23 +588,16 @@ func (s *BackupService) runScheduledBackup() {
 // CreateBackup 创建全量数据库备份并上传到 S3（流式处理）
 // expireDays: 备份过期天数，0=永不过期，默认14天
 func (s *BackupService) CreateBackup(ctx context.Context, triggeredBy string, expireDays int) (*BackupRecord, error) {
-	if s.shuttingDown.Load() {
-		return nil, infraerrors.ServiceUnavailable("SERVER_SHUTTING_DOWN", "server is shutting down")
+	finishBackup, err := s.beginBackup(ctx)
+	if err != nil {
+		return nil, err
 	}
+	defer finishBackup()
 
-	s.opMu.Lock()
-	if s.backingUp {
-		s.opMu.Unlock()
-		return nil, ErrBackupInProgress
-	}
-	s.backingUp = true
-	s.opMu.Unlock()
-	defer func() {
-		s.opMu.Lock()
-		s.backingUp = false
-		s.opMu.Unlock()
-	}()
+	return s.createBackup(ctx, triggeredBy, expireDays)
+}
 
+func (s *BackupService) createBackup(ctx context.Context, triggeredBy string, expireDays int) (*BackupRecord, error) {
 	s3Cfg, err := s.loadS3Config(ctx)
 	if err != nil {
 		return nil, err
@@ -572,25 +698,16 @@ func (s *BackupService) CreateBackup(ctx context.Context, triggeredBy string, ex
 
 // StartBackup 异步创建备份，立即返回 running 状态的记录
 func (s *BackupService) StartBackup(ctx context.Context, triggeredBy string, expireDays int) (*BackupRecord, error) {
-	if s.shuttingDown.Load() {
-		return nil, infraerrors.ServiceUnavailable("SERVER_SHUTTING_DOWN", "server is shutting down")
+	finishBackup, err := s.beginBackup(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	s.opMu.Lock()
-	if s.backingUp {
-		s.opMu.Unlock()
-		return nil, ErrBackupInProgress
-	}
-	s.backingUp = true
-	s.opMu.Unlock()
 
 	// 初始化阶段出错时自动重置标志
 	launched := false
 	defer func() {
 		if !launched {
-			s.opMu.Lock()
-			s.backingUp = false
-			s.opMu.Unlock()
+			finishBackup()
 		}
 	}()
 
@@ -641,11 +758,7 @@ func (s *BackupService) StartBackup(ctx context.Context, triggeredBy string, exp
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		defer func() {
-			s.opMu.Lock()
-			s.backingUp = false
-			s.opMu.Unlock()
-		}()
+		defer finishBackup()
 		defer func() {
 			if r := recover(); r != nil {
 				logger.LegacyPrintf("service.backup", "[Backup] panic recovered: %v", r)
@@ -1015,7 +1128,7 @@ func (s *BackupService) getOrCreateStore(ctx context.Context, cfg *BackupS3Confi
 	s.storeMu.Lock()
 	defer s.storeMu.Unlock()
 
-	if s.store != nil && s.s3Cfg != nil {
+	if s.store != nil && s.s3Cfg != nil && *s.s3Cfg == *cfg {
 		return s.store, nil
 	}
 
@@ -1028,7 +1141,10 @@ func (s *BackupService) getOrCreateStore(ctx context.Context, cfg *BackupS3Confi
 		return nil, err
 	}
 	s.store = store
-	s.s3Cfg = cfg
+	// Keep a private snapshot so a subsequent settings read can detect a
+	// cross-instance credential/endpoint change and rebuild this process cache.
+	s.s3Cfg = &BackupS3Config{}
+	*s.s3Cfg = *cfg
 	return store, nil
 }
 

@@ -1990,6 +1990,14 @@ func (h *AuthHandler) ExchangePendingOAuthCompletion(c *gin.Context) {
 		response.Success(c, payload)
 		return
 	}
+	// Only terminal login sessions that can issue a token pair, or an explicitly
+	// authenticated bind-current-user session, may mutate OAuth identity state.
+	// Choice/non-terminal sessions can target an existing email without proving
+	// ownership; fail closed before applying adoption or consuming the session.
+	if !canIssueTokenPair && !strings.EqualFold(strings.TrimSpace(session.Intent), oauthIntentBindCurrentUser) {
+		response.Success(c, payload)
+		return
+	}
 	if !adoptionDecision.hasDecision() {
 		adoptionRequired, _ := payload["adoption_required"].(bool)
 		if adoptionRequired {

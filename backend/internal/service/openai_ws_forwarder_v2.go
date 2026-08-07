@@ -346,6 +346,8 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 		mappedModelBytes = []byte(mappedModel)
 	}
 	bufferedStreamEvents := make([][]byte, 0, 4)
+	bufferedStreamBytes := 0
+	preambleCommitted := false
 	eventCount := 0
 	tokenEventCount := 0
 	terminalEventCount := 0
@@ -413,10 +415,14 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 			return
 		}
 		flushed := len(bufferedStreamEvents)
-		for _, buffered := range bufferedStreamEvents {
-			emitStreamMessage(buffered, false)
-		}
-		bufferedStreamEvents = bufferedStreamEvents[:0]
+		_ = flushOpenAIWSIngressPreamble(
+			&bufferedStreamEvents,
+			&bufferedStreamBytes,
+			func(buffered []byte) error {
+				emitStreamMessage(buffered, false)
+				return nil
+			},
+		)
 		flushStreamWriter(true)
 		flushedBufferedEventCount += flushed
 		if debugEnabled {
@@ -574,7 +580,7 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 					UpstreamOutTok: usage.OutputTokens,
 				})
 			}
-			if firstTokenMs == nil {
+			if firstTokenMs == nil && !wroteDownstream {
 				if failoverErr := s.newOpenAIWSResponseFailedFailoverError(
 					ctx,
 					c,
@@ -661,11 +667,18 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 		if reqStream {
 			// 在首个 token 前先缓冲事件（如 response.created），
 			// 以便上游早期断连时仍可安全回退到 HTTP，不给下游发送半截流。
-			shouldBuffer := firstTokenMs == nil && !isTokenEvent && !isTerminalEvent
+			shouldBuffer := firstTokenMs == nil && !preambleCommitted && !isTokenEvent && !isTerminalEvent
 			if shouldBuffer {
 				buffered := make([]byte, len(message))
 				copy(buffered, message)
-				bufferedStreamEvents = append(bufferedStreamEvents, buffered)
+				if !openAIWSIngressPreambleWithinLimit(len(bufferedStreamEvents), bufferedStreamBytes, len(buffered)) {
+					flushBufferedStreamEvents("preamble_limit")
+					preambleCommitted = true
+					emitStreamMessage(buffered, false)
+				} else {
+					bufferedStreamEvents = append(bufferedStreamEvents, buffered)
+					bufferedStreamBytes += len(buffered)
+				}
 				bufferedEventCount++
 				if debugEnabled && shouldLogOpenAIWSBufferedEvent(bufferedEventCount) {
 					logOpenAIWSModeDebug(
@@ -775,6 +788,7 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 		ResponseHeaders:       lease.HandshakeHeaders(),
 		Duration:              time.Since(startTime),
 		FirstTokenMs:          firstTokenMs,
+		ClientDisconnect:      clientDisconnected,
 	}, nil
 }
 

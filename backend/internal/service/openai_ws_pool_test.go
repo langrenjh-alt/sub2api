@@ -882,6 +882,26 @@ func TestOpenAIWSConnPool_BackgroundCleanupSweep_WithoutAcquire(t *testing.T) {
 	require.False(t, exists, "后台清理应在无新 acquire 时也回收过期连接")
 }
 
+func TestOpenAIWSConnPool_BackgroundCleanupSweep_EvictsIdleAccountPool(t *testing.T) {
+	cfg := &config.Config{}
+	cfg.Gateway.OpenAIWS.MaxConnsPerAccount = 2
+	cfg.Gateway.OpenAIWS.MaxIdlePerAccount = 0
+	pool := &openAIWSConnPool{cfg: cfg}
+	accountID := int64(303)
+	ap := pool.getOrCreateAccountPool(accountID)
+	now := time.Now()
+	ap.mu.Lock()
+	ap.lastAcquire = &openAIWSAcquireRequest{
+		Account: &Account{ID: accountID, Platform: PlatformOpenAI, Type: AccountTypeAPIKey},
+	}
+	ap.lastAcquireAt = now.Add(-openAIWSAccountPoolIdleTTL - time.Second)
+	ap.mu.Unlock()
+
+	pool.runBackgroundCleanupSweep(now)
+	_, exists := pool.accounts.Load(accountID)
+	require.False(t, exists, "empty stale account pool must release lastAcquire and map entry")
+}
+
 func TestOpenAIWSConnPool_BackgroundWorkerGuardBranches(t *testing.T) {
 	var nilPool *openAIWSConnPool
 	require.NotPanics(t, func() {

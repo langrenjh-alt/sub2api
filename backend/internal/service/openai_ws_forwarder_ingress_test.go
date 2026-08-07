@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"strings"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -797,6 +798,34 @@ func TestBuildOpenAIWSReplayInputSequence(t *testing.T) {
 		require.Equal(t, "hello", gjson.GetBytes(items[0], "text").String())
 		require.Equal(t, "world", gjson.GetBytes(items[1], "text").String())
 	})
+}
+
+func TestBuildOpenAIWSReplayInputSequenceRejectsOversizeHistory(t *testing.T) {
+	oversized := strings.Repeat("x", openAIWSReplayInputMaxBytes)
+	payload, err := json.Marshal(map[string]any{
+		"input": []map[string]any{{"type": "input_text", "text": oversized}},
+	})
+	require.NoError(t, err)
+
+	_, _, err = buildOpenAIWSReplayInputSequence(nil, false, payload, false)
+	require.ErrorIs(t, err, errOpenAIWSReplayInputTooLarge)
+}
+
+func TestOpenAIWSToolCallReplayCollectorRejectsOversizeContext(t *testing.T) {
+	collector := &openAIWSToolCallReplayCollector{}
+	payload, err := json.Marshal(map[string]any{
+		"type": "response.output_item.done",
+		"item": map[string]any{
+			"type":      "function_call",
+			"call_id":   "call_large",
+			"arguments": strings.Repeat("x", openAIWSReplayInputMaxBytes),
+		},
+	})
+	require.NoError(t, err)
+
+	require.False(t, collector.AddEvent("response.output_item.done", payload))
+	require.True(t, collector.Overflowed())
+	require.Empty(t, collector.Items())
 }
 
 func TestOpenAIWSRawPayloadHasToolCallOutput(t *testing.T) {

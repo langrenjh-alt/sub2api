@@ -310,7 +310,7 @@ func (s *OpenAIGatewayService) newOpenAIWSResponseFailedFailoverError(
 	}
 
 	s.handleOpenAIWSTerminalTransientFailure(ctx, account, canonicalModel, headers, payload)
-	return s.newOpenAIStreamFailoverError(
+	failoverErr := s.newOpenAIStreamFailoverError(
 		c,
 		account,
 		true,
@@ -319,6 +319,24 @@ func (s *OpenAIGatewayService) newOpenAIWSResponseFailedFailoverError(
 		message,
 		headers,
 	)
+	if failoverErr != nil {
+		failoverErr.ObservedUsage = openAIWSObservedUsageFromPayload(payload)
+	}
+	return failoverErr
+}
+
+func openAIWSObservedUsageFromPayload(payload []byte) *OpenAIUsage {
+	usage := &OpenAIUsage{}
+	parseOpenAIWSResponseUsageFromCompletedEvent(payload, usage)
+	if usage.InputTokens == 0 &&
+		usage.ImageInputTokens == 0 &&
+		usage.OutputTokens == 0 &&
+		usage.CacheCreationInputTokens == 0 &&
+		usage.CacheReadInputTokens == 0 &&
+		usage.ImageOutputTokens == 0 {
+		return nil
+	}
+	return usage
 }
 
 func (s *OpenAIGatewayService) handleOpenAIWSErrorEventTransientFailure(ctx context.Context, account *Account, canonicalModel string, headers http.Header, payload []byte) {
@@ -384,6 +402,10 @@ func openAIWSResponseEventStartsSemanticOutputPayload(eventType string, payload 
 	switch eventType {
 	case "response.created", "response.in_progress":
 		return false
+	case "error":
+		// An upstream error is already the client-visible result for this turn.
+		// Commit it immediately so a following EOF/close cannot hide the payload.
+		return true
 	case "response.output_item.added":
 		return openAIWSOutputItemAddedCarriesSemanticPayload(payload)
 	case "response.output_item.done":

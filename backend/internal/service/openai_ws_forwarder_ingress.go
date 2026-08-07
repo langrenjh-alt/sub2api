@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
@@ -458,6 +459,233 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 	}
 	refreshIngressRouteState(firstPayload)
 
+	// Keep one client reader alive for the session. coder/websocket closes the
+	// connection when a Read context expires, so this reader must not use polling
+	// deadlines. Inter-turn idle timeouts are enforced by readClientMessage.
+	type clientReadResult struct {
+		msgType coderws.MessageType
+		payload []byte
+		err     error
+	}
+	clientReadResults := make(chan clientReadResult, 1)
+	clientPumpCtx, clientPumpCancel := context.WithCancel(ctx)
+	clientPumpDone := make(chan struct{})
+	var clientQueuedBytes int64
+	clientQueueMaxBytes := ResolveOpenAIWSClientReadLimitBytes(s.cfg)
+	if clientQueueMaxBytes <= 0 {
+		clientQueueMaxBytes = 64 * 1024 * 1024
+	}
+	defer func() {
+		clientPumpCancel()
+		_ = clientConn.CloseNow()
+		<-clientPumpDone
+	}()
+	var clientPumpMu sync.Mutex
+	type activeTurnCancellation struct {
+		cancel context.CancelFunc
+	}
+	var activeTurn *activeTurnCancellation
+	clientDisconnectedFlag := false
+	var clientPumpTerminalErr error
+	var clientDisconnectOnce sync.Once
+	clientDisconnectSignal := make(chan struct{})
+	clientSessionCtx, clientSessionCancel := context.WithCancel(ctx)
+	defer clientSessionCancel()
+	setActiveTurnCancel := func(cancel context.CancelFunc, preserveDisconnected bool) *activeTurnCancellation {
+		if cancel == nil {
+			return nil
+		}
+		turn := &activeTurnCancellation{cancel: cancel}
+		clientPumpMu.Lock()
+		activeTurn = turn
+		disconnected := clientDisconnectedFlag && !preserveDisconnected
+		clientPumpMu.Unlock()
+		if disconnected {
+			cancel()
+		}
+		return turn
+	}
+	clearActiveTurnCancel := func(turn *activeTurnCancellation) {
+		if turn == nil {
+			return
+		}
+		clientPumpMu.Lock()
+		if activeTurn == turn {
+			activeTurn = nil
+		}
+		clientPumpMu.Unlock()
+	}
+	signalClientDisconnect := func() {
+		clientDisconnectOnce.Do(func() {
+			close(clientDisconnectSignal)
+			clientSessionCancel()
+			clientPumpMu.Lock()
+			clientDisconnectedFlag = true
+			turn := activeTurn
+			clientPumpMu.Unlock()
+			if turn != nil && turn.cancel != nil {
+				turn.cancel()
+			}
+		})
+	}
+	setClientPumpTerminalErr := func(err error) {
+		clientPumpMu.Lock()
+		if clientPumpTerminalErr == nil {
+			clientPumpTerminalErr = err
+		}
+		clientPumpMu.Unlock()
+	}
+	clientPumpError := func() error {
+		clientPumpMu.Lock()
+		defer clientPumpMu.Unlock()
+		return clientPumpTerminalErr
+	}
+	go func() {
+		defer close(clientPumpDone)
+		defer close(clientReadResults)
+		for {
+			msgType, payload, readErr := clientConn.Read(clientPumpCtx)
+			if readErr != nil {
+				signalClientDisconnect()
+			}
+			result := clientReadResult{msgType: msgType, payload: payload, err: readErr}
+			if readErr != nil {
+				setClientPumpTerminalErr(readErr)
+			}
+			clientPumpMu.Lock()
+			queueTooLarge := readErr == nil && int64(len(payload)) > clientQueueMaxBytes-clientQueuedBytes
+			if !queueTooLarge && readErr == nil {
+				clientQueuedBytes += int64(len(payload))
+			}
+			clientPumpMu.Unlock()
+			if queueTooLarge {
+				queueErr := NewOpenAIWSClientCloseError(
+					coderws.StatusMessageTooBig,
+					"queued websocket requests are too large",
+					nil,
+				)
+				setClientPumpTerminalErr(queueErr)
+				signalClientDisconnect()
+				clientPumpCancel()
+				_ = clientConn.CloseNow()
+				return
+			}
+			select {
+			case clientReadResults <- result:
+			case <-clientPumpCtx.Done():
+				if readErr == nil {
+					clientPumpMu.Lock()
+					clientQueuedBytes -= int64(len(payload))
+					clientPumpMu.Unlock()
+				}
+				return
+			default:
+				if readErr == nil {
+					clientPumpMu.Lock()
+					clientQueuedBytes -= int64(len(payload))
+					clientPumpMu.Unlock()
+				}
+				queueErr := NewOpenAIWSClientCloseError(
+					coderws.StatusTryAgainLater,
+					"too many queued websocket requests",
+					nil,
+				)
+				setClientPumpTerminalErr(queueErr)
+				signalClientDisconnect()
+				clientPumpCancel()
+				_ = clientConn.CloseNow()
+				return
+			}
+			if readErr != nil {
+				return
+			}
+		}
+	}()
+	readClientMessage = func() ([]byte, error) {
+		if terminalErr := clientPumpError(); terminalErr != nil {
+			return nil, terminalErr
+		}
+		idleTimeout := s.openAIWSIngressInterTurnIdleTimeout()
+		var idleTimer *time.Timer
+		var idleTimeoutCh <-chan time.Time
+		if idleTimeout > 0 {
+			idleTimer = time.NewTimer(idleTimeout)
+			idleTimeoutCh = idleTimer.C
+			defer idleTimer.Stop()
+		}
+		var result clientReadResult
+		var ok bool
+		select {
+		case result, ok = <-clientReadResults:
+		case <-idleTimeoutCh:
+			idleErr := NewOpenAIWSClientCloseError(
+				coderws.StatusNormalClosure,
+				"websocket idle timeout",
+				context.DeadlineExceeded,
+			)
+			setClientPumpTerminalErr(idleErr)
+			_ = clientConn.Close(coderws.StatusNormalClosure, "websocket idle timeout")
+			_ = clientConn.CloseNow()
+			signalClientDisconnect()
+			clientPumpCancel()
+			return nil, idleErr
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		if !ok {
+			err := clientPumpError()
+			if err == nil {
+				err = NewOpenAIWSClientCloseError(coderws.StatusNormalClosure, "client websocket closed", nil)
+			}
+			return nil, err
+		}
+		if result.err != nil {
+			signalClientDisconnect()
+			return nil, result.err
+		}
+		clientPumpMu.Lock()
+		clientQueuedBytes -= int64(len(result.payload))
+		if clientQueuedBytes < 0 {
+			clientQueuedBytes = 0
+		}
+		clientPumpMu.Unlock()
+		if result.msgType != coderws.MessageText && result.msgType != coderws.MessageBinary {
+			unsupportedErr := NewOpenAIWSClientCloseError(
+				coderws.StatusPolicyViolation,
+				fmt.Sprintf("unsupported websocket client message type: %s", result.msgType.String()),
+				nil,
+			)
+			setClientPumpTerminalErr(unsupportedErr)
+			signalClientDisconnect()
+			return nil, unsupportedErr
+		}
+		return result.payload, nil
+	}
+	clientDisconnectObserved := func() bool {
+		select {
+		case <-clientDisconnectSignal:
+			return true
+		default:
+			return false
+		}
+	}
+	clientDisconnectError := func(reason string) error {
+		if !clientDisconnectObserved() {
+			return nil
+		}
+		if terminalErr := clientPumpError(); terminalErr != nil {
+			var closeErr *OpenAIWSClientCloseError
+			if errors.As(terminalErr, &closeErr) && closeErr.StatusCode() != coderws.StatusNormalClosure {
+				return terminalErr
+			}
+		}
+		return NewOpenAIWSClientCloseError(
+			coderws.StatusNormalClosure,
+			reason,
+			nil,
+		)
+	}
+
 	if forceHTTPBridge || s.shouldBridgeOpenAIWSHTTP(account, firstPayload.payloadBytes, firstPayload.previousResponseID) {
 		logOpenAIWSModeInfo(
 			"ingress_ws_http_bridge_start account_id=%d account_type=%s payload_bytes=%d threshold_bytes=%d has_session_hash=%v store_disabled=%v",
@@ -476,6 +704,9 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		var bridgeReplayInput []json.RawMessage
 		bridgeReplayInputExists := false
 		for turn := 1; ; turn++ {
+			if disconnectErr := clientDisconnectError("client disconnected before upstream turn"); disconnectErr != nil {
+				return disconnectErr
+			}
 			if turn > 1 && hooks != nil && hooks.BeforeRequest != nil {
 				if err := hooks.BeforeRequest(turn, currentBridgePayload.payloadRaw, currentBridgePayload.originalModel); err != nil {
 					return err
@@ -534,8 +765,17 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 					return fmt.Errorf("resolve Grok websocket cache identity: %w", err)
 				}
 			}
+			bridgeParentCtx := clientSessionCtx
+			if turn == 1 {
+				bridgeParentCtx = ctx
+			}
+			bridgeCtx, bridgeCancel := context.WithCancel(bridgeParentCtx)
+			bridgeTurn := setActiveTurnCancel(bridgeCancel, false)
+			if clientDisconnectObserved() {
+				bridgeCancel()
+			}
 			result, bridgeErr := s.proxyOpenAIWSHTTPBridgeTurn(
-				ctx,
+				bridgeCtx,
 				c,
 				account,
 				token,
@@ -549,10 +789,15 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 				turn,
 				writeClientMessage,
 			)
+			clearActiveTurnCancel(bridgeTurn)
+			bridgeCancel()
 			if hooks != nil && hooks.AfterTurn != nil {
 				hooks.AfterTurn(turn, result, bridgeErr)
 			}
 			if bridgeErr != nil {
+				if disconnectErr := clientDisconnectError("client disconnected during upstream turn"); disconnectErr != nil {
+					return disconnectErr
+				}
 				return bridgeErr
 			}
 			if result == nil {
@@ -563,6 +808,13 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			if result.wsReplayInputExists {
 				bridgeReplayInput = append(bridgeReplayInput, cloneOpenAIWSRawMessages(result.wsReplayInput)...)
 				bridgeReplayInputExists = true
+			}
+			if replayInputErr := validateOpenAIWSReplayInputItems(bridgeReplayInput, bridgeReplayInputExists); replayInputErr != nil {
+				return NewOpenAIWSClientCloseError(
+					coderws.StatusMessageTooBig,
+					"websocket replay context is too large; please start a new conversation",
+					replayInputErr,
+				)
 			}
 			if bridgeTurnState := strings.TrimSpace(result.ResponseHeaders.Get(openAIWSTurnStateHeader)); bridgeTurnState != "" {
 				turnState = bridgeTurnState
@@ -679,7 +931,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		req.ForcePreferredConn = forcePreferredConn
 		// dedicated 模式下每次获取均新建连接，避免跨会话复用残留上下文。
 		req.ForceNewConn = dedicatedMode
-		acquireCtx, acquireCancel := context.WithTimeout(ctx, acquireTimeout)
+		acquireParentCtx := clientSessionCtx
+		if turn == 1 {
+			acquireParentCtx = ctx
+		}
+		acquireCtx, acquireCancel := context.WithTimeout(acquireParentCtx, acquireTimeout)
 		lease, acquireErr := pool.Acquire(acquireCtx, req)
 		acquireCancel()
 		var dialErr *openAIWSDialError
@@ -764,13 +1020,20 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		return lease, nil
 	}
 
-	sendAndRelay := func(turn int, lease *openAIWSConnLease, payload []byte, payloadBytes int, originalModel string, imageBillingModel string, imageSizeTier string, imageInputSize string) (*OpenAIForwardResult, error) {
+	sendAndRelay := func(turn int, lease *openAIWSConnLease, payload []byte, payloadBytes int, originalModel string, imageBillingModel string, imageSizeTier string, imageInputSize string, relayCtx context.Context) (*OpenAIForwardResult, error) {
 		if lease == nil {
 			return nil, errors.New("upstream websocket lease is nil")
 		}
 		turnStart := time.Now()
 		wroteDownstream := false
-		if err := lease.WriteJSONWithContextTimeout(ctx, json.RawMessage(payload), s.openAIWSWriteTimeout()); err != nil {
+		if err := lease.WriteJSONWithContextTimeout(relayCtx, json.RawMessage(payload), s.openAIWSWriteTimeout()); err != nil {
+			if clientDisconnectObserved() {
+				return nil, NewOpenAIWSClientCloseError(
+					coderws.StatusNormalClosure,
+					"client disconnected while writing upstream",
+					err,
+				)
+			}
 			return nil, wrapOpenAIWSIngressTurnError(
 				"write_upstream",
 				fmt.Errorf("write upstream websocket request: %w", err),
@@ -805,7 +1068,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		firstEventType := ""
 		lastEventType := ""
 		needModelReplace := false
-		clientDisconnected := false
+		clientDisconnected := clientDisconnectObserved()
+		clientDisconnectedAt := time.Time{}
+		if clientDisconnected {
+			clientDisconnectedAt = time.Now()
+		}
 		mappedModel := ""
 		var mappedModelBytes []byte
 		if originalModel != "" {
@@ -828,6 +1095,8 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			if err := writeClientMessage(message); err != nil {
 				if isOpenAIWSClientDisconnectError(err) {
 					clientDisconnected = true
+					clientDisconnectedAt = time.Now()
+					signalClientDisconnect()
 					closeStatus, closeReason := summarizeOpenAIWSReadCloseError(err)
 					logOpenAIWSModeInfo(
 						"ingress_ws_client_disconnected_drain account_id=%d turn=%d conn_id=%s close_status=%s close_reason=%s",
@@ -849,14 +1118,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			return nil
 		}
 		flushBufferedDownstreamEvents := func() error {
-			for _, buffered := range bufferedDownstreamEvents {
-				if err := writeDownstreamEvent(buffered); err != nil {
-					return err
-				}
-			}
-			bufferedDownstreamEvents = bufferedDownstreamEvents[:0]
-			bufferedDownstreamBytes = 0
-			return nil
+			return flushOpenAIWSIngressPreamble(
+				&bufferedDownstreamEvents,
+				&bufferedDownstreamBytes,
+				writeDownstreamEvent,
+			)
 		}
 		bufferPreambleEvent := func(message []byte) error {
 			if !openAIWSIngressPreambleWithinLimit(
@@ -879,10 +1145,130 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			bufferedDownstreamBytes += len(buffered)
 			return nil
 		}
-		for {
-			upstreamMessage, readErr := lease.ReadMessageWithContextTimeout(ctx, s.openAIWSReadTimeout())
-			if readErr != nil {
+		type upstreamReadResult struct {
+			message []byte
+			err     error
+		}
+		readUpstreamMessage := func(timeout time.Duration) ([]byte, error) {
+			if timeout <= 0 {
+				timeout = s.openAIWSReadTimeout()
+			}
+			if timeout <= 0 {
+				timeout = 30 * time.Second
+			}
+			readCtx, readCancel := context.WithCancel(ctx)
+			defer readCancel()
+			readDone := make(chan upstreamReadResult, 1)
+			go func() {
+				message, err := lease.ReadMessageContext(readCtx)
+				readDone <- upstreamReadResult{message: message, err: err}
+			}()
+
+			waitForRead := func(wait time.Duration) (upstreamReadResult, bool) {
+				if wait <= 0 {
+					select {
+					case result := <-readDone:
+						return result, true
+					default:
+						return upstreamReadResult{}, false
+					}
+				}
+				timer := time.NewTimer(wait)
+				defer timer.Stop()
+				select {
+				case result := <-readDone:
+					return result, true
+				case <-timer.C:
+					return upstreamReadResult{}, false
+				}
+			}
+
+			if clientDisconnected {
+				remaining := openAIWSClientDisconnectDrainTimeout - time.Since(clientDisconnectedAt)
+				if remaining <= 0 {
+					readCancel()
+					lease.MarkBroken()
+					return nil, context.DeadlineExceeded
+				}
+				if result, ok := waitForRead(remaining); ok {
+					return result.message, result.err
+				}
+				readCancel()
 				lease.MarkBroken()
+				if result, ok := waitForRead(100 * time.Millisecond); ok {
+					return result.message, result.err
+				}
+				return nil, context.DeadlineExceeded
+			}
+
+			normalTimer := time.NewTimer(timeout)
+			defer normalTimer.Stop()
+			select {
+			case result := <-readDone:
+				return result.message, result.err
+			case <-clientDisconnectSignal:
+				clientDisconnected = true
+				clientDisconnectedAt = time.Now()
+				if result, ok := waitForRead(openAIWSClientDisconnectDrainTimeout); ok {
+					return result.message, result.err
+				}
+				readCancel()
+				lease.MarkBroken()
+				if result, ok := waitForRead(100 * time.Millisecond); ok {
+					return result.message, result.err
+				}
+				return nil, context.DeadlineExceeded
+			case <-normalTimer.C:
+				readCancel()
+				if result, ok := waitForRead(100 * time.Millisecond); ok {
+					return result.message, result.err
+				}
+				lease.MarkBroken()
+				return nil, context.DeadlineExceeded
+			case <-ctx.Done():
+				readCancel()
+				lease.MarkBroken()
+				if result, ok := waitForRead(100 * time.Millisecond); ok {
+					return result.message, result.err
+				}
+				return nil, ctx.Err()
+			}
+		}
+		for {
+			readTimeout := s.openAIWSReadTimeout()
+			if clientDisconnected {
+				remaining := openAIWSClientDisconnectDrainTimeout - time.Since(clientDisconnectedAt)
+				if remaining <= 0 {
+					return nil, NewOpenAIWSClientCloseError(
+						coderws.StatusNormalClosure,
+						"client disconnected while draining upstream",
+						nil,
+					)
+				}
+				readTimeout = remaining
+			}
+			upstreamMessage, readErr := readUpstreamMessage(readTimeout)
+			if readErr != nil {
+				if !clientDisconnected && clientDisconnectObserved() {
+					clientDisconnected = true
+					clientDisconnectedAt = time.Now()
+					continue
+				}
+				lease.MarkBroken()
+				if clientDisconnected {
+					logOpenAIWSModeInfo(
+						"ingress_ws_client_disconnect_drain_end account_id=%d turn=%d conn_id=%s cause=%s",
+						account.ID,
+						turn,
+						truncateOpenAIWSLogValue(lease.ConnID(), openAIWSIDValueMaxLen),
+						truncateOpenAIWSLogValue(readErr.Error(), openAIWSLogValueMaxLen),
+					)
+					return nil, NewOpenAIWSClientCloseError(
+						coderws.StatusNormalClosure,
+						"client disconnected while draining upstream",
+						readErr,
+					)
+				}
 				return nil, wrapOpenAIWSIngressTurnError(
 					"read_upstream",
 					fmt.Errorf("read upstream websocket event: %w", readErr),
@@ -1055,7 +1441,13 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 						upstreamMessage = corrected
 					}
 				}
-				replayCollector.AddEvent(eventType, upstreamMessage)
+				if !replayCollector.AddEvent(eventType, upstreamMessage) {
+					return nil, NewOpenAIWSClientCloseError(
+						coderws.StatusMessageTooBig,
+						"websocket tool-call replay context is too large; please start a new conversation",
+						errOpenAIWSReplayInputTooLarge,
+					)
+				}
 				shouldBuffer := !semanticOutputStarted && !preambleCommitted && !isSemanticOutputEvent && !isTerminalEvent
 				if shouldBuffer {
 					if err := bufferPreambleEvent(upstreamMessage); err != nil {
@@ -1115,6 +1507,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 					ResponseHeaders:       lease.HandshakeHeaders(),
 					Duration:              time.Since(turnStart),
 					FirstTokenMs:          firstTokenMs,
+					ClientDisconnect:      clientDisconnected,
 				}
 				if replayInput := replayCollector.Items(); len(replayInput) > 0 {
 					result.wsReplayInput = replayInput
@@ -1318,6 +1711,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		return true
 	}
 	for {
+		if turn > 1 {
+			if disconnectErr := clientDisconnectError("client disconnected before upstream turn"); disconnectErr != nil {
+				return disconnectErr
+			}
+		}
 		if turn > 1 && !skipBeforeTurn && hooks != nil && hooks.BeforeRequest != nil {
 			if err := hooks.BeforeRequest(turn, currentPayload, currentOriginalModel); err != nil {
 				return err
@@ -1387,8 +1785,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 				truncateOpenAIWSLogValue(sessionConnID, openAIWSIDValueMaxLen),
 				truncateOpenAIWSLogValue(replayInputErr.Error(), openAIWSLogValueMaxLen),
 			)
-			currentTurnReplayInput = nil
-			currentTurnReplayInputExists = false
+			return NewOpenAIWSClientCloseError(
+				coderws.StatusMessageTooBig,
+				"websocket replay context is too large; please start a new conversation",
+				replayInputErr,
+			)
 		} else {
 			currentTurnReplayInput = nextReplayInput
 			currentTurnReplayInputExists = nextReplayInputExists
@@ -1625,7 +2026,17 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			)
 		}
 
-		result, relayErr := sendAndRelay(turn, sessionLease, currentPayload, currentPayloadBytes, currentOriginalModel, currentImageBillingModel, currentImageSizeTier, currentImageInputSize)
+		turnParentCtx := clientSessionCtx
+		if turn == 1 {
+			// The first payload was already accepted. Preserve the bounded usage
+			// drain even if the client closes before the upstream request starts.
+			turnParentCtx = ctx
+		}
+		turnCtx, turnCancel := context.WithCancel(turnParentCtx)
+		turnCancellation := setActiveTurnCancel(turnCancel, turn == 1)
+		result, relayErr := sendAndRelay(turn, sessionLease, currentPayload, currentPayloadBytes, currentOriginalModel, currentImageBillingModel, currentImageSizeTier, currentImageInputSize, turnCtx)
+		clearActiveTurnCancel(turnCancellation)
+		turnCancel()
 		if relayErr != nil {
 			lastTurnClean = false
 			if recoverIngressPrevResponseNotFound(relayErr, turn, connID) {
@@ -1635,8 +2046,11 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 				continue
 			}
 			finalErr := relayErr
-			if unwrapped := errors.Unwrap(relayErr); unwrapped != nil {
-				finalErr = unwrapped
+			var clientCloseErr *OpenAIWSClientCloseError
+			if !errors.As(relayErr, &clientCloseErr) {
+				if unwrapped := errors.Unwrap(relayErr); unwrapped != nil {
+					finalErr = unwrapped
+				}
 			}
 			if hooks != nil && hooks.AfterTurn != nil {
 				hooks.AfterTurn(turn, nil, finalErr)
@@ -1657,12 +2071,28 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		responseID := strings.TrimSpace(result.RequestID)
 		lastTurnResponseID = responseID
 		lastTurnPayload = cloneOpenAIWSPayloadBytes(currentPayload)
-		lastTurnReplayInput = cloneOpenAIWSRawMessages(currentTurnReplayInput)
-		lastTurnReplayInputExists = currentTurnReplayInputExists
+		nextLastReplayInput := cloneOpenAIWSRawMessages(currentTurnReplayInput)
+		nextLastReplayInputExists := currentTurnReplayInputExists
 		if result.wsReplayInputExists {
-			lastTurnReplayInput = append(lastTurnReplayInput, cloneOpenAIWSRawMessages(result.wsReplayInput)...)
-			lastTurnReplayInputExists = true
+			nextLastReplayInput = append(nextLastReplayInput, cloneOpenAIWSRawMessages(result.wsReplayInput)...)
+			nextLastReplayInputExists = true
 		}
+		if err := validateOpenAIWSReplayInputItems(nextLastReplayInput, nextLastReplayInputExists); err != nil {
+			logOpenAIWSModeInfo(
+				"ingress_ws_replay_input_retain_failed account_id=%d turn=%d conn_id=%s cause=%s",
+				account.ID,
+				turn,
+				truncateOpenAIWSLogValue(connID, openAIWSIDValueMaxLen),
+				truncateOpenAIWSLogValue(err.Error(), openAIWSLogValueMaxLen),
+			)
+			return NewOpenAIWSClientCloseError(
+				coderws.StatusMessageTooBig,
+				"websocket replay context is too large; please start a new conversation",
+				err,
+			)
+		}
+		lastTurnReplayInput = nextLastReplayInput
+		lastTurnReplayInputExists = nextLastReplayInputExists
 		nextStrictState, strictStateErr := buildOpenAIWSIngressPreviousTurnStrictState(currentPayload)
 		if strictStateErr != nil {
 			lastTurnStrictState = nil

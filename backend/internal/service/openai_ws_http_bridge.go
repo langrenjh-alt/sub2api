@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	coderws "github.com/coder/websocket"
 	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
@@ -79,39 +80,51 @@ func prepareOpenAIWSHTTPBridgeBody(payload []byte) ([]byte, error) {
 }
 
 type openAIWSToolCallReplayCollector struct {
-	items []json.RawMessage
-	seen  map[string]struct{}
+	items    []json.RawMessage
+	seen     map[string]struct{}
+	bytes    int
+	overflow bool
 }
 
-func (c *openAIWSToolCallReplayCollector) AddEvent(eventType string, message []byte) {
+func (c *openAIWSToolCallReplayCollector) AddEvent(eventType string, message []byte) bool {
 	switch strings.TrimSpace(eventType) {
 	case "response.output_item.done":
-		c.addItem(gjson.GetBytes(message, "item"))
+		return c.addItem(gjson.GetBytes(message, "item"))
 	case "response.completed", "response.done":
 		output := gjson.GetBytes(message, "response.output")
 		if !output.IsArray() {
-			return
+			return true
 		}
 		for _, item := range output.Array() {
-			c.addItem(item)
+			if !c.addItem(item) {
+				return false
+			}
 		}
 	}
+	return true
 }
 
 func (c *openAIWSToolCallReplayCollector) Items() []json.RawMessage {
 	return cloneOpenAIWSRawMessages(c.items)
 }
 
-func (c *openAIWSToolCallReplayCollector) addItem(item gjson.Result) {
+func (c *openAIWSToolCallReplayCollector) Overflowed() bool {
+	return c != nil && c.overflow
+}
+
+func (c *openAIWSToolCallReplayCollector) addItem(item gjson.Result) bool {
+	if c == nil || c.overflow {
+		return false
+	}
 	if !item.Exists() || item.Type != gjson.JSON {
-		return
+		return true
 	}
 	raw := strings.TrimSpace(item.Raw)
 	if raw == "" || !strings.HasPrefix(raw, "{") {
-		return
+		return true
 	}
 	if !isCodexToolCallContextItemType(item.Get("type").String()) {
-		return
+		return true
 	}
 	key := strings.TrimSpace(item.Get("id").String())
 	if key == "" {
@@ -124,10 +137,16 @@ func (c *openAIWSToolCallReplayCollector) addItem(item gjson.Result) {
 		c.seen = make(map[string]struct{})
 	}
 	if _, ok := c.seen[key]; ok {
-		return
+		return true
+	}
+	if len(c.items) >= openAIWSReplayInputMaxItems || len(raw) > openAIWSReplayInputMaxBytes || c.bytes > openAIWSReplayInputMaxBytes-len(raw) {
+		c.overflow = true
+		return false
 	}
 	c.seen[key] = struct{}{}
 	c.items = append(c.items, json.RawMessage(raw))
+	c.bytes += len(raw)
+	return true
 }
 
 func buildOpenAIWSHTTPBridgeErrorEvent(statusCode int, message string) []byte {
@@ -186,32 +205,30 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		return nil, fmt.Errorf("prepare http bridge body: %w", err)
 	}
 
-	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
+	// The websocket session owns this request. Keep cancellation attached so a
+	// disconnected client cannot leave the HTTP response body blocked forever.
+	upstreamCtx := ctx
 	var upstreamReq *http.Request
 	if account.Platform == PlatformGrok {
 		upstreamModel := resolveGrokWSUpstreamModel(account, body, originalModel)
 		grokIntentSourceBody := body
 		body, err = patchGrokResponsesBody(body, upstreamModel)
 		if err != nil {
-			releaseUpstreamCtx()
 			return nil, err
 		}
 		grokMixedCacheIntentBody := append([]byte(nil), body...)
 		body, err = applyGrokResponsesCacheIdentity(body, grokIntentSourceBody, grokCacheIdentity, account.IsGrokOAuth())
 		if err != nil {
-			releaseUpstreamCtx()
 			return nil, fmt.Errorf("apply grok prompt cache identity: %w", err)
 		}
 		body, err = applyGrokFreeRequestToolCacheRoute(c, body, grokMixedCacheIntentBody, account, grokCacheIdentity)
 		if err != nil {
-			releaseUpstreamCtx()
 			return nil, fmt.Errorf("apply grok Free function-tool cache route: %w", err)
 		}
 		upstreamReq, err = buildGrokResponsesRequest(upstreamCtx, c, account, body, token, grokCacheIdentity, s.cfg)
 	} else {
 		upstreamReq, err = s.buildUpstreamRequestOpenAIPassthrough(upstreamCtx, c, account, body, token)
 	}
-	releaseUpstreamCtx()
 	if err != nil {
 		return nil, err
 	}
@@ -231,6 +248,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	turnStart := time.Now()
 	resp, err := s.httpUpstream.Do(upstreamReq, proxyURL, account.ID, account.Concurrency)
 	if err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, ctxErr
+		}
 		if turn == 1 {
 			return nil, s.handleOpenAIUpstreamTransportError(ctx, c, account, err, true)
 		}
@@ -385,7 +405,13 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 				upstreamMessage = corrected
 			}
 		}
-		replayCollector.AddEvent(eventType, upstreamMessage)
+		if !replayCollector.AddEvent(eventType, upstreamMessage) {
+			return nil, NewOpenAIWSClientCloseError(
+				coderws.StatusMessageTooBig,
+				"websocket tool-call replay context is too large; please start a new conversation",
+				errOpenAIWSReplayInputTooLarge,
+			)
+		}
 
 		var upstreamEventErr error
 		if eventType == "error" {
@@ -475,6 +501,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 	}
 	if err := scanner.Err(); err != nil {
 		streamErr := fmt.Errorf("read upstream http bridge stream: %w", err)
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return resultWithUsage(), ctxErr
+		}
 		if turn == 1 && !wroteDownstream {
 			return nil, s.handleOpenAIUpstreamTransportError(ctx, c, account, streamErr, true)
 		}
@@ -485,6 +514,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		terminalErr = errors.New("upstream http bridge stream sent [DONE] before terminal event")
 	}
 	if turn == 1 && !wroteDownstream {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return resultWithUsage(), ctxErr
+		}
 		return nil, s.handleOpenAIUpstreamTransportError(ctx, c, account, terminalErr, true)
 	}
 	return resultWithUsage(), terminalErr
