@@ -277,6 +277,50 @@ func (s *OpenAIGatewayService) handleOpenAIWSTerminalTransientFailure(ctx contex
 	return terminalEvent
 }
 
+func openAIWSResponseFailedMessage(payload []byte) string {
+	for _, path := range []string{
+		"response.error.message",
+		"error.message",
+		"message",
+	} {
+		if message := strings.TrimSpace(gjson.GetBytes(payload, path).String()); message != "" {
+			return message
+		}
+	}
+	return ""
+}
+
+func (s *OpenAIGatewayService) newOpenAIWSResponseFailedFailoverError(
+	ctx context.Context,
+	c *gin.Context,
+	account *Account,
+	canonicalModel string,
+	headers http.Header,
+	payload []byte,
+) *UpstreamFailoverError {
+	eventType, _, _ := parseOpenAIWSEventEnvelope(payload)
+	if normalizeOpenAIWSTerminalEvent(eventType) != "response.failed" {
+		return nil
+	}
+
+	message := openAIWSResponseFailedMessage(payload)
+	if openAIStreamFailureStatus(payload, message) != http.StatusTooManyRequests &&
+		!isOpenAITransientProcessingError(http.StatusBadRequest, message, payload) {
+		return nil
+	}
+
+	s.handleOpenAIWSTerminalTransientFailure(ctx, account, canonicalModel, headers, payload)
+	return s.newOpenAIStreamFailoverError(
+		c,
+		account,
+		true,
+		strings.TrimSpace(headers.Get("x-request-id")),
+		payload,
+		message,
+		headers,
+	)
+}
+
 func (s *OpenAIGatewayService) handleOpenAIWSErrorEventTransientFailure(ctx context.Context, account *Account, canonicalModel string, headers http.Header, payload []byte) {
 	eventType, _, _ := parseOpenAIWSEventEnvelope(payload)
 	if eventType != "error" {
@@ -319,6 +363,112 @@ func isOpenAIWSTokenEvent(eventType string) bool {
 	// firstTokenMs 会被填到终止时刻，等于把"总耗时"误报为"首 token 延迟"。
 	return false
 }
+
+// openAIWSResponseEventStartsSemanticOutput distinguishes lifecycle preamble
+// frames from output that a client cannot safely replay after an account
+// switch. It is intentionally conservative when no payload is available.
+func openAIWSResponseEventStartsSemanticOutput(eventType string) bool {
+	return openAIWSResponseEventStartsSemanticOutputPayload(eventType, nil)
+}
+
+// openAIWSResponseEventStartsSemanticOutputPayload uses the item/part type
+// when the protocol supplies one. An output_item.added message item is only a
+// lifecycle notification; a function/tool item, or a frame carrying actual
+// content, crosses the replay boundary. This keeps harmless preambles retryable
+// without replaying an already-visible tool invocation.
+func openAIWSResponseEventStartsSemanticOutputPayload(eventType string, payload []byte) bool {
+	eventType = strings.TrimSpace(eventType)
+	if eventType == "" {
+		return false
+	}
+	switch eventType {
+	case "response.created", "response.in_progress":
+		return false
+	case "response.output_item.added":
+		return openAIWSOutputItemAddedCarriesSemanticPayload(payload)
+	case "response.output_item.done":
+		// A completed output item is a replay boundary even when the upstream
+		// omitted the item body from the terminal lifecycle frame.
+		return true
+	case "response.content_part.added":
+		return openAIWSContentPartCarriesSemanticPayload(payload)
+	case "response.content_part.done":
+		return openAIWSContentPartCarriesSemanticPayload(payload)
+	case "response.reasoning_summary_part.added", "response.reasoning_summary_part.done":
+		return openAIWSContentPartCarriesSemanticPayload(payload)
+	}
+	if isOpenAIWSTerminalEvent(eventType) {
+		return true
+	}
+	if isOpenAIWSTokenEvent(eventType) {
+		return true
+	}
+	for _, prefix := range []string{
+		"response.content",
+		"response.reasoning",
+		"response.refusal",
+		"response.audio",
+		"response.function_call",
+	} {
+		if strings.HasPrefix(eventType, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func openAIWSOutputItemAddedCarriesSemanticPayload(payload []byte) bool {
+	item := gjson.GetBytes(payload, "item")
+	if !item.Exists() || item.Type != gjson.JSON || item.IsArray() {
+		// Missing item data is malformed/unknown. Preserve the old conservative
+		// behavior instead of allowing an unsafe replay.
+		return true
+	}
+	itemType := strings.ToLower(strings.TrimSpace(item.Get("type").String()))
+	if itemType == "message" {
+		return openAIWSJSONValueHasVisibleContent(item.Get("content"))
+	}
+	// Tool calls and future non-message output item types can have side
+	// effects before any text delta is emitted, so they are replay boundaries.
+	return true
+}
+
+func openAIWSContentPartCarriesSemanticPayload(payload []byte) bool {
+	part := gjson.GetBytes(payload, "part")
+	if !part.Exists() || part.Type != gjson.JSON || part.IsArray() {
+		return false
+	}
+	partType := strings.ToLower(strings.TrimSpace(part.Get("type").String()))
+	if partType == "input_text" || partType == "input_audio" {
+		return false
+	}
+	return openAIWSJSONValueHasVisibleContent(part.Get("text")) ||
+		openAIWSJSONValueHasVisibleContent(part.Get("transcript")) ||
+		openAIWSJSONValueHasVisibleContent(part.Get("refusal"))
+}
+
+func openAIWSJSONValueHasVisibleContent(value gjson.Result) bool {
+	if !value.Exists() {
+		return false
+	}
+	if value.Type == gjson.String {
+		return strings.TrimSpace(value.String()) != ""
+	}
+	if value.IsArray() {
+		for _, item := range value.Array() {
+			if openAIWSJSONValueHasVisibleContent(item.Get("text")) ||
+				openAIWSJSONValueHasVisibleContent(item.Get("transcript")) ||
+				openAIWSJSONValueHasVisibleContent(item.Get("refusal")) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+const openAIWSCapacityRetryCloseReason = "upstream model capacity changed; please retry this turn"
+const openAIWSResponseFailedRetryCloseReason = "upstream response failed; please retry this turn"
+const openAIWSRateLimitRetryCloseReason = "upstream rate limit reached; please retry this turn"
 
 func replaceOpenAIWSMessageModel(message []byte, fromModel, toModel string) []byte {
 	if len(message) == 0 {

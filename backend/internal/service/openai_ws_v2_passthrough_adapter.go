@@ -565,15 +565,7 @@ func (c *openAIWSPassthroughFirstOutputFrameConn) notifyDeadlineChanged() {
 
 func openAIWSPassthroughStartsSemanticOutput(payload []byte) bool {
 	eventType := strings.TrimSpace(gjson.GetBytes(payload, "type").String())
-	switch eventType {
-	case "response.completed", "response.done", "response.failed", "response.incomplete", "response.cancelled", "response.canceled":
-		return true
-	case "", "response.created", "response.in_progress", "response.output_item.added", "response.output_item.done":
-		return false
-	}
-	return strings.Contains(eventType, ".delta") ||
-		strings.HasPrefix(eventType, "response.output_text") ||
-		strings.HasPrefix(eventType, "response.output")
+	return openAIWSResponseEventStartsSemanticOutputPayload(eventType, payload)
 }
 
 func openAIWSPassthroughIsTerminalOutput(payload []byte) bool {
@@ -902,6 +894,7 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 	}
 
 	completedTurns := atomic.Int32{}
+	firstTurnSemanticOutputStarted := false
 	turnLifecycle := newOpenAIWSPassthroughTurnLifecycle(true)
 	clientFrameConn := &openAIWSClientFrameConn{
 		conn:                 clientConn,
@@ -1158,11 +1151,42 @@ func (s *OpenAIGatewayService) proxyResponsesWebSocketV2Passthrough(
 					return nil
 				}
 				eventType, _, _ := parseOpenAIWSEventEnvelope(payload)
+				isFirstTurn := completedTurns.Load() == 0
+				if eventType == "response.failed" {
+					if failoverErr := s.newOpenAIWSResponseFailedFailoverError(
+						ctx,
+						c,
+						account,
+						capturedSessionModel,
+						handshakeHeaders,
+						payload,
+					); failoverErr != nil {
+						// Passthrough forwards lifecycle frames immediately so the
+						// client can cancel or serialize turns. Once any frame has
+						// crossed that boundary, switching accounts would leave the
+						// old client reader attached to this websocket and could
+						// duplicate the first request. Suppress only the capacity
+						// payload and close with a stable retry reason in that case.
+						if isFirstTurn && !firstTurnSemanticOutputStarted && !wroteDownstream {
+							return failoverErr
+						}
+						if failoverErr.IsOpenAIModelCapacity() {
+							return NewOpenAIWSClientCloseError(
+								coderws.StatusTryAgainLater,
+								openAIWSCapacityRetryCloseReason,
+								failoverErr,
+							)
+						}
+					}
+				}
 				if isOpenAIWSTerminalEvent(eventType) {
 					s.handleOpenAIWSTerminalTransientFailure(ctx, account, capturedSessionModel, handshakeHeaders, payload)
 				}
 				if eventType == "error" {
 					s.handleOpenAIWSErrorEventTransientFailure(ctx, account, capturedSessionModel, handshakeHeaders, payload)
+				}
+				if isFirstTurn && openAIWSPassthroughStartsSemanticOutput(payload) {
+					firstTurnSemanticOutputStarted = true
 				}
 				if wroteDownstream || eventType != "error" {
 					return nil

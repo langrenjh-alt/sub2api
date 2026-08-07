@@ -791,6 +791,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 		usage := OpenAIUsage{}
 		imageCounter := newOpenAIImageOutputCounter()
 		var firstTokenMs *int
+		semanticOutputStarted := false
 		reqStream := openAIWSPayloadBoolFromRaw(payload, "stream", true)
 		turnPreviousResponseID := openAIWSPayloadStringFromRaw(payload, "previous_response_id")
 		turnPreviousResponseIDKind := ClassifyOpenAIPreviousResponseIDKind(turnPreviousResponseID)
@@ -816,6 +817,67 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			if needModelReplace {
 				mappedModelBytes = []byte(mappedModel)
 			}
+		}
+		bufferedDownstreamEvents := make([][]byte, 0, 4)
+		bufferedDownstreamBytes := 0
+		preambleCommitted := false
+		writeDownstreamEvent := func(message []byte) error {
+			if clientDisconnected {
+				return nil
+			}
+			if err := writeClientMessage(message); err != nil {
+				if isOpenAIWSClientDisconnectError(err) {
+					clientDisconnected = true
+					closeStatus, closeReason := summarizeOpenAIWSReadCloseError(err)
+					logOpenAIWSModeInfo(
+						"ingress_ws_client_disconnected_drain account_id=%d turn=%d conn_id=%s close_status=%s close_reason=%s",
+						account.ID,
+						turn,
+						truncateOpenAIWSLogValue(lease.ConnID(), openAIWSIDValueMaxLen),
+						closeStatus,
+						truncateOpenAIWSLogValue(closeReason, openAIWSHeaderValueMaxLen),
+					)
+					return nil
+				}
+				return wrapOpenAIWSIngressTurnError(
+					"write_client",
+					fmt.Errorf("write client websocket event: %w", err),
+					wroteDownstream,
+				)
+			}
+			wroteDownstream = true
+			return nil
+		}
+		flushBufferedDownstreamEvents := func() error {
+			for _, buffered := range bufferedDownstreamEvents {
+				if err := writeDownstreamEvent(buffered); err != nil {
+					return err
+				}
+			}
+			bufferedDownstreamEvents = bufferedDownstreamEvents[:0]
+			bufferedDownstreamBytes = 0
+			return nil
+		}
+		bufferPreambleEvent := func(message []byte) error {
+			if !openAIWSIngressPreambleWithinLimit(
+				len(bufferedDownstreamEvents),
+				bufferedDownstreamBytes,
+				len(message),
+			) {
+				// Preserve the client-visible event order once the private replay
+				// budget is exhausted. The committed preamble deliberately disables
+				// later account failover for this turn.
+				if err := flushBufferedDownstreamEvents(); err != nil {
+					return err
+				}
+				preambleCommitted = true
+				return writeDownstreamEvent(message)
+			}
+			buffered := make([]byte, len(message))
+			copy(buffered, message)
+			bufferedDownstreamEvents = append(bufferedDownstreamEvents, buffered)
+			bufferedDownstreamBytes += len(buffered)
+			return nil
 		}
 		for {
 			upstreamMessage, readErr := lease.ReadMessageWithContextTimeout(ctx, s.openAIWSReadTimeout())
@@ -904,16 +966,28 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 						false,
 					)
 				}
-				if !wroteDownstream && isOpenAIWSRateLimitError(errCodeRaw, errTypeRaw, errMsgRaw) {
+				if isOpenAIWSRateLimitError(errCodeRaw, errTypeRaw, errMsgRaw) {
 					lease.MarkBroken()
-					return nil, &UpstreamFailoverError{
-						StatusCode:      http.StatusTooManyRequests,
-						ResponseBody:    append([]byte(nil), upstreamMessage...),
-						ResponseHeaders: cloneHeader(lease.HandshakeHeaders()),
+					if turn == 1 && !semanticOutputStarted && !wroteDownstream {
+						return nil, &UpstreamFailoverError{
+							StatusCode:      http.StatusTooManyRequests,
+							ResponseBody:    append([]byte(nil), upstreamMessage...),
+							ResponseHeaders: cloneHeader(lease.HandshakeHeaders()),
+						}
 					}
+					return nil, wrapOpenAIWSIngressTurnError(
+						"error",
+						NewOpenAIWSClientCloseError(
+							coderws.StatusTryAgainLater,
+							openAIWSRateLimitRetryCloseReason,
+							nil,
+						),
+						wroteDownstream,
+					)
 				}
 			}
 			isTokenEvent := isOpenAIWSTokenEvent(eventType)
+			isSemanticOutputEvent := openAIWSResponseEventStartsSemanticOutputPayload(eventType, upstreamMessage)
 			if isTokenEvent {
 				tokenEventCount++
 			}
@@ -941,6 +1015,35 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 						UpstreamOutTok: usage.OutputTokens,
 					})
 				}
+				canonicalModel := canonicalOpenAIAccountSchedulingModel(account, originalModel)
+				if failoverErr := s.newOpenAIWSResponseFailedFailoverError(
+					ctx,
+					c,
+					account,
+					canonicalModel,
+					lease.HandshakeHeaders(),
+					upstreamMessage,
+				); failoverErr != nil {
+					lease.MarkBroken()
+					if turn == 1 && !semanticOutputStarted && !wroteDownstream {
+						return nil, failoverErr
+					}
+					if failoverErr.IsOpenAIModelCapacity() || turn > 1 {
+						reason := openAIWSResponseFailedRetryCloseReason
+						if failoverErr.IsOpenAIModelCapacity() {
+							reason = openAIWSCapacityRetryCloseReason
+						}
+						return nil, wrapOpenAIWSIngressTurnError(
+							"response_failed",
+							NewOpenAIWSClientCloseError(
+								coderws.StatusTryAgainLater,
+								reason,
+								nil,
+							),
+							wroteDownstream,
+						)
+					}
+				}
 			}
 
 			if !clientDisconnected {
@@ -953,27 +1056,21 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 					}
 				}
 				replayCollector.AddEvent(eventType, upstreamMessage)
-				if err := writeClientMessage(upstreamMessage); err != nil {
-					if isOpenAIWSClientDisconnectError(err) {
-						clientDisconnected = true
-						closeStatus, closeReason := summarizeOpenAIWSReadCloseError(err)
-						logOpenAIWSModeInfo(
-							"ingress_ws_client_disconnected_drain account_id=%d turn=%d conn_id=%s close_status=%s close_reason=%s",
-							account.ID,
-							turn,
-							truncateOpenAIWSLogValue(lease.ConnID(), openAIWSIDValueMaxLen),
-							closeStatus,
-							truncateOpenAIWSLogValue(closeReason, openAIWSHeaderValueMaxLen),
-						)
-					} else {
-						return nil, wrapOpenAIWSIngressTurnError(
-							"write_client",
-							fmt.Errorf("write client websocket event: %w", err),
-							wroteDownstream,
-						)
+				shouldBuffer := !semanticOutputStarted && !preambleCommitted && !isSemanticOutputEvent && !isTerminalEvent
+				if shouldBuffer {
+					if err := bufferPreambleEvent(upstreamMessage); err != nil {
+						return nil, err
 					}
 				} else {
-					wroteDownstream = true
+					if err := flushBufferedDownstreamEvents(); err != nil {
+						return nil, err
+					}
+					if err := writeDownstreamEvent(upstreamMessage); err != nil {
+						return nil, err
+					}
+					if isSemanticOutputEvent {
+						semanticOutputStarted = true
+					}
 				}
 			}
 			if isTerminalEvent {

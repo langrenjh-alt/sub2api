@@ -34,6 +34,13 @@ const (
 	openAIWSPayloadSizeEstimateMaxBytes = 64 * 1024
 	openAIWSPayloadSizeEstimateMaxItems = 16
 
+	// A ctx_pool turn keeps lifecycle frames private until the first semantic
+	// frame proves that replay is no longer safe. Keep that private preamble
+	// bounded so an upstream that never produces output cannot grow memory
+	// without limit.
+	openAIWSIngressPreambleMaxEvents = 64
+	openAIWSIngressPreambleMaxBytes  = 256 * 1024
+
 	openAIWSEventFlushBatchSizeDefault    = 4
 	openAIWSEventFlushIntervalDefault     = 25 * time.Millisecond
 	openAIWSPayloadLogSampleDefault       = 0.2
@@ -53,6 +60,16 @@ var openAIWSLogValueReplacer = strings.NewReplacer(
 	"warning", "warnx",
 	"failed", "fail",
 )
+
+func openAIWSIngressPreambleWithinLimit(eventCount, bufferedBytes, incomingBytes int) bool {
+	if eventCount < 0 || bufferedBytes < 0 || incomingBytes < 0 {
+		return false
+	}
+	if eventCount >= openAIWSIngressPreambleMaxEvents || incomingBytes > openAIWSIngressPreambleMaxBytes {
+		return false
+	}
+	return bufferedBytes <= openAIWSIngressPreambleMaxBytes-incomingBytes
+}
 
 var openAIWSIngressPreflightPingIdle = 20 * time.Second
 

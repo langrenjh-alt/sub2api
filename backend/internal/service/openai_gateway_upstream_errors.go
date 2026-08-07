@@ -144,7 +144,7 @@ func isOpenAITransientProcessingError(upstreamStatusCode int, upstreamMsg string
 		if strings.Contains(lower, "an error occurred while processing your request") {
 			return true
 		}
-		if strings.Contains(lower, "selected model is at capacity") {
+		if isOpenAIModelCapacityMessage(lower) {
 			return true
 		}
 		return strings.Contains(lower, "you can retry your request") &&
@@ -162,6 +162,24 @@ func isOpenAITransientProcessingError(upstreamStatusCode int, upstreamMsg string
 		return true
 	}
 	return match(string(upstreamBody))
+}
+
+func isOpenAIModelCapacityMessage(text string) bool {
+	lower := strings.ToLower(strings.TrimSpace(text))
+	return strings.Contains(lower, "selected model is at capacity") ||
+		strings.Contains(lower, "model is at capacity. please try a different model")
+}
+
+// IsOpenAIModelCapacity reports the transient model-capacity failure that is
+// retried internally and must not be exposed verbatim after failover exhaustion.
+func (e *UpstreamFailoverError) IsOpenAIModelCapacity() bool {
+	if e == nil {
+		return false
+	}
+	if isOpenAIModelCapacityMessage(e.Error()) {
+		return true
+	}
+	return isOpenAIModelCapacityMessage(string(e.ResponseBody))
 }
 
 func isOpenAIContextWindowError(upstreamMsg string, upstreamBody []byte) bool {

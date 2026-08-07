@@ -574,6 +574,19 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 					UpstreamOutTok: usage.OutputTokens,
 				})
 			}
+			if firstTokenMs == nil {
+				if failoverErr := s.newOpenAIWSResponseFailedFailoverError(
+					ctx,
+					c,
+					account,
+					mappedModel,
+					lease.HandshakeHeaders(),
+					message,
+				); failoverErr != nil {
+					lease.MarkBroken()
+					return nil, failoverErr
+				}
+			}
 		}
 
 		if eventType == "error" {

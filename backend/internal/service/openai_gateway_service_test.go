@@ -1502,6 +1502,13 @@ func TestOpenAIStreamingResponseFailedBeforeOutputCapacityErrorReturnsFailover(t
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
 	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+	rule := newNonFailoverPassthroughRule(http.StatusBadGateway, "selected model is at capacity", http.StatusBadGateway, "provider capacity")
+	rule.Platforms = []string{PlatformOpenAI}
+	rule.PassthroughBody = true
+	rule.CustomMessage = nil
+	ruleSvc := &ErrorPassthroughService{}
+	ruleSvc.setLocalCache([]*model.ErrorPassthroughRule{rule})
+	BindErrorPassthroughService(c, ruleSvc)
 
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
@@ -2256,6 +2263,49 @@ func TestOpenAIStreamingPassthroughContextWindowResponseFailedBeforeOutputApplie
 	require.True(t, opsRecorded, "passthrough hit should record an ops upstream error event")
 	opsEvents, _ := opsVal.([]*OpsUpstreamErrorEvent)
 	require.NotEmpty(t, opsEvents)
+}
+
+func TestOpenAIStreamingPassthroughCapacityResponseFailedSkipsPassthroughRule(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	cfg := &config.Config{
+		Gateway: config.GatewayConfig{
+			MaxLineSize: defaultMaxLineSize,
+		},
+	}
+	svc := &OpenAIGatewayService{cfg: cfg}
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", nil)
+	rule := newNonFailoverPassthroughRule(http.StatusBadGateway, "selected model is at capacity", http.StatusBadGateway, "provider capacity")
+	rule.Platforms = []string{PlatformOpenAI}
+	rule.PassthroughBody = true
+	rule.CustomMessage = nil
+	ruleSvc := &ErrorPassthroughService{}
+	ruleSvc.setLocalCache([]*model.ErrorPassthroughRule{rule})
+	BindErrorPassthroughService(c, ruleSvc)
+
+	capacityMessage := "Selected model is at capacity. Please try a different model."
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body: io.NopCloser(strings.NewReader(strings.Join([]string{
+			"event: response.created",
+			`data: {"type":"response.created","response":{"id":"resp_capacity_passthrough"}}`,
+			"",
+			"event: response.failed",
+			`data: {"type":"response.failed","response":{"id":"resp_capacity_passthrough","error":{"type":"invalid_request_error","message":"` + capacityMessage + `"}}}`,
+			"",
+		}, "\n"))),
+		Header: http.Header{"X-Request-Id": []string{"rid-capacity-passthrough-rule"}},
+	}
+
+	_, err := svc.handleStreamingResponsePassthrough(c.Request.Context(), resp, c, &Account{ID: 1, Platform: PlatformOpenAI, Name: "acc"}, time.Now(), "", "")
+	require.Error(t, err)
+	var failoverErr *UpstreamFailoverError
+	require.ErrorAs(t, err, &failoverErr)
+	require.True(t, failoverErr.IsOpenAIModelCapacity())
+	require.False(t, c.Writer.Written())
+	require.Empty(t, rec.Body.String())
 }
 
 func TestOpenAIStreamingPassthroughContextWindowResponseFailedBeforeOutputWithoutRulePassesThrough(t *testing.T) {

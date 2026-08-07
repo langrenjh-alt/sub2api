@@ -66,6 +66,115 @@ func TestIsOpenAIWSTokenEvent_TerminalEventsExcluded(t *testing.T) {
 // detectOpenAICyberPolicy + MarkOpsCyberPolicy，覆盖「从 response.failed 帧
 // 到 gin context 写入」的完整调用序列，等同于循环体内对应代码段的逻辑验证。
 // 全量 WS 端到端覆盖由后续集成测试（Task 12 handler 编排）承担。
+// Payload-aware semantic classification keeps lifecycle preambles retryable
+// while treating visible output and tool calls as replay boundaries.
+func TestOpenAIWSResponseEventStartsSemanticOutputPayload(t *testing.T) {
+	tests := []struct {
+		name      string
+		eventType string
+		payload   string
+		want      bool
+	}{
+		{
+			name:      "created lifecycle",
+			eventType: "response.created",
+			payload:   `{"type":"response.created","response":{"id":"resp_1"}}`,
+			want:      false,
+		},
+		{
+			name:      "empty message item lifecycle",
+			eventType: "response.output_item.added",
+			payload:   `{"type":"response.output_item.added","item":{"type":"message","content":[]}}`,
+			want:      false,
+		},
+		{
+			name:      "message item with visible text",
+			eventType: "response.output_item.added",
+			payload:   `{"type":"response.output_item.added","item":{"type":"message","content":[{"type":"output_text","text":"hello"}]}}`,
+			want:      true,
+		},
+		{
+			name:      "function call item",
+			eventType: "response.output_item.added",
+			payload:   `{"type":"response.output_item.added","item":{"type":"function_call","name":"exec_command"}}`,
+			want:      true,
+		},
+		{
+			name:      "unknown item payload is conservative",
+			eventType: "response.output_item.added",
+			payload:   `{"type":"response.output_item.added"}`,
+			want:      true,
+		},
+		{
+			name:      "unknown item type is conservative",
+			eventType: "response.output_item.added",
+			payload:   `{"type":"response.output_item.added","item":{}}`,
+			want:      true,
+		},
+		{
+			name:      "empty content part lifecycle",
+			eventType: "response.content_part.added",
+			payload:   `{"type":"response.content_part.added","part":{"type":"output_text","text":""}}`,
+			want:      false,
+		},
+		{
+			name:      "content part with visible text",
+			eventType: "response.content_part.added",
+			payload:   `{"type":"response.content_part.added","part":{"type":"output_text","text":"hello"}}`,
+			want:      true,
+		},
+		{
+			name:      "reasoning part lifecycle",
+			eventType: "response.reasoning_summary_part.added",
+			payload:   `{"type":"response.reasoning_summary_part.added","part":{"type":"summary_text","text":""}}`,
+			want:      false,
+		},
+		{
+			name:      "text delta",
+			eventType: "response.output_text.delta",
+			payload:   `{"type":"response.output_text.delta","delta":"hello"}`,
+			want:      true,
+		},
+		{
+			name:      "terminal",
+			eventType: "response.completed",
+			payload:   `{"type":"response.completed","response":{"id":"resp_1"}}`,
+			want:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, openAIWSResponseEventStartsSemanticOutputPayload(tt.eventType, []byte(tt.payload)))
+			require.Equal(t, tt.want, openAIWSPassthroughStartsSemanticOutput([]byte(tt.payload)))
+		})
+	}
+}
+
+func TestOpenAIWSIngressPreambleWithinLimit(t *testing.T) {
+	tests := []struct {
+		name                 string
+		eventCount           int
+		bufferedBytes        int
+		incomingBytes        int
+		wantWithinReplayGate bool
+	}{
+		{name: "normal frame", eventCount: 1, bufferedBytes: 128, incomingBytes: 64, wantWithinReplayGate: true},
+		{name: "event count boundary", eventCount: openAIWSIngressPreambleMaxEvents, bufferedBytes: 0, incomingBytes: 1, wantWithinReplayGate: false},
+		{name: "byte boundary", eventCount: 1, bufferedBytes: openAIWSIngressPreambleMaxBytes, incomingBytes: 1, wantWithinReplayGate: false},
+		{name: "exact byte limit", eventCount: 1, bufferedBytes: openAIWSIngressPreambleMaxBytes - 1, incomingBytes: 1, wantWithinReplayGate: true},
+		{name: "single oversized frame", eventCount: 0, bufferedBytes: 0, incomingBytes: openAIWSIngressPreambleMaxBytes + 1, wantWithinReplayGate: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.wantWithinReplayGate, openAIWSIngressPreambleWithinLimit(tt.eventCount, tt.bufferedBytes, tt.incomingBytes))
+		})
+	}
+}
+
+// TestOpenAIWSCyberPolicyMark_ResponseFailed covers the response.failed
+// cyber-policy marker path used by the full websocket relay.
 func TestOpenAIWSCyberPolicyMark_ResponseFailed(t *testing.T) {
 	// 构造一个真实的 response.failed 帧（cyber_policy 命中路径）。
 	payload := []byte(`{"type":"response.failed","response":{"id":"resp_abc","status":"failed","error":{"code":"cyber_policy","message":"Request blocked by content policy."}}}`)
