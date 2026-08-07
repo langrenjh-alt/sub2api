@@ -911,8 +911,11 @@ func TestExchangePendingOAuthCompletionRejectsDisabledTargetUser(t *testing.T) {
 }
 
 func TestExchangePendingOAuthCompletionChoiceStateDoesNotBindIdentity(t *testing.T) {
-	// Regression: an unverified existing-email choice state must not bind the
-	// attacker's OAuth identity to the targeted account or consume the session.
+	// 回归测试：复刻"补邮箱/创建账户"路径的账号接管 0day。
+	// 攻击者用自己的 OAuth 账号登录后，在 create-account 步骤提交受害者邮箱，
+	// 后端发现邮箱已存在会把 pending session 转入 choice 状态并指向受害者
+	// （TargetUserID=受害者、无密码/验证码证明）。此时带 adoption decision 调
+	// exchange 绝不能把 OAuth identity 绑定到受害者账号。
 	handler, client := newOAuthPendingFlowTestHandler(t, false)
 	ctx := context.Background()
 
@@ -971,6 +974,7 @@ func TestExchangePendingOAuthCompletionChoiceStateDoesNotBindIdentity(t *testing
 	require.NotContains(t, data, "access_token")
 	require.Equal(t, oauthPendingChoiceStep, data["step"])
 
+	// 攻击者的 OAuth identity 绝不能绑定到受害者账号
 	identityCount, err := client.AuthIdentity.Query().
 		Where(
 			authidentity.ProviderTypeEQ("linuxdo"),
@@ -981,10 +985,12 @@ func TestExchangePendingOAuthCompletionChoiceStateDoesNotBindIdentity(t *testing
 	require.NoError(t, err)
 	require.Zero(t, identityCount)
 
+	// 受害者资料不得被 adoption 篡改
 	storedVictim, err := client.User.Get(ctx, victim.ID)
 	require.NoError(t, err)
 	require.Equal(t, "victim-user", storedVictim.Username)
 
+	// session 不得被消费（攻击者无法进入下一环）
 	storedSession, err := client.PendingAuthSession.Get(ctx, session.ID)
 	require.NoError(t, err)
 	require.Nil(t, storedSession.ConsumedAt)

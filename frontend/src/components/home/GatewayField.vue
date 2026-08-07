@@ -181,12 +181,20 @@ function setupScene() {
   camera = new THREE.PerspectiveCamera(compact ? 48 : 40, 1, 0.1, 40)
   camera.position.set(0, compact ? 0.05 : 0, compact ? 10.7 : 10.4)
 
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: !compact,
-    alpha: false,
-    powerPreference: 'high-performance',
-  })
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: !compact,
+      alpha: false,
+      powerPreference: 'high-performance',
+    })
+  } catch {
+    // The decorative field must not prevent the home page from rendering when
+    // WebGL is unavailable (for example, jsdom or a restricted browser).
+    canvas.style.display = 'none'
+    renderer = null
+    return
+  }
   renderer.outputColorSpace = THREE.SRGBColorSpace
   renderer.toneMapping = THREE.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.08

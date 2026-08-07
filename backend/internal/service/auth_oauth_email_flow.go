@@ -29,7 +29,20 @@ func normalizeOAuthSignupSource(signupSource string) string {
 // SendPendingOAuthVerifyCode sends a local verification code for pending OAuth
 // account-creation flows without relying on the public registration gate.
 func (s *AuthService) SendPendingOAuthVerifyCode(ctx context.Context, email, turnstileToken, remoteIP string, geetestChallenge GeetestChallenge, locale ...string) (*SendVerifyCodeResult, error) {
-	turnstileVerified, err := s.VerifyTurnstileWithState(ctx, turnstileToken, remoteIP)
+	return s.SendPendingOAuthVerifyCodeWithCaptcha(
+		ctx,
+		email,
+		CaptchaProof{TurnstileToken: turnstileToken},
+		remoteIP,
+		geetestChallenge,
+		locale...,
+	)
+}
+
+// SendPendingOAuthVerifyCodeWithCaptcha verifies the provider proof and the
+// optional GeeTest challenge once before queuing the pending OAuth code.
+func (s *AuthService) SendPendingOAuthVerifyCodeWithCaptcha(ctx context.Context, email string, proof CaptchaProof, remoteIP string, geetestChallenge GeetestChallenge, locale ...string) (*SendVerifyCodeResult, error) {
+	turnstileVerified, err := s.VerifyCaptchaWithState(ctx, proof, remoteIP)
 	if err != nil {
 		return nil, err
 	}

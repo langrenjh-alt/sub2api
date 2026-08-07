@@ -1,0 +1,71 @@
+UPSTREAM_MERGE_VERIFICATION
+
+CHANGED_BRANCH: upstream sync from Wei-Shaw/sub2api at 68d8f122e47fe50e9edda3beba95c7bd98b19e56
+CHANGED_FIELD: backend/cmd/server/VERSION = 0.1.172; local GeeTest authentication remains enabled as a parallel provider path
+BASELINE_TAG: codex-before-upstream-v0.1.172 = cd12aaf9b7f8eae24557b2ba857a12a10f844fd6
+MERGE_HEAD: 68d8f122e47fe50e9edda3beba95c7bd98b19e56
+
+ARTIFACTS
+MODIFIED_FILE: E:\sub2api-codex\artifacts\upstream-merge-v0.1.172\MODIFIED_FILE.go
+DIFF_FILE: E:\sub2api-codex\artifacts\upstream-merge-v0.1.172\DIFF_FILE
+VERIFICATION_FILE: E:\sub2api-codex\artifacts\upstream-merge-v0.1.172\VERIFICATION.txt
+ROLLBACK_FILE: E:\sub2api-codex\artifacts\upstream-merge-v0.1.172\ROLLBACK.sh
+
+BASELINE
+COMMAND: go run baseline/MODIFIED_FILE.go
+INPUT: none
+LITERAL_OUTPUT: 0.1.171
+RESULT: baseline fixture reported the pre-change version field
+EXIT_STATUS: 0
+BASELINE_SHA256: C7A6051F8789D59ADBD2606229A06F581BE273BFE0570B7E231DA33473C49360
+
+MODIFIED
+COMMAND: go run MODIFIED_FILE.go
+INPUT: none
+LITERAL_OUTPUT: 0.1.172
+RESULT: modified fixture reported the upstream version field
+EXIT_STATUS: 0
+MODIFIED_SHA256: 838877C054C9727DFE8662BB86208BE4AB8090277589AB083B1D0D4FC7AE903E
+
+ROLLBACK
+COMMAND: wsl.exe -- bash -lc 'cd /mnt/e/sub2api-codex/artifacts/upstream-merge-v0.1.172 && ./ROLLBACK.sh rollback-copy/MODIFIED_FILE.go baseline/MODIFIED_FILE.go; cmp -s rollback-copy/MODIFIED_FILE.go baseline/MODIFIED_FILE.go; echo hash-match=yes; go run rollback-copy/MODIFIED_FILE.go'
+INPUT: target=rollback-copy/MODIFIED_FILE.go, baseline=baseline/MODIFIED_FILE.go
+LITERAL_OUTPUT:
+restored rollback-copy/MODIFIED_FILE.go
+hash-match=yes
+0.1.171
+RESULT: rollback copy restored baseline behavior and hash
+EXIT_STATUS: 0
+ROLLBACK_COPY_SHA256: C7A6051F8789D59ADBD2606229A06F581BE273BFE0570B7E231DA33473C49360
+
+REOPENED_STATE
+MODIFIED_FILE remains changed and reports 0.1.172 after rollback-copy verification.
+Frontend typecheck, full Vitest run, and production build passed.
+Backend normal and unit-tag compile checks passed; captcha, OAuth, OpenAI capacity/WebSocket, payment, announcement, ticket, homepage-status, and upstream compatibility focus tests passed.
+
+FINAL_VALIDATION
+COMMAND: go test ./internal/service -run '^TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_CtxPoolCapacityFailureIsNotForwarded$' -count=1
+INPUT: none
+LITERAL_OUTPUT: PASS; dial count remained 1; capacity payload was not forwarded
+RESULT: OpenAI ctx_pool pre-output capacity failover preserved as UpstreamFailoverError
+EXIT_STATUS: 0
+
+COMMAND: go test ./internal/service -run '^TestOpenAIGatewayService_ProxyResponsesWebSocketFromClient_LeaseLossSendsRetryClose$' -count=1
+INPUT: injected ErrOpenAIWSIngressLeaseLost after upstream response
+LITERAL_OUTPUT: PASS; client close code=1013; reason=websocket ingress capacity lease lost; please reconnect
+RESULT: lease-loss close reached the client and the service returned the lease-loss cause
+EXIT_STATUS: 0
+
+COMMAND: go test ./internal/handler -count=1
+INPUT: none
+LITERAL_OUTPUT: ok github.com/Wei-Shaw/sub2api/internal/handler 35.191s
+RESULT: handler package passed, including same-account OpenAI WS capacity retry
+EXIT_STATUS: 0
+
+COMMAND: go test ./...
+INPUT: none
+LITERAL_OUTPUT: all listed packages passed; internal/handler 35.736s; internal/service 104.718s
+RESULT: full backend test suite passed
+EXIT_STATUS: 0
+
+RESTORED_BEHAVIOR: rollback-copy/MODIFIED_FILE.go restored to baseline SHA-256 C7A6051F8789D59ADBD2606229A06F581BE273BFE0570B7E231DA33473C49360 and output 0.1.171; MODIFIED_FILE.go remains changed with SHA-256 838877C054C9727DFE8662BB86208BE4AB8090277589AB083B1D0D4FC7AE903E and output 0.1.172.

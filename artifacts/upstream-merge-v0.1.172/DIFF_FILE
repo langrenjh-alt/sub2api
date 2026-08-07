@@ -1,0 +1,5 @@
+--- baseline/MODIFIED_FILE.go
++++ MODIFIED_FILE.go
+@@
+-const selectedVersion = "0.1.171"
++const selectedVersion = "0.1.172"

@@ -12,7 +12,8 @@ import (
 
 type settingPublicRepoStub struct {
 	values    map[string]string
-	requested []string
+	err       error
+	requested map[string]struct{}
 }
 
 func (s *settingPublicRepoStub) Get(ctx context.Context, key string) (*Setting, error) {
@@ -28,9 +29,15 @@ func (s *settingPublicRepoStub) Set(ctx context.Context, key, value string) erro
 }
 
 func (s *settingPublicRepoStub) GetMultiple(ctx context.Context, keys []string) (map[string]string, error) {
-	s.requested = append(s.requested, keys...)
+	if s.err != nil {
+		return nil, s.err
+	}
 	out := make(map[string]string, len(keys))
+	if s.requested == nil {
+		s.requested = make(map[string]struct{}, len(keys))
+	}
 	for _, key := range keys {
+		s.requested[key] = struct{}{}
 		if value, ok := s.values[key]; ok {
 			out[key] = value
 		}

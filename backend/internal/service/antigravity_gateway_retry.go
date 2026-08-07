@@ -884,6 +884,18 @@ func antigravityFallbackCooldownSeconds() (time.Duration, bool) {
 	return time.Duration(seconds) * time.Second, true
 }
 
+const emptyResponseCooldown = 1 * time.Minute
+
+func tempUnscheduleEmptyResponse(ctx context.Context, repo AccountRepository, accountID int64, logPrefix string) {
+	until := time.Now().Add(emptyResponseCooldown)
+	reason := "empty stream response (auto temp-unschedule 1m)"
+	if err := repo.SetTempUnschedulable(ctx, accountID, until, reason); err != nil {
+		log.Printf("%s temp_unschedule_failed account=%d error=%v", logPrefix, accountID, err)
+	} else {
+		log.Printf("%s temp_unscheduled account=%d until=%v reason=%q", logPrefix, accountID, until.Format("15:04:05"), reason)
+	}
+}
+
 // antigravitySmartRetryInfo 智能重试所需的信息
 type antigravitySmartRetryInfo struct {
 	RetryDelay               time.Duration // 重试延迟时间

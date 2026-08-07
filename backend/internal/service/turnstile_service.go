@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
@@ -100,6 +101,26 @@ func (s *TurnstileService) VerifyTokenWithState(ctx context.Context, token strin
 
 	logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Verification successful")
 	return true, nil
+}
+
+// VerifyTokenWithSecret verifies a token against an explicit secret. The
+// provider-selection path uses this to validate a settings snapshot without a
+// second read from the settings repository.
+func (s *TurnstileService) VerifyTokenWithSecret(ctx context.Context, secretKey, token, remoteIP string) error {
+	if s == nil || s.verifier == nil || strings.TrimSpace(secretKey) == "" {
+		return ErrTurnstileNotConfigured
+	}
+	if strings.TrimSpace(token) == "" {
+		return ErrTurnstileVerificationFailed
+	}
+	result, err := s.verifier.VerifyToken(ctx, strings.TrimSpace(secretKey), token, remoteIP)
+	if err != nil {
+		return fmt.Errorf("send request: %w", err)
+	}
+	if result == nil || !result.Success {
+		return ErrTurnstileVerificationFailed
+	}
+	return nil
 }
 
 // IsEnabled 检查 Turnstile 是否启用

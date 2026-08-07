@@ -455,8 +455,7 @@ func (s *SettingService) GetTurnstileSecretKey(ctx context.Context) string {
 	return value
 }
 
-// GetTurnstileConfig reads the security-critical Turnstile settings in one
-// query. Storage failures are returned so authentication paths fail closed.
+// GetTurnstileConfig reads both security-critical values as one snapshot.
 func (s *SettingService) GetTurnstileConfig(ctx context.Context) (enabled bool, secretKey string, err error) {
 	if s == nil || s.settingRepo == nil {
 		return false, "", errors.New("setting repository is not configured")
@@ -468,35 +467,19 @@ func (s *SettingService) GetTurnstileConfig(ctx context.Context) (enabled bool, 
 	if err != nil {
 		return false, "", fmt.Errorf("load Turnstile settings: %w", err)
 	}
-	return values[SettingKeyTurnstileEnabled] == "true",
-		strings.TrimSpace(values[SettingKeyTurnstileSecretKey]),
-		nil
+	return values[SettingKeyTurnstileEnabled] == "true", strings.TrimSpace(values[SettingKeyTurnstileSecretKey]), nil
 }
 
 func (s *SettingService) IsGeetestEnabled(ctx context.Context) bool {
+	if s == nil || s.settingRepo == nil {
+		return false
+	}
 	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestEnabled)
 	return err == nil && value == "true"
 }
 
-func (s *SettingService) GetGeetestCaptchaID(ctx context.Context) string {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestCaptchaID)
-	if err != nil {
-		return ""
-	}
-	return value
-}
-
-func (s *SettingService) GetGeetestCaptchaKey(ctx context.Context) string {
-	value, err := s.settingRepo.GetValue(ctx, SettingKeyGeetestCaptchaKey)
-	if err != nil {
-		return ""
-	}
-	return value
-}
-
-// GetGeetestConfig reads the security-critical GEETEST settings in one query.
-// A missing setting means the feature is disabled; storage failures are returned
-// so authentication paths can fail closed instead of silently bypassing checks.
+// GetGeetestConfig reads all GEETEST settings in one query so verification
+// decisions use a consistent snapshot and fail closed on storage errors.
 func (s *SettingService) GetGeetestConfig(ctx context.Context) (enabled bool, captchaID, captchaKey string, err error) {
 	if s == nil || s.settingRepo == nil {
 		return false, "", "", errors.New("setting repository is not configured")
@@ -513,6 +496,87 @@ func (s *SettingService) GetGeetestConfig(ctx context.Context) (enabled bool, ca
 		strings.TrimSpace(values[SettingKeyGeetestCaptchaID]),
 		strings.TrimSpace(values[SettingKeyGeetestCaptchaKey]),
 		nil
+}
+
+// TencentCaptchaConfig contains the credentials required by Tencent Cloud's
+// ticket verification API. It must never be returned by a public handler.
+type TencentCaptchaConfig struct {
+	Enabled        bool
+	AppID          string
+	AppSecretKey   string
+	CloudSecretID  string
+	CloudSecretKey string
+	Region         string
+}
+
+// AliyunCaptchaConfig contains the credentials required by Aliyun Captcha 2.0's
+// server-side verification API. It must never be returned by a public handler.
+type AliyunCaptchaConfig struct {
+	Enabled         bool
+	AccessKeyID     string
+	AccessKeySecret string
+	SceneID         string
+	Region          string
+}
+
+type CaptchaProviderConfig struct {
+	TurnstileEnabled   bool
+	TurnstileSecretKey string
+	Tencent            TencentCaptchaConfig
+	Aliyun             AliyunCaptchaConfig
+}
+
+func (s *SettingService) GetCaptchaProviderConfig(ctx context.Context) (CaptchaProviderConfig, error) {
+	values, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyTurnstileEnabled,
+		SettingKeyTurnstileSecretKey,
+		SettingKeyTencentCaptchaEnabled,
+		SettingKeyTencentCaptchaAppID,
+		SettingKeyTencentCaptchaAppSecretKey,
+		SettingKeyTencentCaptchaCloudSecretID,
+		SettingKeyTencentCaptchaCloudSecretKey,
+		SettingKeyTencentCaptchaRegion,
+		SettingKeyAliyunCaptchaEnabled,
+		SettingKeyAliyunCaptchaAccessKeyID,
+		SettingKeyAliyunCaptchaAccessKeySecret,
+		SettingKeyAliyunCaptchaSceneID,
+		SettingKeyAliyunCaptchaRegion,
+	})
+	if err != nil {
+		return CaptchaProviderConfig{}, fmt.Errorf("read captcha provider settings: %w", err)
+	}
+	return CaptchaProviderConfig{
+		TurnstileEnabled:   values[SettingKeyTurnstileEnabled] == "true",
+		TurnstileSecretKey: values[SettingKeyTurnstileSecretKey],
+		Tencent: TencentCaptchaConfig{
+			Enabled:        values[SettingKeyTencentCaptchaEnabled] == "true",
+			AppID:          values[SettingKeyTencentCaptchaAppID],
+			AppSecretKey:   values[SettingKeyTencentCaptchaAppSecretKey],
+			CloudSecretID:  values[SettingKeyTencentCaptchaCloudSecretID],
+			CloudSecretKey: values[SettingKeyTencentCaptchaCloudSecretKey],
+			Region:         normalizeTencentCaptchaRegion(values[SettingKeyTencentCaptchaRegion]),
+		},
+		Aliyun: AliyunCaptchaConfig{
+			Enabled:         values[SettingKeyAliyunCaptchaEnabled] == "true",
+			AccessKeyID:     values[SettingKeyAliyunCaptchaAccessKeyID],
+			AccessKeySecret: values[SettingKeyAliyunCaptchaAccessKeySecret],
+			SceneID:         values[SettingKeyAliyunCaptchaSceneID],
+			Region:          normalizeAliyunCaptchaRegion(values[SettingKeyAliyunCaptchaRegion]),
+		},
+	}, nil
+}
+
+func (s *SettingService) IsTencentCaptchaEnabled(ctx context.Context) bool {
+	value, err := s.settingRepo.GetValue(ctx, SettingKeyTencentCaptchaEnabled)
+	return err == nil && value == "true"
+}
+
+func (s *SettingService) GetTencentCaptchaConfig(ctx context.Context) TencentCaptchaConfig {
+	config, err := s.GetCaptchaProviderConfig(ctx)
+	if err != nil {
+		return TencentCaptchaConfig{}
+	}
+	return config.Tencent
 }
 
 // IsIdentityPatchEnabled 检查是否启用身份补丁（Claude -> Gemini systemInstruction 注入）

@@ -43,6 +43,7 @@ var (
 	ErrInvitationCodeRequired  = infraerrors.BadRequest("INVITATION_CODE_REQUIRED", "invitation code is required")
 	ErrInvitationCodeInvalid   = infraerrors.BadRequest("INVITATION_CODE_INVALID", "invalid or used invitation code")
 	ErrOAuthInvitationRequired = infraerrors.Forbidden("OAUTH_INVITATION_REQUIRED", "invitation code required to complete oauth registration")
+	ErrCaptchaProviderConflict = infraerrors.ServiceUnavailable("CAPTCHA_PROVIDER_CONFLICT", "multiple captcha providers are enabled")
 )
 
 // maxTokenLength 限制 token 大小，避免超长 header 触发解析时的异常内存分配。
@@ -75,11 +76,20 @@ type AuthService struct {
 	emailService          *EmailService
 	turnstileService      *TurnstileService
 	geetestService        *GeetestService
+	tencentCaptchaService *TencentCaptchaService
+	aliyunCaptchaService  *AliyunCaptchaService
 	emailQueueService     *EmailQueueService
 	promoService          *PromoService
 	affiliateService      *AffiliateService
 	defaultSubAssigner    DefaultSubscriptionAssigner
 	userPlatformQuotaRepo UserPlatformQuotaRepository
+}
+
+type CaptchaProof struct {
+	// TurnstileToken 承载 Cloudflare Turnstile token；阿里云验证码复用该字段承载 captchaVerifyParam
+	TurnstileToken string
+	TencentTicket  string
+	TencentRandstr string
 }
 
 type DefaultSubscriptionAssigner interface {
@@ -126,46 +136,25 @@ func NewAuthService(
 	}
 }
 
-func ProvideAuthService(
-	entClient *dbent.Client,
-	userRepo UserRepository,
-	redeemRepo RedeemCodeRepository,
-	refreshTokenCache RefreshTokenCache,
-	cfg *config.Config,
-	settingService *SettingService,
-	emailService *EmailService,
-	turnstileService *TurnstileService,
-	emailQueueService *EmailQueueService,
-	promoService *PromoService,
-	defaultSubAssigner DefaultSubscriptionAssigner,
-	affiliateService *AffiliateService,
-	userPlatformQuotaRepo UserPlatformQuotaRepository,
-	geetestService *GeetestService,
-) *AuthService {
-	service := NewAuthService(
-		entClient,
-		userRepo,
-		redeemRepo,
-		refreshTokenCache,
-		cfg,
-		settingService,
-		emailService,
-		turnstileService,
-		emailQueueService,
-		promoService,
-		defaultSubAssigner,
-		affiliateService,
-		userPlatformQuotaRepo,
-	)
-	service.geetestService = geetestService
-	return service
-}
-
 func (s *AuthService) EntClient() *dbent.Client {
 	if s == nil {
 		return nil
 	}
 	return s.entClient
+}
+
+func (s *AuthService) SetTencentCaptchaService(tencentCaptchaService *TencentCaptchaService) {
+	s.tencentCaptchaService = tencentCaptchaService
+}
+
+// SetGeetestService injects the local GEETEST v4 verifier used by the
+// registration and email verification flows.
+func (s *AuthService) SetGeetestService(geetestService *GeetestService) {
+	s.geetestService = geetestService
+}
+
+func (s *AuthService) SetAliyunCaptchaService(aliyunCaptchaService *AliyunCaptchaService) {
+	s.aliyunCaptchaService = aliyunCaptchaService
 }
 
 // Register 用户注册，返回token和用户
@@ -379,9 +368,23 @@ func (s *AuthService) SendVerifyCode(ctx context.Context, email string, locale .
 
 // SendVerifyCodeAsync 异步发送邮箱验证码并返回倒计时
 func (s *AuthService) SendVerifyCodeAsync(ctx context.Context, email, turnstileToken, remoteIP string, geetestChallenge GeetestChallenge, locale ...string) (*SendVerifyCodeResult, error) {
+	return s.SendVerifyCodeAsyncWithCaptcha(
+		ctx,
+		email,
+		CaptchaProof{TurnstileToken: turnstileToken},
+		remoteIP,
+		geetestChallenge,
+		locale...,
+	)
+}
+
+// SendVerifyCodeAsyncWithCaptcha verifies the configured captcha providers once
+// and carries the resulting attestation into the email queue. The HTTP handler
+// passes the complete proof so Tencent/Alibaba and Turnstile share one path.
+func (s *AuthService) SendVerifyCodeAsyncWithCaptcha(ctx context.Context, email string, proof CaptchaProof, remoteIP string, geetestChallenge GeetestChallenge, locale ...string) (*SendVerifyCodeResult, error) {
 	logger.LegacyPrintf("service.auth", "[Auth] SendVerifyCodeAsync called for email: %s", email)
 
-	turnstileVerified, err := s.VerifyTurnstileWithState(ctx, turnstileToken, remoteIP)
+	turnstileVerified, err := s.VerifyCaptchaWithState(ctx, proof, remoteIP)
 	if err != nil {
 		return nil, err
 	}
@@ -457,59 +460,165 @@ func (s *AuthService) isTurnstileProofRequired(ctx context.Context) (bool, error
 	return enabled, err
 }
 
-// VerifyTurnstileForRegister 在注册场景下验证 Turnstile。
-// 当邮箱验证开启且已提交验证码时，说明验证码发送阶段已完成 Turnstile 校验，
-// 此处跳过二次校验，避免一次性 token 在注册提交时重复使用导致误报失败。
-func (s *AuthService) VerifyTurnstileForRegister(ctx context.Context, token, remoteIP, verifyCode string) error {
-	if s.IsEmailVerifyEnabled(ctx) && strings.TrimSpace(verifyCode) != "" {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Email verify flow detected, skip duplicate Turnstile check on register")
-		return nil
+// VerifyTurnstileWithState returns whether this exact call performed a
+// successful verification. This preserves the attestation used by email-code
+// flows when settings change between requests.
+func (s *AuthService) VerifyTurnstileWithState(ctx context.Context, token, remoteIP string) (bool, error) {
+	required := s != nil && s.cfg != nil && s.cfg.Server.Mode == "release" && s.cfg.Turnstile.Required
+	if s == nil {
+		return false, nil
 	}
-	return s.VerifyTurnstile(ctx, token, remoteIP)
-}
-
-// VerifyTurnstile 验证Turnstile token
-func (s *AuthService) VerifyTurnstile(ctx context.Context, token string, remoteIP string) error {
-	_, err := s.VerifyTurnstileWithState(ctx, token, remoteIP)
-	return err
-}
-
-// VerifyTurnstileWithState verifies Turnstile and reports whether this exact
-// call performed a successful verification. This avoids deriving an attestation
-// from a later settings read that may observe a different configuration.
-func (s *AuthService) VerifyTurnstileWithState(ctx context.Context, token string, remoteIP string) (bool, error) {
-	required := s.cfg != nil && s.cfg.Server.Mode == "release" && s.cfg.Turnstile.Required
-
-	if required && s.settingService == nil {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but settings service is not configured")
-		return false, ErrTurnstileNotConfigured
-	}
-
 	if s.turnstileService == nil {
 		if s.settingService == nil {
 			if required {
-				logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but service not configured")
 				return false, ErrTurnstileNotConfigured
 			}
 			return false, nil
 		}
 		enabled, _, err := s.settingService.GetTurnstileConfig(ctx)
 		if err != nil || enabled || required {
-			logger.LegacyPrintf("service.auth", "[Auth] Turnstile service not configured (enabled=%v, settings_error=%v)", enabled, err)
 			return false, ErrTurnstileNotConfigured
 		}
-		return false, nil // 服务未配置则跳过验证
+		return false, nil
 	}
-
 	verified, err := s.turnstileService.VerifyTokenWithState(ctx, token, remoteIP)
 	if err != nil {
 		return false, err
 	}
 	if required && !verified {
-		logger.LegacyPrintf("service.auth", "%s", "[Auth] Turnstile required but not enabled")
 		return false, ErrTurnstileNotConfigured
 	}
 	return verified, nil
+}
+
+// VerifyCaptchaForRegister 在注册场景下验证当前启用的验证码。
+// 当邮箱验证开启且已提交验证码时，说明验证码发送阶段已完成验证码校验，
+// 此处跳过二次校验，避免一次性 token 在注册提交时重复使用导致误报失败。
+func (s *AuthService) VerifyCaptchaForRegister(ctx context.Context, proof CaptchaProof, remoteIP, verifyCode string) error {
+	if s.IsEmailVerifyEnabled(ctx) && strings.TrimSpace(verifyCode) != "" {
+		logger.LegacyPrintf("service.auth", "%s", "[Auth] Email verify flow detected, skip duplicate captcha check on register")
+		return nil
+	}
+	return s.VerifyCaptcha(ctx, proof, remoteIP)
+}
+
+func (s *AuthService) VerifyCaptcha(ctx context.Context, proof CaptchaProof, remoteIP string) error {
+	_, err := s.VerifyCaptchaWithState(ctx, proof, remoteIP)
+	return err
+}
+
+// VerifyCaptchaWithState verifies the currently configured provider and reports
+// whether this request supplied a successful provider attestation.
+func (s *AuthService) VerifyCaptchaWithState(ctx context.Context, proof CaptchaProof, remoteIP string) (bool, error) {
+	required := s.cfg != nil && s.cfg.Server.Mode == "release" && s.cfg.Turnstile.Required
+	if s.settingService == nil {
+		if required {
+			return false, ErrTurnstileNotConfigured
+		}
+		return false, nil
+	}
+
+	providerConfig, err := s.settingService.GetCaptchaProviderConfig(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.auth", "%s", "[Auth] Failed to read captcha provider settings")
+		return false, ErrServiceUnavailable
+	}
+	turnstileEnabled := providerConfig.TurnstileEnabled
+	tencentEnabled := providerConfig.Tencent.Enabled
+	aliyunEnabled := providerConfig.Aliyun.Enabled
+	if captchaProvidersConflict(turnstileEnabled, tencentEnabled, aliyunEnabled) {
+		return false, ErrCaptchaProviderConflict
+	}
+	if tencentEnabled {
+		if s.tencentCaptchaService == nil {
+			return false, ErrTencentCaptchaNotConfigured
+		}
+		if err := s.tencentCaptchaService.VerifyTicketWithConfig(ctx, providerConfig.Tencent, proof.TencentTicket, proof.TencentRandstr, remoteIP); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	if aliyunEnabled {
+		if s.aliyunCaptchaService == nil {
+			return false, ErrAliyunCaptchaNotConfigured
+		}
+		if err := s.aliyunCaptchaService.VerifyParamWithConfig(ctx, providerConfig.Aliyun, proof.TurnstileToken); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	if turnstileEnabled {
+		if s.turnstileService == nil || strings.TrimSpace(providerConfig.TurnstileSecretKey) == "" {
+			return false, ErrTurnstileNotConfigured
+		}
+		if err := s.turnstileService.VerifyTokenWithSecret(ctx, providerConfig.TurnstileSecretKey, proof.TurnstileToken, remoteIP); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	if required {
+		return false, ErrTurnstileNotConfigured
+	}
+	return false, nil
+}
+
+// captchaProvidersConflict 同一时间仅允许启用一家人机验证服务商
+func captchaProvidersConflict(enabled ...bool) bool {
+	count := 0
+	for _, e := range enabled {
+		if e {
+			count++
+		}
+	}
+	return count > 1
+}
+
+// VerifyActionCaptchaIfEnabled 仅保护动作触发的扩展入口（OAuth 登录启动、passkey 登录），
+// 腾讯天御与阿里云验证码启用时拦截；不扩大 Cloudflare Turnstile 的既有覆盖范围。
+func (s *AuthService) VerifyActionCaptchaIfEnabled(ctx context.Context, proof CaptchaProof, remoteIP string) error {
+	if s == nil || s.settingService == nil {
+		return ErrServiceUnavailable
+	}
+
+	providerConfig, err := s.settingService.GetCaptchaProviderConfig(ctx)
+	if err != nil {
+		logger.LegacyPrintf("service.auth", "%s", "[Auth] Failed to read captcha provider settings")
+		return ErrServiceUnavailable
+	}
+	tencentEnabled := providerConfig.Tencent.Enabled
+	aliyunEnabled := providerConfig.Aliyun.Enabled
+	if !tencentEnabled && !aliyunEnabled {
+		return nil
+	}
+	if captchaProvidersConflict(providerConfig.TurnstileEnabled, tencentEnabled, aliyunEnabled) {
+		return ErrCaptchaProviderConflict
+	}
+	if aliyunEnabled {
+		if s.aliyunCaptchaService == nil {
+			return ErrAliyunCaptchaNotConfigured
+		}
+		return s.aliyunCaptchaService.VerifyParamWithConfig(ctx, providerConfig.Aliyun, proof.TurnstileToken)
+	}
+	if s.tencentCaptchaService == nil {
+		return ErrTencentCaptchaNotConfigured
+	}
+	return s.tencentCaptchaService.VerifyTicketWithConfig(
+		ctx,
+		providerConfig.Tencent,
+		proof.TencentTicket,
+		proof.TencentRandstr,
+		remoteIP,
+	)
+}
+
+// VerifyTurnstileForRegister 保留旧内部接口，生产 handler 使用 VerifyCaptchaForRegister。
+func (s *AuthService) VerifyTurnstileForRegister(ctx context.Context, token, remoteIP, verifyCode string) error {
+	return s.VerifyCaptchaForRegister(ctx, CaptchaProof{TurnstileToken: token}, remoteIP, verifyCode)
+}
+
+// VerifyTurnstile 保留旧内部接口，生产 handler 使用 VerifyCaptcha。
+func (s *AuthService) VerifyTurnstile(ctx context.Context, token string, remoteIP string) error {
+	return s.VerifyCaptcha(ctx, CaptchaProof{TurnstileToken: token}, remoteIP)
 }
 
 // IsTurnstileEnabled 检查是否启用Turnstile验证

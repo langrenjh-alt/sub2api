@@ -81,7 +81,7 @@
     </footer>
   </div>
 
-  <div v-else ref="homeRootRef" class="geist-home min-h-screen">
+  <div v-else ref="homeRootRef" class="geist-home terminal-container min-h-screen">
     <header class="home-topbar">
       <div class="home-shell home-topbar-inner">
         <RouterLink to="/home" class="home-brand" aria-label="Home">
