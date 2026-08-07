@@ -207,6 +207,18 @@ export default {
         providerTencent: '腾讯天御验证码',
         providerAliyun: '阿里云验证码 2.0'
       },
+      geetest: {
+        title: '极验 GeeTest v4',
+        description: '为登录、注册及第三方登录创建账号流程提供极验验证保护',
+        enable: '启用极验验证',
+        enableHint: '在支持的身份验证流程中要求完成极验验证',
+        captchaId: 'Captcha ID',
+        captchaIdHint: '请从极验后台获取 Captcha ID。',
+        console: '打开极验后台',
+        captchaKey: 'Captcha Key',
+        captchaKeyHint: '服务端验证密钥（请妥善保管）',
+        captchaKeyConfiguredHint: 'Captcha Key 已配置，留空将保留当前值。'
+      },
       tencentCaptcha: {
         title: '腾讯天御验证码',
         description: '为登录、注册及第三方登录创建账号流程提供滑动验证码保护',

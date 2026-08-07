@@ -207,6 +207,18 @@ export default {
         providerTencent: 'Tencent Captcha',
         providerAliyun: 'Aliyun Captcha 2.0'
       },
+      geetest: {
+        title: 'GeeTest v4',
+        description: 'GeeTest verification for login, registration, and third-party account creation',
+        enable: 'Enable GeeTest',
+        enableHint: 'Require GeeTest verification on supported authentication flows',
+        captchaId: 'Captcha ID',
+        captchaIdHint: 'Get the Captcha ID from the GeeTest console.',
+        console: 'Open GeeTest console',
+        captchaKey: 'Captcha Key',
+        captchaKeyHint: 'Server-side verification key (keep this secret)',
+        captchaKeyConfiguredHint: 'Captcha Key configured. Leave empty to keep the current value.'
+      },
       tencentCaptcha: {
         title: 'Tencent Captcha',
         description: 'Slider captcha protection for login, registration, and third-party account creation',

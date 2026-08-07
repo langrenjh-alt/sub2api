@@ -47,6 +47,10 @@ const (
 	AirwallexDemoStaticDomain = "https://static-demo.airwallex.com"
 	// AirwallexDemoCheckoutDomain 是 Airwallex 沙箱环境收银台元素和 iframe 域名。
 	AirwallexDemoCheckoutDomain = "https://checkout-demo.airwallex.com"
+	// GeeTestStaticDomain is the primary GeeTest v4 loader host.
+	GeeTestStaticDomain = "https://static.geetest.com"
+	// GeeTestFallbackStaticDomain is the GeeTest v4 loader fallback host.
+	GeeTestFallbackStaticDomain = "https://static.geevisit.com"
 )
 
 var requiredCSPDirectiveValues = []struct {
@@ -80,6 +84,8 @@ var requiredCSPDirectiveValues = []struct {
 	{"style-src", AirwallexDemoStaticDomain},
 	{"style-src", AirwallexDemoCheckoutDomain},
 	{"frame-src", AirwallexDemoCheckoutDomain},
+	{"script-src", GeeTestStaticDomain},
+	{"script-src", GeeTestFallbackStaticDomain},
 }
 
 // GenerateNonce generates a cryptographically secure random nonce.

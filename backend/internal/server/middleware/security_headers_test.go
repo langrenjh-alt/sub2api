@@ -194,6 +194,8 @@ func TestSecurityHeaders(t *testing.T) {
 		// Default policy should contain these elements
 		assert.Contains(t, csp, "default-src 'self'")
 		assert.Contains(t, csp, TencentCaptchaDomain)
+		assert.Contains(t, csp, GeeTestStaticDomain)
+		assert.Contains(t, csp, GeeTestFallbackStaticDomain)
 	})
 
 	t.Run("uses_default_policy_when_whitespace_only", func(t *testing.T) {
@@ -337,6 +339,14 @@ func TestEnhanceCSPPolicy(t *testing.T) {
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", TencentCaptchaGlobalDomain))
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", TencentCaptchaPrehandleDomain))
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "worker-src", TencentCaptchaWorkerSource))
+	})
+
+	t.Run("adds_geetest_loader_domains_for_web_sdk", func(t *testing.T) {
+		policy := "default-src 'self'; script-src 'self' __CSP_NONCE__"
+		enhanced := enhanceCSPPolicy(policy)
+
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestFallbackStaticDomain))
 	})
 
 	t.Run("does_not_duplicate_tencent_captcha_worker_source", func(t *testing.T) {
