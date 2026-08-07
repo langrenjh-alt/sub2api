@@ -243,6 +243,7 @@ export default {
     reloginRequired: '会话已过期，请重新登录。',
     turnstileExpired: '验证已过期，请重试',
     turnstileFailed: '验证失败，请重试',
+    geetestFailed: '极验验证失败，请重试',
     captchaVerified: '验证已完成',
     captchaLoading: '正在加载验证码…',
     captchaClickToVerify: '点击完成人机验证',

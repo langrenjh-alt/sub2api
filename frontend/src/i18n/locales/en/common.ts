@@ -244,6 +244,7 @@ export default {
     reloginRequired: 'Session expired. Please log in again.',
     turnstileExpired: 'Verification expired, please try again',
     turnstileFailed: 'Verification failed, please try again',
+    geetestFailed: 'GeeTest verification failed, please try again',
     captchaVerified: 'Verification completed',
     captchaLoading: 'Loading verification…',
     captchaClickToVerify: 'Click to complete verification',

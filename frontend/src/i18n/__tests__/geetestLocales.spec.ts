@@ -20,5 +20,6 @@ describe('GeeTest settings locale keys', () => {
     expect(geetest.captchaKey).toBeTruthy()
     expect(geetest.captchaKeyHint).toBeTruthy()
     expect(geetest.captchaKeyConfiguredHint).toBeTruthy()
+    expect(messages.auth.geetestFailed).toBeTruthy()
   })
 })
