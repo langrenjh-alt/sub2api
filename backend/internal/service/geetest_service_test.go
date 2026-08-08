@@ -85,7 +85,7 @@ func TestGeetestServiceVerifyRequiresCompleteChallenge(t *testing.T) {
 }
 
 func TestGeetestServiceVerifyAcceptsSuccess(t *testing.T) {
-	verifier := &geetestVerifierStub{}
+	verifier := &geetestVerifierStub{result: &GeetestVerifyResponse{Status: " success ", Result: "SUCCESS"}}
 	_, svc := newGeetestServiceForTest(map[string]string{
 		SettingKeyGeetestEnabled:    "true",
 		SettingKeyGeetestCaptchaID:  "id",

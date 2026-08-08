@@ -29,12 +29,13 @@ func TestGeetestVerifierVerifySendsSignedForm(t *testing.T) {
 		require.Equal(t, http.MethodPost, r.Method)
 		require.Equal(t, "captcha-id", r.URL.Query().Get("captcha_id"))
 		require.True(t, strings.HasPrefix(r.Header.Get("Content-Type"), "application/x-www-form-urlencoded"))
+		require.Equal(t, "application/json", r.Header.Get("Accept"))
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		values, err := url.ParseQuery(string(body))
 		require.NoError(t, err)
 		received <- values
-		_ = json.NewEncoder(w).Encode(service.GeetestVerifyResponse{Result: "success"})
+		_ = json.NewEncoder(w).Encode(service.GeetestVerifyResponse{Status: "success", Result: "success"})
 	})
 
 	result, err := verifier.Verify(context.Background(), "captcha-id", "captcha-key", service.GeetestChallenge{

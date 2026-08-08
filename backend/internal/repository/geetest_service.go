@@ -56,6 +56,7 @@ func (v *geetestVerifier) Verify(ctx context.Context, captchaID, captchaKey stri
 		return nil, fmt.Errorf("create validate request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
 
 	resp, err := v.httpClient.Do(req)
 	if err != nil {

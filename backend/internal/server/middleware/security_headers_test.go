@@ -196,6 +196,9 @@ func TestSecurityHeaders(t *testing.T) {
 		assert.Contains(t, csp, TencentCaptchaDomain)
 		assert.Contains(t, csp, GeeTestStaticDomain)
 		assert.Contains(t, csp, GeeTestFallbackStaticDomain)
+		assert.Contains(t, csp, GeeTestAPIDomain)
+		assert.Contains(t, csp, GeeTestFallbackAPIDomain)
+		assert.Contains(t, csp, GeeTestSecondaryFallbackAPIDomain)
 	})
 
 	t.Run("uses_default_policy_when_whitespace_only", func(t *testing.T) {
@@ -341,12 +344,26 @@ func TestEnhanceCSPPolicy(t *testing.T) {
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "worker-src", TencentCaptchaWorkerSource))
 	})
 
-	t.Run("adds_geetest_loader_domains_for_web_sdk", func(t *testing.T) {
+	t.Run("adds_geetest_domains_for_web_sdk", func(t *testing.T) {
 		policy := "default-src 'self'; script-src 'self' __CSP_NONCE__"
 		enhanced := enhanceCSPPolicy(policy)
 
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestStaticDomain))
 		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "script-src", GeeTestSecondaryFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "style-src", GeeTestStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "style-src", GeeTestFallbackStaticDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "connect-src", GeeTestAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "connect-src", GeeTestFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "connect-src", GeeTestSecondaryFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "connect-src", GeeTestMonitorDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", GeeTestAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", GeeTestFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", GeeTestSecondaryFallbackAPIDomain))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", "https://*.geetest.com"))
+		assert.Equal(t, 1, countDirectiveValue(enhanced, "frame-src", "https://*.geevisit.com"))
 	})
 
 	t.Run("does_not_duplicate_tencent_captcha_worker_source", func(t *testing.T) {

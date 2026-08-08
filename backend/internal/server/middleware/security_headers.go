@@ -51,6 +51,14 @@ const (
 	GeeTestStaticDomain = "https://static.geetest.com"
 	// GeeTestFallbackStaticDomain is the GeeTest v4 loader fallback host.
 	GeeTestFallbackStaticDomain = "https://static.geevisit.com"
+	// GeeTestAPIDomain is the primary GeeTest v4 API host used by the browser.
+	GeeTestAPIDomain = "https://gcaptcha4.geetest.com"
+	// GeeTestFallbackAPIDomain is the GeeTest v4 API fallback host.
+	GeeTestFallbackAPIDomain = "https://gcaptcha4.geevisit.com"
+	// GeeTestSecondaryFallbackAPIDomain is the SDK's final API fallback host.
+	GeeTestSecondaryFallbackAPIDomain = "https://gcaptcha4.gsensebot.com"
+	// GeeTestMonitorDomain receives non-sensitive client diagnostics from the SDK.
+	GeeTestMonitorDomain = "https://monitor.geetest.com"
 )
 
 var requiredCSPDirectiveValues = []struct {
@@ -86,6 +94,20 @@ var requiredCSPDirectiveValues = []struct {
 	{"frame-src", AirwallexDemoCheckoutDomain},
 	{"script-src", GeeTestStaticDomain},
 	{"script-src", GeeTestFallbackStaticDomain},
+	{"script-src", GeeTestAPIDomain},
+	{"script-src", GeeTestFallbackAPIDomain},
+	{"script-src", GeeTestSecondaryFallbackAPIDomain},
+	{"style-src", GeeTestStaticDomain},
+	{"style-src", GeeTestFallbackStaticDomain},
+	{"connect-src", GeeTestAPIDomain},
+	{"connect-src", GeeTestFallbackAPIDomain},
+	{"connect-src", GeeTestSecondaryFallbackAPIDomain},
+	{"connect-src", GeeTestMonitorDomain},
+	{"frame-src", GeeTestAPIDomain},
+	{"frame-src", GeeTestFallbackAPIDomain},
+	{"frame-src", GeeTestSecondaryFallbackAPIDomain},
+	{"frame-src", "https://*.geetest.com"},
+	{"frame-src", "https://*.geevisit.com"},
 }
 
 // GenerateNonce generates a cryptographically secure random nonce.

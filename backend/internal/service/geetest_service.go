@@ -46,6 +46,17 @@ type GeetestVerifyResponse struct {
 	CaptchaArgs map[string]interface{} `json:"captcha_args,omitempty"`
 }
 
+func (r *GeetestVerifyResponse) successful() bool {
+	if r == nil {
+		return false
+	}
+	status := strings.TrimSpace(r.Status)
+	if status != "" && !strings.EqualFold(status, "success") {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(r.Result), "success")
+}
+
 // GeetestVerifier verifies a completed GEETEST v4 challenge with the vendor API.
 type GeetestVerifier interface {
 	Verify(ctx context.Context, captchaID, captchaKey string, challenge GeetestChallenge) (*GeetestVerifyResponse, error)
@@ -124,12 +135,12 @@ func (s *GeetestService) VerifyWithState(ctx context.Context, challenge GeetestC
 	if result == nil {
 		return true, ErrGeetestServiceUnavailable
 	}
-	if result.Status == "error" {
-		logger.LegacyPrintf("service.geetest", "[GEETEST] Validate API error response: code=%s", result.Code)
+	if status := strings.TrimSpace(result.Status); status != "" && !strings.EqualFold(status, "success") {
+		logger.LegacyPrintf("service.geetest", "[GEETEST] Validate API error response: status=%s code=%s message=%s", status, result.Code, result.Message)
 		return true, ErrGeetestVerificationFailed
 	}
-	if result.Result != "success" {
-		logger.LegacyPrintf("service.geetest", "[GEETEST] Verification failed: %s", result.Reason)
+	if !result.successful() {
+		logger.LegacyPrintf("service.geetest", "[GEETEST] Verification failed: result=%s reason=%s code=%s message=%s", result.Result, result.Reason, result.Code, result.Message)
 		return true, ErrGeetestVerificationFailed
 	}
 
