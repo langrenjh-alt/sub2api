@@ -169,6 +169,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		return nil, fmt.Errorf("marshal registration email suffix whitelist: %w", err)
 	}
 	updates[SettingKeyRegistrationEmailSuffixWhitelist] = string(registrationEmailSuffixWhitelistJSON)
+	updates[SettingKeyRegistrationEmailDomainQuotaEnabled] = strconv.FormatBool(settings.RegistrationEmailDomainQuotaEnabled)
 	updates[SettingKeyPromoCodeEnabled] = strconv.FormatBool(settings.PromoCodeEnabled)
 	updates[SettingKeyPasswordResetEnabled] = strconv.FormatBool(settings.PasswordResetEnabled)
 	updates[SettingKeyFrontendURL] = settings.FrontendURL
@@ -417,9 +418,18 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 
 	// Channel monitor feature switch
 	updates[SettingKeyChannelMonitorEnabled] = strconv.FormatBool(settings.ChannelMonitorEnabled)
+	updates[SettingKeyChannelMonitorMode] = normalizeChannelMonitorMode(settings.ChannelMonitorMode)
 	if v := clampChannelMonitorInterval(settings.ChannelMonitorDefaultIntervalSeconds); v > 0 {
 		updates[SettingKeyChannelMonitorDefaultIntervalSeconds] = strconv.Itoa(v)
 	}
+	updates[SettingKeyChannelMonitorHideThroughput] = strconv.FormatBool(settings.ChannelMonitorHideThroughput)
+	if v := strings.TrimSpace(settings.GrokDefaultTextModel); v != "" {
+		updates[SettingKeyGrokDefaultTextModel] = v
+	} else {
+		updates[SettingKeyGrokDefaultTextModel] = "grok-4.5"
+	}
+	updates[SettingKeyGrokCrossClientModelMapEnabled] = strconv.FormatBool(settings.GrokCrossClientModelMapEnabled)
+	updates[SettingKeyGrokDefaultBaseURLMode] = normalizeGrokDefaultBaseURLMode(settings.GrokDefaultBaseURLMode)
 	updates[SettingKeyHomepageStatusEnabled] = strconv.FormatBool(settings.HomepageStatusEnabled)
 	homepageGroupIDs, err := json.Marshal(normalizeHomepageStatusGroupIDs(settings.HomepageStatusGroupIDs))
 	if err != nil {
@@ -524,6 +534,17 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		}
 		updates[SettingKeyDefaultPlatformQuotas] = string(blob)
 	}
+	if settings.AccountSchedulingThresholds != nil {
+		normalized, err := validateAndNormalizeAccountSchedulingThresholds(settings.AccountSchedulingThresholds)
+		if err != nil {
+			return nil, err
+		}
+		blob, err := json.Marshal(normalized)
+		if err != nil {
+			return nil, fmt.Errorf("marshal account scheduling thresholds: %w", err)
+		}
+		updates[SettingKeyAccountSchedulingThresholds] = string(blob)
+	}
 
 	updates[SettingKeyAllowUserViewErrorRequests] = strconv.FormatBool(settings.AllowUserViewErrorRequests)
 
@@ -533,6 +554,67 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 // validateDefaultPlatformQuotaMap 校验 platform quota map 的合法性：
 // 平台名须在 AllowedQuotaPlatforms 白名单内，每个非 nil 上限须 finite 且 >= 0。
 // 系统层和 auth-source 层共用此 helper。
+func defaultAccountSchedulingThresholds() map[string]int {
+	return map[string]int{PlatformOpenAI: 100, PlatformAnthropic: 100, PlatformGrok: 100}
+}
+
+func validateAndNormalizeAccountSchedulingThresholds(input map[string]int) (map[string]int, error) {
+	normalized := defaultAccountSchedulingThresholds()
+	for platform, value := range input {
+		allowed := false
+		for _, item := range AllowedSchedulingThresholdPlatforms {
+			if item == platform {
+				allowed = true
+				break
+			}
+		}
+		if !allowed {
+			return nil, infraerrors.BadRequest("INVALID_ACCOUNT_SCHEDULING_THRESHOLDS", fmt.Sprintf("unknown platform %q", platform))
+		}
+		if value < 1 || value > 100 {
+			return nil, infraerrors.BadRequest("INVALID_ACCOUNT_SCHEDULING_THRESHOLDS", "platform scheduling threshold must be between 1 and 100")
+		}
+		normalized[platform] = value
+	}
+	return normalized, nil
+}
+
+func parseAccountSchedulingThresholdsSetting(raw string) (map[string]int, error) {
+	thresholds := defaultAccountSchedulingThresholds()
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return thresholds, nil
+	}
+	parsed := map[string]int{}
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return thresholds, err
+	}
+	for _, platform := range AllowedSchedulingThresholdPlatforms {
+		if value, ok := parsed[platform]; ok {
+			thresholds[platform] = boundedIntOrDefault(value, 1, 100, 100)
+		}
+	}
+	return thresholds, nil
+}
+
+func boundedIntOrDefault(value, minValue, maxValue, defaultValue int) int {
+	if value < minValue || value > maxValue {
+		return defaultValue
+	}
+	return value
+}
+
+func cloneAccountSchedulingThresholds(input map[string]int) map[string]int {
+	if len(input) == 0 {
+		return defaultAccountSchedulingThresholds()
+	}
+	cloned := make(map[string]int, len(input))
+	for key, value := range input {
+		cloned[key] = value
+	}
+	return cloned
+}
+
 func validateDefaultPlatformQuotaMap(m map[string]*DefaultPlatformQuotaSetting) error {
 	for platform, pq := range m {
 		if !IsAllowedQuotaPlatform(platform) {
@@ -685,6 +767,19 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 			expiresAt: 0,
 		})
 	}
+	accountSchedulingThresholdsSF.Forget(SettingKeyAccountSchedulingThresholds)
+	if settings.AccountSchedulingThresholds != nil {
+		normalizedThresholds, err := validateAndNormalizeAccountSchedulingThresholds(settings.AccountSchedulingThresholds)
+		if err != nil {
+			normalizedThresholds = defaultAccountSchedulingThresholds()
+		}
+		accountSchedulingThresholdsCache.Store(&cachedAccountSchedulingThresholds{
+			thresholds: cloneAccountSchedulingThresholds(normalizedThresholds),
+			expiresAt:  time.Now().Add(accountSchedulingThresholdsCacheTTL).UnixNano(),
+		})
+	} else {
+		accountSchedulingThresholdsCache.Store(&cachedAccountSchedulingThresholds{})
+	}
 	if s.cfg != nil {
 		s.cfg.SetForwardedClientIPSettings(settings.APIKeyACLTrustForwardedIP, settings.ForwardedClientIPHeaders)
 	}
@@ -694,6 +789,7 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 	if s.onUpdate != nil {
 		s.onUpdate() // Invalidate cache after settings update
 	}
+	s.notifyChannelMonitorRuntimeListeners()
 }
 
 func (s *SettingService) defaultRewriteMessageCacheControl() bool {

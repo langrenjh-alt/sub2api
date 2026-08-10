@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 )
 
 // InitializeDefaultSettings 初始化默认设置
@@ -57,6 +58,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyRegistrationEnabled:                       "true",
 		SettingKeyEmailVerifyEnabled:                        "false",
 		SettingKeyRegistrationEmailSuffixWhitelist:          "[]",
+		SettingKeyRegistrationEmailDomainQuotaEnabled:       "false",
 		SettingKeyPromoCodeEnabled:                          "true", // 默认启用优惠码功能
 		SettingKeyLoginAgreementEnabled:                     "false",
 		SettingKeyLoginAgreementMode:                        defaultLoginAgreementMode,
@@ -185,7 +187,12 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 
 		// Channel monitor defaults (enabled, 60s)
 		SettingKeyChannelMonitorEnabled:                "true",
+		SettingKeyChannelMonitorMode:                   ChannelMonitorModeV1,
 		SettingKeyChannelMonitorDefaultIntervalSeconds: "60",
+		SettingKeyChannelMonitorHideThroughput:         "true",
+		SettingKeyGrokDefaultTextModel:                 "grok-4.5",
+		SettingKeyGrokCrossClientModelMapEnabled:       "true",
+		SettingKeyGrokDefaultBaseURLMode:               GrokDefaultBaseURLModeCLI,
 		SettingKeyHomepageStatusEnabled:                "false",
 		SettingKeyHomepageStatusGroupIDs:               "[]",
 
@@ -305,6 +312,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		RegistrationEnabled:                    settings[SettingKeyRegistrationEnabled] == "true",
 		EmailVerifyEnabled:                     emailVerifyEnabled,
 		RegistrationEmailSuffixWhitelist:       ParseRegistrationEmailSuffixWhitelist(settings[SettingKeyRegistrationEmailSuffixWhitelist]),
+		RegistrationEmailDomainQuotaEnabled:    settings[SettingKeyRegistrationEmailDomainQuotaEnabled] == "true",
 		PromoCodeEnabled:                       settings[SettingKeyPromoCodeEnabled] != "false", // 默认启用
 		PasswordResetEnabled:                   emailVerifyEnabled && settings[SettingKeyPasswordResetEnabled] == "true",
 		FrontendURL:                            settings[SettingKeyFrontendURL],
@@ -788,9 +796,17 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 
 	// Channel monitor feature (default: enabled, 60s)
 	result.ChannelMonitorEnabled = !isFalseSettingValue(settings[SettingKeyChannelMonitorEnabled])
+	result.ChannelMonitorMode = normalizeChannelMonitorMode(settings[SettingKeyChannelMonitorMode])
 	result.ChannelMonitorDefaultIntervalSeconds = parseChannelMonitorInterval(
 		settings[SettingKeyChannelMonitorDefaultIntervalSeconds],
 	)
+	result.ChannelMonitorHideThroughput = !isFalseSettingValue(settings[SettingKeyChannelMonitorHideThroughput])
+	result.GrokDefaultTextModel = strings.TrimSpace(settings[SettingKeyGrokDefaultTextModel])
+	if result.GrokDefaultTextModel == "" {
+		result.GrokDefaultTextModel = "grok-4.5"
+	}
+	result.GrokCrossClientModelMapEnabled = !isFalseSettingValue(settings[SettingKeyGrokCrossClientModelMapEnabled])
+	result.GrokDefaultBaseURLMode = normalizeGrokDefaultBaseURLMode(settings[SettingKeyGrokDefaultBaseURLMode])
 	result.HomepageStatusEnabled = settings[SettingKeyHomepageStatusEnabled] == "true"
 	result.HomepageStatusGroupIDs = parseHomepageStatusGroupIDs(settings[SettingKeyHomepageStatusGroupIDs])
 
@@ -939,8 +955,20 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 			result.DefaultPlatformQuotas = parsed
 		}
 	}
+	result.AccountSchedulingThresholds = defaultAccountSchedulingThresholds()
+	if raw := strings.TrimSpace(settings[SettingKeyAccountSchedulingThresholds]); raw != "" {
+		if thresholds, err := parseAccountSchedulingThresholdsSetting(raw); err != nil {
+			slog.Warn("[Setting] parseSettings: unmarshal account_scheduling_thresholds failed", "error", err)
+		} else {
+			result.AccountSchedulingThresholds = thresholds
+		}
+	}
 
 	result.AllowUserViewErrorRequests = settings[SettingKeyAllowUserViewErrorRequests] == "true" // default false
+	xai.SetRuntimeModelMappingOptions(xai.ModelMappingOptions{
+		DefaultText:          result.GrokDefaultTextModel,
+		EnableCrossClientMap: result.GrokCrossClientModelMapEnabled,
+	})
 
 	return result
 }

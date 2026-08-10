@@ -1,0 +1,126 @@
+UPSTREAM_MERGE_VERIFICATION
+
+CHANGED_BRANCH: main
+CHANGED_FIELD: backend/cmd/server/VERSION = 0.1.173; local GeeTest, homepage status, tickets, payment providers, OpenAI DONE/capacity handling, WebSocket lifecycle fixes, and Grok billing chips remain merged
+BASELINE_COMMIT: 7528ba8f4e97c53e800a0d740e9df3982d69c7ea
+BASELINE_TAG: codex-before-upstream-v0.1.173-20260810-154217
+ROLLBACK_BRANCH: codex/pre-upstream-v0.1.173-20260810-154217
+MERGE_HEAD: 10a4c6e3ad319587e817109c071259269855ec30
+UPSTREAM_VERSION: 0.1.173
+
+ARTIFACTS
+MODIFIED_FILE: E:/sub2api-codex/artifacts/upstream-merge-v0.1.173/MODIFIED_FILE.go
+DIFF_FILE: E:/sub2api-codex/artifacts/upstream-merge-v0.1.173/DIFF_FILE
+VERIFICATION_FILE: E:/sub2api-codex/artifacts/upstream-merge-v0.1.173/VERIFICATION.txt
+ROLLBACK_FILE: E:/sub2api-codex/artifacts/upstream-merge-v0.1.173/ROLLBACK.sh
+
+BASELINE
+COMMAND: go run baseline/MODIFIED_FILE.go
+INPUT: none
+LITERAL_OUTPUT: 0.1.172
+RESULT: baseline fixture reported the pre-change version field
+EXIT_STATUS: 0
+BASELINE_SHA256: 838877C054C9727DFE8662BB86208BE4AB8090277589AB083B1D0D4FC7AE903E
+
+BASELINE_PROJECT
+COMMAND: Set-Location E:/sub2api-codex/backend; go test ./...
+INPUT: pre-merge tree at 7528ba8f4e97c53e800a0d740e9df3982d69c7ea
+LITERAL_OUTPUT: all listed backend packages passed
+RESULT: pre-merge backend baseline passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run typecheck
+INPUT: pre-merge tree at 7528ba8f4e97c53e800a0d740e9df3982d69c7ea
+LITERAL_OUTPUT: vue-tsc --noEmit
+RESULT: pre-merge frontend typecheck passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run test:run
+INPUT: pre-merge tree at 7528ba8f4e97c53e800a0d740e9df3982d69c7ea
+LITERAL_OUTPUT: vitest run; all test files passed
+RESULT: pre-merge frontend baseline passed
+EXIT_STATUS: 0
+
+MODIFIED
+COMMAND: go run MODIFIED_FILE.go
+INPUT: none
+LITERAL_OUTPUT: 0.1.173
+RESULT: modified fixture reported the merged upstream version field
+EXIT_STATUS: 0
+MODIFIED_SHA256: 37DB0170E550A70FB9BB3BB08B1F7FE111A024A11FFA1C937A4737F7EFF3FFC8
+
+ROLLBACK
+COMMAND: wsl.exe -- bash -lc 'cd /mnt/e/sub2api-codex/artifacts/upstream-merge-v0.1.173 && chmod +x ROLLBACK.sh && ./ROLLBACK.sh rollback-copy/MODIFIED_FILE.go baseline/MODIFIED_FILE.go && cmp -s rollback-copy/MODIFIED_FILE.go baseline/MODIFIED_FILE.go && echo hash-match=yes && go run rollback-copy/MODIFIED_FILE.go'
+INPUT: target=rollback-copy/MODIFIED_FILE.go, baseline=baseline/MODIFIED_FILE.go
+LITERAL_OUTPUT:
+restored rollback-copy/MODIFIED_FILE.go
+hash-match=yes
+0.1.172
+RESULT: rollback copy restored baseline behavior and hash
+EXIT_STATUS: 0
+ROLLBACK_COPY_SHA256: 838877C054C9727DFE8662BB86208BE4AB8090277589AB083B1D0D4FC7AE903E
+
+MODIFIED_PROJECT_VALIDATION
+COMMAND: Set-Location E:/sub2api-codex/backend; go test ./...
+INPUT: merged working tree
+LITERAL_OUTPUT: ok github.com/Wei-Shaw/sub2api/internal/handler 39.767s; ok github.com/Wei-Shaw/sub2api/internal/server/routes 9.756s; ok github.com/Wei-Shaw/sub2api/internal/service 112.761s
+RESULT: full default backend test suite passed
+EXIT_STATUS: 0
+
+COMMAND: Set-Location E:/sub2api-codex/backend; go test -tags=unit ./...
+INPUT: merged working tree
+LITERAL_OUTPUT: ok github.com/Wei-Shaw/sub2api/internal/server/routes 12.013s; ok github.com/Wei-Shaw/sub2api/internal/service 151.852s
+RESULT: official unit-tag CI suite passed
+EXIT_STATUS: 0
+
+COMMAND: Set-Location E:/sub2api-codex/backend; go test -tags=integration ./...
+INPUT: merged working tree
+LITERAL_OUTPUT: ok github.com/Wei-Shaw/sub2api/internal/server/routes 43.381s; ok github.com/Wei-Shaw/sub2api/internal/service 152.521s; ok github.com/Wei-Shaw/sub2api/migrations 30.085s
+RESULT: official integration-tag CI suite passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run typecheck
+INPUT: merged working tree
+LITERAL_OUTPUT: vue-tsc --noEmit
+RESULT: frontend typecheck passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run lint:check
+INPUT: merged working tree
+LITERAL_OUTPUT: eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts
+RESULT: frontend lint passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run test:run
+INPUT: merged working tree
+LITERAL_OUTPUT: vitest run; all test files passed
+RESULT: full frontend test suite passed
+EXIT_STATUS: 0
+
+COMMAND: pnpm --dir frontend run build
+INPUT: merged working tree
+LITERAL_OUTPUT: vite v5.4.21 building for production; 1047 modules transformed; build completed with exit status 0
+RESULT: production frontend assets built successfully
+EXIT_STATUS: 0
+
+COMMAND: Set-Location E:/sub2api-codex/backend; go test -tags=embed ./cmd/server ./internal/web -run '^TestDoesNotExist$' -count=1
+INPUT: production frontend assets in backend/internal/web/dist
+LITERAL_OUTPUT: ok github.com/Wei-Shaw/sub2api/cmd/server 5.827s [no tests to run]; ok github.com/Wei-Shaw/sub2api/internal/web 0.162s [no tests to run]
+RESULT: embedded server build path compiled successfully
+EXIT_STATUS: 0
+
+CONFLICT_DECISIONS
+- OpenAI Responses retains local DONE-only terminal synthesis and capacity failover while adding upstream search surcharge deduplication.
+- Grok applies upstream body-first failure classification before local pool-mode state compatibility.
+- Grok account UI keeps local request/token/account-cost/user-cost chips while using upstream free/paid quota bars.
+- Group creation serializes upstream video_model_prices without leaking the editable row representation.
+- Settings retain local GeeTest and homepage status fields while adding channel-monitor v2, Grok mapping, registration domain quota, and account scheduling thresholds.
+- Empty-stream 502 failures remain schedulable; unrelated generic 502 failures retain the existing temporary-unschedule behavior.
+
+REOPENED_STATE
+MODIFIED_FILE.go reopened after rollback-copy verification and still reports 0.1.173.
+DIFF_FILE reopened and still records 0.1.172 -> 0.1.173.
+VERIFICATION.txt reopened with baseline, modified, and rollback evidence.
+ROLLBACK.sh reopened after execution and remains executable.
+
+RESTORED_BEHAVIOR: rollback-copy/MODIFIED_FILE.go restored to baseline SHA-256 838877C054C9727DFE8662BB86208BE4AB8090277589AB083B1D0D4FC7AE903E and output 0.1.172; MODIFIED_FILE.go remains changed with SHA-256 37DB0170E550A70FB9BB3BB08B1F7FE111A024A11FFA1C937A4737F7EFF3FFC8 and output 0.1.173.
