@@ -70,7 +70,7 @@ func (s *TurnstileService) VerifyTokenWithState(ctx context.Context, token strin
 		return false, nil
 	}
 	if err := s.VerifyTokenWithSecret(ctx, config.TurnstileSecretKey, token, remoteIP); err != nil {
-		return true, err
+		return false, err
 	}
 	return true, nil
 }

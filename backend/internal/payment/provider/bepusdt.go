@@ -26,7 +26,7 @@ const (
 
 // BEpusdt implements the BEpusdt cryptocurrency cashier API.
 // Config keys: apiBase, token, notifyUrl, returnUrl. Optional keys are
-// tradeType, fiat, currencies, address, timeout, rate and queryPath.
+// tradeType, fiat, currencies, address, timeout and rate.
 type BEpusdt struct {
 	instanceID string
 	config     map[string]string
