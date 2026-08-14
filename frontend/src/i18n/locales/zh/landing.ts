@@ -14,6 +14,62 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    landing: {
+      nav: { recharge: '充值' },
+      actions: {
+        rechargeNow: '立即充值',
+        openWorkspace: '打开工作台',
+        rechargeEntry: '充值入口'
+      },
+      workflowTitle: '让 API 中转成为清晰的日常工作流。',
+      modelsTitle: '一个 Key，连接主流 AI 能力。',
+      accessTitle: '从充值到调用，路径保持简单。',
+      accessDescription:
+        '充值后在控制台创建 API Key，将客户端 Base URL 指向兼容接口，即可沿用原有 OpenAI SDK 的调用方式。',
+      metrics: {
+        gateway: '多账号容灾',
+        billing: '额度可见',
+        baseUrl: '兼容 OpenAI'
+      },
+      providerCaptions: {
+        claude: 'messages API',
+        gpt: '兼容 OpenAI',
+        gemini: '支持 v1beta',
+        antigravity: '专用路由',
+        more: '可扩展上游'
+      },
+      providerStatus: { ready: '可用' },
+      sections: {
+        overview: '概览',
+        quickActions: '快捷操作',
+        status: '状态',
+        compatibility: '兼容性',
+        ratesAndStatus: '倍率与状态',
+        accessSteps: '接入步骤'
+      },
+      homepageStatus: {
+        title: '分组倍率与渠道状态',
+        description: '查看当前公开分组的计费倍率，以及已启用渠道最近 7 天的可用率。',
+        groups: '分组倍率',
+        monitors: '渠道状态',
+        rate: '倍率',
+        uptime7d: '7 日可用率'
+      },
+      accessSteps: {
+        connect: {
+          title: '完成充值',
+          description: '先通过充值入口补充余额，再开始调用网关。'
+        },
+        key: {
+          title: '创建 API Key',
+          description: '在控制台创建项目专用密钥，并保持最小权限范围。'
+        },
+        client: {
+          title: '配置客户端',
+          description: '将 Base URL 指向兼容的 /v1 接口，沿用原有 SDK 流程。'
+        }
+      }
+    },
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',

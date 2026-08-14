@@ -320,6 +320,7 @@ import DOMPurify from 'dompurify'
 import { useAppStore } from '@/stores/app'
 import { useAnnouncementStore } from '@/stores/announcements'
 import { formatRelativeTime, formatRelativeWithDateTime } from '@/utils/format'
+import { acquireBodyScrollLock } from '@/utils/bodyScrollLock'
 import type { UserAnnouncement } from '@/types'
 import Icon from '@/components/icons/Icon.vue'
 import '@/styles/announcement-markdown.css'
@@ -408,15 +409,26 @@ onMounted(() => {
   document.addEventListener('keydown', handleEscape)
 })
 
+let releaseBodyScrollLock: (() => void) | null = null
+
+function syncBodyScrollLock(active: boolean) {
+  if (active && !releaseBodyScrollLock) {
+    releaseBodyScrollLock = acquireBodyScrollLock()
+  } else if (!active && releaseBodyScrollLock) {
+    releaseBodyScrollLock()
+    releaseBodyScrollLock = null
+  }
+}
+
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleEscape)
-  document.body.style.overflow = ''
+  syncBodyScrollLock(false)
 })
 
 watch(
-  [isModalOpen, detailModalOpen, () => announcementStore.currentPopup],
-  ([modal, detail, popup]) => {
-    document.body.style.overflow = (modal || detail || popup) ? 'hidden' : ''
+  [isModalOpen, detailModalOpen],
+  ([modal, detail]) => {
+    syncBodyScrollLock(modal || detail)
   }
 )
 </script>

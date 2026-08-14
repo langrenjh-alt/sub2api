@@ -94,6 +94,7 @@ import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { useAnnouncementStore } from '@/stores/announcements'
 import { formatRelativeWithDateTime } from '@/utils/format'
+import { acquireBodyScrollLock } from '@/utils/bodyScrollLock'
 import type { Announcement, UserAnnouncement } from '@/types'
 import '@/styles/announcement-markdown.css'
 
@@ -137,23 +138,27 @@ function handleDismiss() {
   announcementStore.dismissPopup()
 }
 
-// Manage body overflow — only set, never unset (bell component handles restore)
+let releaseBodyScrollLock: (() => void) | null = null
+
+function syncBodyScrollLock(active: boolean) {
+  if (active && !releaseBodyScrollLock) {
+    releaseBodyScrollLock = acquireBodyScrollLock()
+  } else if (!active && releaseBodyScrollLock) {
+    releaseBodyScrollLock()
+    releaseBodyScrollLock = null
+  }
+}
+
 watch(
   displayedAnnouncement,
   (popup) => {
-    if (popup) {
-      document.body.style.overflow = 'hidden'
-    } else if (props.preview) {
-      document.body.style.overflow = ''
-    }
+    syncBodyScrollLock(Boolean(popup))
   },
   { immediate: true },
 )
 
 onBeforeUnmount(() => {
-  if (props.preview) {
-    document.body.style.overflow = ''
-  }
+  syncBodyScrollLock(false)
 })
 </script>
 

@@ -14,6 +14,62 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    landing: {
+      nav: { recharge: 'Recharge' },
+      actions: {
+        rechargeNow: 'Recharge Now',
+        openWorkspace: 'Open Workspace',
+        rechargeEntry: 'Recharge Entry'
+      },
+      workflowTitle: 'Turn API relay into a clear daily workflow.',
+      modelsTitle: 'One key connects mainstream AI capabilities.',
+      accessTitle: 'Keep the path simple from recharge to request.',
+      accessDescription:
+        'After recharging, create an API key in the console, point your client Base URL to the compatible endpoint, and keep using your existing OpenAI SDK flow.',
+      metrics: {
+        gateway: 'Multi-account resilience',
+        billing: 'Visible quota',
+        baseUrl: 'OpenAI compatible'
+      },
+      providerCaptions: {
+        claude: 'messages API',
+        gpt: 'OpenAI compatible',
+        gemini: 'v1beta support',
+        antigravity: 'dedicated routes',
+        more: 'extendable upstreams'
+      },
+      providerStatus: { ready: 'ready' },
+      sections: {
+        overview: 'Overview',
+        quickActions: 'Quick Actions',
+        status: 'Status',
+        compatibility: 'Compatibility',
+        ratesAndStatus: 'Rates and Status',
+        accessSteps: 'Access Steps'
+      },
+      homepageStatus: {
+        title: 'Group Rates and Channel Status',
+        description: 'Review public group billing rates and the last 7 days of uptime for enabled channel monitors.',
+        groups: 'Group Rates',
+        monitors: 'Channel Status',
+        rate: 'Rate',
+        uptime7d: '7D Uptime'
+      },
+      accessSteps: {
+        connect: {
+          title: 'Recharge the account',
+          description: 'Use the recharge entry to top up your balance before calling the gateway.'
+        },
+        key: {
+          title: 'Create an API key',
+          description: 'Generate a project-specific key in the console and keep it scoped to the workflow.'
+        },
+        client: {
+          title: 'Point your client',
+          description: 'Set the Base URL to the compatible /v1 endpoint and keep using your existing SDK flow.'
+        }
+      }
+    },
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',

@@ -20,7 +20,7 @@
             <button
               v-if="showCloseButton"
               @click="emit('close')"
-              class="-mr-2 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 focus-visible:ring-offset-2 dark:text-dark-500 dark:hover:bg-dark-700 dark:hover:text-dark-300 dark:focus-visible:ring-offset-dark-900"
+              class="btn-ghost btn-icon -mr-2 text-[var(--geist-foreground-300)]"
               aria-label="Close modal"
             >
               <Icon name="x" size="md" />
@@ -46,7 +46,7 @@
 import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
 
-// 生成唯一ID以避免多个对话框时ID冲突
+// 生成唯一ID以避免多个对话方块时ID冲突
 let dialogIdCounter = 0
 const dialogId = `modal-title-${++dialogIdCounter}`
 
@@ -119,10 +119,10 @@ watch(
     if (isOpen) {
       // 保存当前焦点元素
       previousActiveElement = document.activeElement as HTMLElement
-      // 使用CSS类而不是直接操作style,更易于管理多个对话框
+      // 使用CSS类而不是直接操作style,更易于管理多个对话方块
       document.body.classList.add('modal-open')
 
-      // 等待DOM更新后设置焦点到对话框
+      // 等待DOM更新后设置焦点到对话方块
       await nextTick()
       if (modalBodyRef.value) {
         modalBodyRef.value.scrollTop = 0
@@ -151,7 +151,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleEscape)
-  // 确保组件卸载时移除滚动锁定
+  // 确保组件解除安装时移除滚动锁定
   document.body.classList.remove('modal-open')
 })
 </script>
