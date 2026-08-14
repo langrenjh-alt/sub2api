@@ -15,6 +15,7 @@ import type {
   SendVerifyCodeResponse,
   PublicSettings,
   ActionCaptchaRequestProof,
+  GeetestRequestFields,
   TotpLoginResponse,
   TotpLogin2FARequest
 } from '@/types'
@@ -528,7 +529,7 @@ export async function validateInvitationCode(code: string): Promise<ValidateInvi
 /**
  * Forgot password request
  */
-export interface ForgotPasswordRequest {
+export interface ForgotPasswordRequest extends GeetestRequestFields {
   email: string
   turnstile_token?: string
   tencent_captcha_ticket?: string

@@ -48,6 +48,7 @@ func NewAuthHandler(cfg *config.Config, authService *service.AuthService, userSe
 
 // RegisterRequest represents the registration request payload
 type RegisterRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	Password              string `json:"password" binding:"required,min=6"`
 	VerifyCode            string `json:"verify_code"`
@@ -59,8 +60,25 @@ type RegisterRequest struct {
 	AffCode               string `json:"aff_code"`        // 邀请返利码
 }
 
+type GeetestChallengeRequest struct {
+	GeetestLotNumber     string `json:"geetest_lot_number"`
+	GeetestCaptchaOutput string `json:"geetest_captcha_output"`
+	GeetestPassToken     string `json:"geetest_pass_token"`
+	GeetestGenTime       string `json:"geetest_gen_time"`
+}
+
+func (r GeetestChallengeRequest) challenge() service.GeetestChallenge {
+	return service.GeetestChallenge{
+		LotNumber:     r.GeetestLotNumber,
+		CaptchaOutput: r.GeetestCaptchaOutput,
+		PassToken:     r.GeetestPassToken,
+		GenTime:       r.GeetestGenTime,
+	}
+}
+
 // SendVerifyCodeRequest 发送验证码请求
 type SendVerifyCodeRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	TurnstileToken        string `json:"turnstile_token"`
 	TencentCaptchaTicket  string `json:"tencent_captcha_ticket"`
@@ -75,6 +93,7 @@ type SendVerifyCodeResponse struct {
 
 // LoginRequest represents the login request payload
 type LoginRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	Password              string `json:"password" binding:"required"`
 	TurnstileToken        string `json:"turnstile_token"`
@@ -88,6 +107,12 @@ func captchaProof(turnstileToken, tencentTicket, tencentRandstr string) service.
 		TencentTicket:  tencentTicket,
 		TencentRandstr: tencentRandstr,
 	}
+}
+
+func captchaProofWithGeetest(turnstileToken, tencentTicket, tencentRandstr string, geetest GeetestChallengeRequest) service.CaptchaProof {
+	proof := captchaProof(turnstileToken, tencentTicket, tencentRandstr)
+	proof.Geetest = geetest.challenge()
+	return proof
 }
 
 // AuthResponse 认证响应格式（匹配前端期望）
@@ -184,7 +209,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	// 验证当前启用的验证码（邮箱验证码注册场景避免重复校验一次性票据）
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
 	if err := h.authService.VerifyCaptchaForRegister(c.Request.Context(), proof, ip.GetClientIP(c), req.VerifyCode); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -216,13 +241,8 @@ func (h *AuthHandler) SendVerifyCode(c *gin.Context) {
 		return
 	}
 
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
-	if err := h.authService.VerifyCaptcha(c.Request.Context(), proof, ip.GetClientIP(c)); err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
-	result, err := h.authService.SendVerifyCodeAsync(c.Request.Context(), req.Email, c.GetHeader("Accept-Language"))
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
+	result, err := h.authService.SendVerifyCodeAsyncWithCaptcha(c.Request.Context(), req.Email, proof, ip.GetClientIP(c), c.GetHeader("Accept-Language"))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -243,7 +263,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
 	if err := h.authService.VerifyCaptcha(c.Request.Context(), proof, ip.GetClientIP(c)); err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -588,6 +608,7 @@ func (h *AuthHandler) ValidateInvitationCode(c *gin.Context) {
 
 // ForgotPasswordRequest 忘记密码请求
 type ForgotPasswordRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	TurnstileToken        string `json:"turnstile_token"`
 	TencentCaptchaTicket  string `json:"tencent_captcha_ticket"`
@@ -608,7 +629,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
 	if err := h.authService.VerifyCaptcha(c.Request.Context(), proof, ip.GetClientIP(c)); err != nil {
 		response.ErrorFrom(c, err)
 		return

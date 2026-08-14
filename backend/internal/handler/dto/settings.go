@@ -60,6 +60,9 @@ type SystemSettings struct {
 	TurnstileEnabled                       bool     `json:"turnstile_enabled"`
 	TurnstileSiteKey                       string   `json:"turnstile_site_key"`
 	TurnstileSecretKeyConfigured           bool     `json:"turnstile_secret_key_configured"`
+	GeetestEnabled                         bool     `json:"geetest_enabled"`
+	GeetestCaptchaID                       string   `json:"geetest_captcha_id"`
+	GeetestCaptchaKeyConfigured            bool     `json:"geetest_captcha_key_configured"`
 	TencentCaptchaEnabled                  bool     `json:"tencent_captcha_enabled"`
 	TencentCaptchaAppID                    string   `json:"tencent_captcha_app_id"`
 	TencentCaptchaAppSecretKeyConfigured   bool     `json:"tencent_captcha_app_secret_key_configured"`
@@ -365,6 +368,8 @@ type PublicSettings struct {
 	LoginAgreementDocuments             []LoginAgreementDocument `json:"login_agreement_documents"`
 	TurnstileEnabled                    bool                     `json:"turnstile_enabled"`
 	TurnstileSiteKey                    string                   `json:"turnstile_site_key"`
+	GeetestEnabled                      bool                     `json:"geetest_enabled"`
+	GeetestCaptchaID                    string                   `json:"geetest_captcha_id"`
 	TencentCaptchaEnabled               bool                     `json:"tencent_captcha_enabled"`
 	TencentCaptchaAppID                 string                   `json:"tencent_captcha_app_id"`
 	TencentCaptchaRegion                string                   `json:"tencent_captcha_region"`

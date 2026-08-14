@@ -47,6 +47,7 @@ type passkeyFinishRequest struct {
 }
 
 type passkeyBeginLoginRequest struct {
+	GeetestChallengeRequest
 	// TurnstileToken 承载阿里云验证码的 captchaVerifyParam（复用既有请求字段名）
 	TurnstileToken        string `json:"turnstile_token"`
 	TencentCaptchaTicket  string `json:"tencent_captcha_ticket"`
@@ -84,6 +85,7 @@ func (h *PasskeyHandler) BeginLogin(c *gin.Context) {
 		TurnstileToken: req.TurnstileToken,
 		TencentTicket:  req.TencentCaptchaTicket,
 		TencentRandstr: req.TencentCaptchaRandstr,
+		Geetest:        req.challenge(),
 	}, ip.GetClientIP(c)); err != nil {
 		response.ErrorFrom(c, err)
 		return

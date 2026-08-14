@@ -210,6 +210,11 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	if settings.TurnstileSecretKey != "" {
 		updates[SettingKeyTurnstileSecretKey] = settings.TurnstileSecretKey
 	}
+	updates[SettingKeyGeetestEnabled] = strconv.FormatBool(settings.GeetestEnabled)
+	updates[SettingKeyGeetestCaptchaID] = settings.GeetestCaptchaID
+	if settings.GeetestCaptchaKey != "" {
+		updates[SettingKeyGeetestCaptchaKey] = settings.GeetestCaptchaKey
+	}
 
 	updates[SettingKeyTencentCaptchaEnabled] = strconv.FormatBool(settings.TencentCaptchaEnabled)
 	updates[SettingKeyTencentCaptchaAppID] = settings.TencentCaptchaAppID

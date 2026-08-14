@@ -95,6 +95,31 @@ func TestVerifyCaptchaRequiredModeAcceptsCompleteTencentProvider(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestIsTurnstileProofRequiredUsesActiveProvider(t *testing.T) {
+	tests := []struct {
+		name     string
+		settings map[string]string
+		want     bool
+	}{
+		{name: "config fallback without database provider", settings: map[string]string{}, want: true},
+		{name: "turnstile provider", settings: map[string]string{SettingKeyTurnstileEnabled: "true"}, want: true},
+		{name: "geetest replaces config fallback", settings: map[string]string{SettingKeyGeetestEnabled: "true"}},
+		{name: "tencent replaces config fallback", settings: tencentCaptchaSettings()},
+		{name: "aliyun replaces config fallback", settings: aliyunEnabledSettings()},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			svc := newAuthServiceForCaptchaTest(tt.settings, true, nil, nil)
+
+			required, err := svc.isTurnstileProofRequired(context.Background())
+
+			require.NoError(t, err)
+			require.Equal(t, tt.want, required)
+		})
+	}
+}
+
 func TestVerifyCaptchaForRegisterSkipsDuplicateTencentTicketAfterEmailCode(t *testing.T) {
 	settings := tencentCaptchaSettings()
 	settings[SettingKeyEmailVerifyEnabled] = "true"
@@ -105,6 +130,38 @@ func TestVerifyCaptchaForRegisterSkipsDuplicateTencentTicketAfterEmailCode(t *te
 
 	require.NoError(t, err)
 	require.Zero(t, verifier.calls)
+}
+
+func TestVerifyCaptchaForPendingOAuthCreatePreservesTencentVerification(t *testing.T) {
+	verifier := &tencentCaptchaVerifierStub{response: &TencentCaptchaVerifyResponse{CaptchaCode: 1}}
+	svc := newAuthServiceForCaptchaTest(tencentCaptchaSettings(), false, nil, verifier)
+
+	err := svc.VerifyCaptchaForPendingOAuthCreate(context.Background(), CaptchaProof{
+		TencentTicket:  "ticket",
+		TencentRandstr: "@rand",
+	}, "203.0.113.10", "123456")
+
+	require.NoError(t, err)
+	require.Equal(t, 1, verifier.calls)
+}
+
+func TestVerifyCaptchaForPendingOAuthCreatePreservesTurnstileVerification(t *testing.T) {
+	settings := map[string]string{
+		SettingKeyTurnstileEnabled:   "true",
+		SettingKeyTurnstileSecretKey: "turnstile-secret",
+	}
+	verifier := &turnstileVerifierSpy{}
+	svc := newAuthServiceForCaptchaTest(settings, false, verifier, nil)
+
+	err := svc.VerifyCaptchaForPendingOAuthCreate(
+		context.Background(),
+		CaptchaProof{TurnstileToken: "turnstile-token"},
+		"203.0.113.10",
+		"123456",
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, verifier.called)
 }
 
 func TestVerifyCaptchaFailsClosedWhenProviderSettingsCannotBeRead(t *testing.T) {

@@ -209,6 +209,8 @@
             ref="turnstileRef"
             :turnstile-enabled="turnstileEnabled"
             :turnstile-site-key="turnstileSiteKey"
+            :geetest-enabled="geetestEnabled"
+            :geetest-captcha-id="geetestCaptchaId"
             :tencent-enabled="tencentCaptchaEnabled"
             :tencent-app-id="tencentCaptchaAppId"
             :tencent-region="tencentCaptchaRegion"
@@ -237,7 +239,11 @@
         <!-- Submit Button -->
         <button
           type="submit"
-          :disabled="registrationActionDisabled || (turnstileEnabled && !turnstileToken)"
+          :disabled="
+            registrationActionDisabled ||
+            (turnstileEnabled && !turnstileToken) ||
+            (geetestEnabled && !geetestValidation)
+          "
           class="btn btn-primary w-full"
         >
           <svg
@@ -353,6 +359,7 @@ import {
   validateInvitationCode
 } from '@/api/auth'
 import { buildAuthErrorMessage } from '@/utils/authError'
+import { toGeetestRequestFields } from '@/utils/geetest'
 import { extractApiErrorCode, extractI18nErrorMessage } from '@/utils/apiError'
 import {
   formatRegistrationEmailSuffixWhitelistForMessage,
@@ -364,7 +371,7 @@ import {
   loadAffiliateReferralCode,
   resolveAffiliateReferralCode
 } from '@/utils/oauthAffiliate'
-import type { LoginAgreementDocument } from '@/types'
+import type { GeetestValidation, LoginAgreementDocument } from '@/types'
 
 const { t, locale } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
@@ -391,6 +398,8 @@ const invitationCodeEnabled = ref<boolean>(false)
 const affiliateEnabled = ref<boolean>(false)
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const tencentCaptchaEnabled = ref<boolean>(false)
 const tencentCaptchaAppId = ref<string>('')
 const tencentCaptchaRegion = ref<string>('cn')
@@ -420,6 +429,7 @@ const showAgreementModal = ref<boolean>(false)
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const turnstileToken = ref<string>('')
 const tencentCaptchaRandstr = ref<string>('')
+const geetestValidation = ref<GeetestValidation | null>(null)
 const aliyunCaptchaReady = computed(
   () =>
     aliyunCaptchaEnabled.value &&
@@ -429,6 +439,7 @@ const aliyunCaptchaReady = computed(
 // 动作触发式验证码（腾讯/阿里云）：提交、OAuth 启动时弹窗验证
 const actionCaptchaEnabled = computed(
   () =>
+    (geetestEnabled.value && Boolean(geetestCaptchaId.value)) ||
     (tencentCaptchaEnabled.value && Boolean(tencentCaptchaAppId.value)) ||
     aliyunCaptchaReady.value
 )
@@ -526,6 +537,8 @@ onMounted(async () => {
     affiliateEnabled.value = settings.affiliate_enabled
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     tencentCaptchaEnabled.value = settings.tencent_captcha_enabled === true
     tencentCaptchaAppId.value = settings.tencent_captcha_app_id || ''
     tencentCaptchaRegion.value = settings.tencent_captcha_region || 'cn'
@@ -782,21 +795,24 @@ function getInvitationErrorMessage(errorCode?: string): string {
 
 // ==================== Turnstile Handlers ====================
 
-function onTurnstileVerify(token: string, randstr = ''): void {
+function onTurnstileVerify(token: string, randstr = '', geetest?: GeetestValidation): void {
   turnstileToken.value = token
   tencentCaptchaRandstr.value = randstr
+  geetestValidation.value = geetest ?? null
   errors.turnstile = ''
 }
 
 function onTurnstileExpire(): void {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = t('auth.turnstileExpired')
 }
 
 function onTurnstileError(): void {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = t('auth.turnstileFailed')
 }
 
@@ -804,6 +820,7 @@ function resetCaptchaProof(): void {
   turnstileRef.value?.reset()
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = ''
 }
 
@@ -811,10 +828,16 @@ async function acquireActionProof(): Promise<boolean> {
   if (!actionCaptchaEnabled.value) return true
 
   const proof = await turnstileRef.value?.verifyAction()
-  if (!proof) return false
+  if (!proof) {
+    if (geetestEnabled.value) {
+      errors.turnstile = t('auth.completeVerification')
+    }
+    return false
+  }
 
   turnstileToken.value = proof.token
   tencentCaptchaRandstr.value = proof.randstr
+  geetestValidation.value = proof.geetest ?? null
   return true
 }
 
@@ -829,11 +852,18 @@ async function handleOAuthStart(request: OAuthLoginStart): Promise<void> {
   isLoading.value = true
   try {
     const proof = await turnstileRef.value?.verifyAction()
-    if (!proof) return
+    if (!proof) {
+      if (geetestEnabled.value) {
+        errors.turnstile = t('auth.completeVerification')
+      }
+      return
+    }
 
     const result = await startOAuthLogin(
       request,
-      tencentCaptchaEnabled.value
+      proof.geetest
+        ? toGeetestRequestFields(proof.geetest)
+        : tencentCaptchaEnabled.value
         ? {
             tencent_captcha_ticket: proof.token,
             tencent_captcha_randstr: proof.randstr
@@ -933,6 +963,10 @@ function validateForm(): boolean {
     errors.turnstile = t('auth.completeVerification')
     isValid = false
   }
+  if (geetestEnabled.value && !geetestValidation.value) {
+    errors.turnstile = t('auth.completeVerification')
+    isValid = false
+  }
 
   return isValid
 }
@@ -1010,6 +1044,7 @@ async function handleRegister(): Promise<void> {
             turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
           tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
           tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
+          ...toGeetestRequestFields(geetestValidation.value),
           promo_code: formData.promo_code || undefined,
           invitation_code: formData.invitation_code || undefined,
           ...(affCode ? { aff_code: affCode } : {})
@@ -1029,6 +1064,7 @@ async function handleRegister(): Promise<void> {
         turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
       tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
       tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
+      ...toGeetestRequestFields(geetestValidation.value),
       promo_code: formData.promo_code || undefined,
       invitation_code: formData.invitation_code || undefined,
       ...(affCode ? { aff_code: affCode } : {})

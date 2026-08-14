@@ -487,9 +487,18 @@ type AliyunCaptchaConfig struct {
 	Region          string
 }
 
+// GeetestCaptchaConfig contains the GEETEST v4 credentials. It must never be
+// returned by a public handler.
+type GeetestCaptchaConfig struct {
+	Enabled    bool
+	CaptchaID  string
+	CaptchaKey string
+}
+
 type CaptchaProviderConfig struct {
 	TurnstileEnabled   bool
 	TurnstileSecretKey string
+	Geetest            GeetestCaptchaConfig
 	Tencent            TencentCaptchaConfig
 	Aliyun             AliyunCaptchaConfig
 }
@@ -498,6 +507,9 @@ func (s *SettingService) GetCaptchaProviderConfig(ctx context.Context) (CaptchaP
 	values, err := s.settingRepo.GetMultiple(ctx, []string{
 		SettingKeyTurnstileEnabled,
 		SettingKeyTurnstileSecretKey,
+		SettingKeyGeetestEnabled,
+		SettingKeyGeetestCaptchaID,
+		SettingKeyGeetestCaptchaKey,
 		SettingKeyTencentCaptchaEnabled,
 		SettingKeyTencentCaptchaAppID,
 		SettingKeyTencentCaptchaAppSecretKey,
@@ -516,6 +528,11 @@ func (s *SettingService) GetCaptchaProviderConfig(ctx context.Context) (CaptchaP
 	return CaptchaProviderConfig{
 		TurnstileEnabled:   values[SettingKeyTurnstileEnabled] == "true",
 		TurnstileSecretKey: values[SettingKeyTurnstileSecretKey],
+		Geetest: GeetestCaptchaConfig{
+			Enabled:    values[SettingKeyGeetestEnabled] == "true",
+			CaptchaID:  strings.TrimSpace(values[SettingKeyGeetestCaptchaID]),
+			CaptchaKey: strings.TrimSpace(values[SettingKeyGeetestCaptchaKey]),
+		},
 		Tencent: TencentCaptchaConfig{
 			Enabled:        values[SettingKeyTencentCaptchaEnabled] == "true",
 			AppID:          values[SettingKeyTencentCaptchaAppID],
@@ -532,6 +549,19 @@ func (s *SettingService) GetCaptchaProviderConfig(ctx context.Context) (CaptchaP
 			Region:          normalizeAliyunCaptchaRegion(values[SettingKeyAliyunCaptchaRegion]),
 		},
 	}, nil
+}
+
+func (s *SettingService) IsGeetestEnabled(ctx context.Context) bool {
+	config, err := s.GetCaptchaProviderConfig(ctx)
+	return err == nil && config.Geetest.Enabled
+}
+
+func (s *SettingService) GetGeetestConfig(ctx context.Context) (enabled bool, captchaID, captchaKey string, err error) {
+	config, err := s.GetCaptchaProviderConfig(ctx)
+	if err != nil {
+		return false, "", "", err
+	}
+	return config.Geetest.Enabled, config.Geetest.CaptchaID, config.Geetest.CaptchaKey, nil
 }
 
 func (s *SettingService) IsTencentCaptchaEnabled(ctx context.Context) bool {

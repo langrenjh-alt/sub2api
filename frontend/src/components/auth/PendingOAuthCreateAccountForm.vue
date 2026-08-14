@@ -16,12 +16,14 @@
       :placeholder="t('auth.passwordPlaceholder')"
       :disabled="isSubmitting"
     />
-    <div v-if="captchaEnabled" class="space-y-2">
+    <div v-if="captchaEnabled && !(geetestEnabled && sendCodeSuccess)" class="space-y-2">
       <TurnstileWidget
         ref="turnstileRef"
         :site-key="turnstileSiteKey"
         :turnstile-enabled="turnstileEnabled"
         :turnstile-site-key="turnstileSiteKey"
+        :geetest-enabled="geetestEnabled"
+        :geetest-captcha-id="geetestCaptchaId"
         :tencent-enabled="tencentCaptchaEnabled"
         :tencent-app-id="tencentCaptchaAppId"
         :tencent-region="tencentCaptchaRegion"
@@ -49,7 +51,13 @@
         :data-testid="`${testIdPrefix}-create-account-send-code`"
         type="button"
         class="btn btn-secondary shrink-0"
-        :disabled="isSubmitting || isSendingCode || countdown > 0 || !email.trim() || (turnstileEnabled && !turnstileToken)"
+        :disabled="
+          isSubmitting ||
+          isSendingCode ||
+          countdown > 0 ||
+          !email.trim() ||
+          (turnstileEnabled && !turnstileToken)
+        "
         @click="handleSendCode"
       >
         {{
@@ -102,6 +110,8 @@ import { useI18n } from 'vue-i18n'
 import TurnstileWidget from '@/components/CaptchaChallenge.vue'
 import { getPublicSettings, sendPendingOAuthVerifyCode } from '@/api/auth'
 import { useAppStore } from '@/stores'
+import { toGeetestRequestFields } from '@/utils/geetest'
+import type { GeetestValidation } from '@/types'
 
 export type PendingOAuthCreateAccountPayload = {
   email: string
@@ -110,6 +120,7 @@ export type PendingOAuthCreateAccountPayload = {
   turnstileToken?: string
   tencentCaptchaTicket?: string
   tencentCaptchaRandstr?: string
+  geetest?: GeetestValidation
   invitationCode?: string
 }
 
@@ -140,6 +151,8 @@ const invitationCodeEnabled = ref(false)
 const emailVerifyEnabled = ref(true)
 const turnstileEnabled = ref(false)
 const turnstileSiteKey = ref('')
+const geetestEnabled = ref(false)
+const geetestCaptchaId = ref('')
 const tencentCaptchaEnabled = ref(false)
 const tencentCaptchaAppId = ref('')
 const tencentCaptchaRegion = ref('cn')
@@ -149,6 +162,7 @@ const aliyunCaptchaPrefix = ref('')
 const aliyunCaptchaRegion = ref('cn')
 const turnstileToken = ref('')
 const tencentCaptchaRandstr = ref('')
+const geetestValidation = ref<GeetestValidation | null>(null)
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const aliyunCaptchaReady = computed(
   () =>
@@ -159,12 +173,16 @@ const aliyunCaptchaReady = computed(
 // 动作触发式验证码（腾讯/阿里云）：发送验证码、提交时弹窗验证
 const actionCaptchaEnabled = computed(
   () =>
+    (geetestEnabled.value && Boolean(geetestCaptchaId.value)) ||
     (tencentCaptchaEnabled.value && Boolean(tencentCaptchaAppId.value)) ||
     aliyunCaptchaReady.value
 )
 const captchaEnabled = computed(
   () =>
     (turnstileEnabled.value && Boolean(turnstileSiteKey.value)) || actionCaptchaEnabled.value
+)
+const submitActionCaptchaEnabled = computed(
+  () => actionCaptchaEnabled.value && (!geetestEnabled.value || !sendCodeSuccess.value)
 )
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null
@@ -229,24 +247,28 @@ function getRequestErrorMessage(error: unknown, fallback: string): string {
 function resetTurnstile() {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   turnstileRef.value?.reset()
 }
 
-function onTurnstileVerify(token: string, randstr = '') {
+function onTurnstileVerify(token: string, randstr = '', geetest?: GeetestValidation) {
   turnstileToken.value = token
   tencentCaptchaRandstr.value = randstr
+  geetestValidation.value = geetest ?? null
   sendCodeError.value = ''
 }
 
 function onTurnstileExpire() {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   sendCodeError.value = t('auth.turnstileExpired')
 }
 
 function onTurnstileError() {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   sendCodeError.value = t('auth.turnstileFailed')
 }
 
@@ -254,10 +276,16 @@ async function acquireActionProof(): Promise<boolean> {
   if (!actionCaptchaEnabled.value) return true
 
   const proof = await turnstileRef.value?.verifyAction()
-  if (!proof) return false
+  if (!proof) {
+    if (geetestEnabled.value) {
+      sendCodeError.value = t('auth.completeVerification')
+    }
+    return false
+  }
 
   turnstileToken.value = proof.token
   tencentCaptchaRandstr.value = proof.randstr
+  geetestValidation.value = proof.geetest ?? null
   return true
 }
 
@@ -271,7 +299,6 @@ async function handleSendCode() {
     sendCodeError.value = t('auth.completeVerification')
     return
   }
-
   if (!(await acquireActionProof())) {
     return
   }
@@ -286,7 +313,8 @@ async function handleSendCode() {
       turnstile_token:
         turnstileEnabled.value || aliyunCaptchaEnabled.value ? turnstileToken.value : undefined,
       tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
-      tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined
+      tencent_captcha_randstr: tencentCaptchaEnabled.value ? tencentCaptchaRandstr.value : undefined,
+      ...toGeetestRequestFields(geetestValidation.value)
     })
     sendCodeSuccess.value = true
     startCountdown(response.countdown)
@@ -314,7 +342,7 @@ async function handleSubmit() {
     return
   }
 
-  if (!(await acquireActionProof())) {
+  if (submitActionCaptchaEnabled.value && !(await acquireActionProof())) {
     return
   }
 
@@ -330,6 +358,9 @@ async function handleSubmit() {
           tencentCaptchaTicket: turnstileToken.value,
           tencentCaptchaRandstr: tencentCaptchaRandstr.value
         }
+      : {}),
+    ...(geetestValidation.value && !sendCodeSuccess.value
+      ? { geetest: geetestValidation.value }
       : {}),
     invitationCode: invitationCode.value.trim() || undefined
   })
@@ -350,6 +381,8 @@ onMounted(async () => {
     emailVerifyEnabled.value = settings.email_verify_enabled !== false
     turnstileEnabled.value = settings.turnstile_enabled === true
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     tencentCaptchaEnabled.value = settings.tencent_captcha_enabled === true
     tencentCaptchaAppId.value = settings.tencent_captcha_app_id || ''
     tencentCaptchaRegion.value = settings.tencent_captcha_region || 'cn'
@@ -362,6 +395,8 @@ onMounted(async () => {
     emailVerifyEnabled.value = true
     turnstileEnabled.value = false
     turnstileSiteKey.value = ''
+    geetestEnabled.value = false
+    geetestCaptchaId.value = ''
     tencentCaptchaEnabled.value = false
     tencentCaptchaAppId.value = ''
     tencentCaptchaRegion.value = 'cn'

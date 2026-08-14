@@ -56,6 +56,25 @@ func (s *TurnstileService) VerifyToken(ctx context.Context, token string, remote
 	return s.VerifyTokenWithSecret(ctx, secretKey, token, remoteIP)
 }
 
+// VerifyTokenWithState reports whether Turnstile was enabled and successfully
+// verified for the exact settings snapshot used by this call.
+func (s *TurnstileService) VerifyTokenWithState(ctx context.Context, token string, remoteIP string) (bool, error) {
+	if s == nil || s.settingService == nil {
+		return false, ErrTurnstileNotConfigured
+	}
+	config, err := s.settingService.GetCaptchaProviderConfig(ctx)
+	if err != nil {
+		return false, ErrTurnstileNotConfigured
+	}
+	if !config.TurnstileEnabled {
+		return false, nil
+	}
+	if err := s.VerifyTokenWithSecret(ctx, config.TurnstileSecretKey, token, remoteIP); err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
 func (s *TurnstileService) VerifyTokenWithSecret(ctx context.Context, secretKey, token, remoteIP string) error {
 	if secretKey == "" {
 		logger.LegacyPrintf("service.turnstile", "%s", "[Turnstile] Secret key not configured")

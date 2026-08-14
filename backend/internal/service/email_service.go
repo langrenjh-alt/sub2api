@@ -58,12 +58,61 @@ type EmailCache interface {
 	GetNotifyCodeUserRate(ctx context.Context, userID int64) (int64, error)
 }
 
+type VerificationCodePurpose string
+
+const (
+	VerificationCodePurposeRegistration VerificationCodePurpose = "registration"
+	VerificationCodePurposePendingOAuth VerificationCodePurpose = "pending_oauth"
+	VerificationCodePurposeEmailBinding VerificationCodePurpose = "email_binding"
+	VerificationCodePurposeTOTP         VerificationCodePurpose = "totp"
+)
+
+type VerificationCodeOptions struct {
+	Purpose           VerificationCodePurpose
+	TurnstileVerified bool
+	GeetestVerified   bool
+}
+
+type VerificationCodeRequirements struct {
+	Purpose          VerificationCodePurpose
+	RequireTurnstile bool
+	RequireGeetest   bool
+}
+
+type VerificationCodeConsumeRequest struct {
+	Code             string
+	Purpose          VerificationCodePurpose
+	RequireTurnstile bool
+	RequireGeetest   bool
+	MaxAttempts      int
+}
+
+type VerificationCodeConsumeStatus string
+
+const (
+	VerificationCodeConsumeSuccess              VerificationCodeConsumeStatus = "success"
+	VerificationCodeConsumeMissing              VerificationCodeConsumeStatus = "missing"
+	VerificationCodeConsumeInvalid              VerificationCodeConsumeStatus = "invalid"
+	VerificationCodeConsumeMaxAttempts          VerificationCodeConsumeStatus = "max_attempts"
+	VerificationCodeConsumeRequirementsMismatch VerificationCodeConsumeStatus = "requirements_mismatch"
+)
+
+// AtomicVerificationCodeCache is implemented by the production Redis cache.
+// It validates and consumes a code under one optimistic transaction so a code
+// and its captcha proof cannot be reused concurrently.
+type AtomicVerificationCodeCache interface {
+	ConsumeVerificationCode(ctx context.Context, email string, req VerificationCodeConsumeRequest) (VerificationCodeConsumeStatus, error)
+}
+
 // VerificationCodeData represents verification code data
 type VerificationCodeData struct {
-	Code      string
-	Attempts  int
-	CreatedAt time.Time
-	ExpiresAt time.Time // absolute expiry; used to preserve remaining TTL when updating attempts
+	Code              string                  `json:"code"`
+	Attempts          int                     `json:"attempts"`
+	CreatedAt         time.Time               `json:"created_at"`
+	ExpiresAt         time.Time               `json:"expires_at"` // absolute expiry; used to preserve remaining TTL when updating attempts
+	Purpose           VerificationCodePurpose `json:"purpose,omitempty"`
+	TurnstileVerified bool                    `json:"turnstile_verified,omitempty"`
+	GeetestVerified   bool                    `json:"geetest_verified,omitempty"`
 }
 
 // PasswordResetTokenData represents password reset token data
@@ -317,6 +366,10 @@ func (s *EmailService) GenerateVerifyCode() (string, error) {
 
 // SendVerifyCode 发送验证码邮件
 func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName string, locale ...string) error {
+	return s.SendVerifyCodeWithOptions(ctx, email, siteName, VerificationCodeOptions{}, locale...)
+}
+
+func (s *EmailService) SendVerifyCodeWithOptions(ctx context.Context, email, siteName string, options VerificationCodeOptions, locale ...string) error {
 	// 检查是否在冷却期内
 	existing, err := s.cache.GetVerificationCode(ctx, email)
 	if err == nil && existing != nil {
@@ -333,10 +386,13 @@ func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName strin
 
 	// 保存验证码到 Redis
 	data := &VerificationCodeData{
-		Code:      code,
-		Attempts:  0,
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(verifyCodeTTL),
+		Code:              code,
+		Attempts:          0,
+		CreatedAt:         time.Now(),
+		ExpiresAt:         time.Now().Add(verifyCodeTTL),
+		Purpose:           options.Purpose,
+		TurnstileVerified: options.TurnstileVerified,
+		GeetestVerified:   options.GeetestVerified,
 	}
 	if err := s.cache.SetVerificationCode(ctx, email, data, verifyCodeTTL); err != nil {
 		return fmt.Errorf("save verify code: %w", err)
@@ -376,6 +432,31 @@ func (s *EmailService) SendVerifyCode(ctx context.Context, email, siteName strin
 
 // VerifyCode 验证验证码
 func (s *EmailService) VerifyCode(ctx context.Context, email, code string) error {
+	return s.VerifyCodeWithRequirements(ctx, email, code, VerificationCodeRequirements{})
+}
+
+func (s *EmailService) VerifyCodeWithRequirements(ctx context.Context, email, code string, requirements VerificationCodeRequirements) error {
+	if cache, ok := s.cache.(AtomicVerificationCodeCache); ok {
+		status, err := cache.ConsumeVerificationCode(ctx, email, VerificationCodeConsumeRequest{
+			Code:             code,
+			Purpose:          requirements.Purpose,
+			RequireTurnstile: requirements.RequireTurnstile,
+			RequireGeetest:   requirements.RequireGeetest,
+			MaxAttempts:      maxVerifyCodeAttempts,
+		})
+		if err != nil {
+			return fmt.Errorf("consume verification code: %w", err)
+		}
+		switch status {
+		case VerificationCodeConsumeSuccess:
+			return nil
+		case VerificationCodeConsumeMaxAttempts:
+			return ErrVerifyCodeMaxAttempts
+		default:
+			return ErrInvalidVerifyCode
+		}
+	}
+
 	data, err := s.cache.GetVerificationCode(ctx, email)
 	if err != nil || data == nil {
 		return ErrInvalidVerifyCode
@@ -384,6 +465,9 @@ func (s *EmailService) VerifyCode(ctx context.Context, email, code string) error
 	// 检查是否已达到最大尝试次数
 	if data.Attempts >= maxVerifyCodeAttempts {
 		return ErrVerifyCodeMaxAttempts
+	}
+	if !verificationCodeMeetsRequirements(data, requirements) {
+		return ErrInvalidVerifyCode
 	}
 
 	// 验证码不匹配 (constant-time comparison to prevent timing attacks)
@@ -407,6 +491,22 @@ func (s *EmailService) VerifyCode(ctx context.Context, email, code string) error
 		slog.Error("failed to delete verification code after success", "email", email, "error", err)
 	}
 	return nil
+}
+
+func verificationCodeMeetsRequirements(data *VerificationCodeData, requirements VerificationCodeRequirements) bool {
+	if data == nil {
+		return false
+	}
+	if requirements.Purpose != "" && data.Purpose != requirements.Purpose {
+		return false
+	}
+	if requirements.RequireTurnstile && !data.TurnstileVerified {
+		return false
+	}
+	if requirements.RequireGeetest && !data.GeetestVerified {
+		return false
+	}
+	return true
 }
 
 // buildVerifyCodeEmailBody 构建验证码邮件HTML内容

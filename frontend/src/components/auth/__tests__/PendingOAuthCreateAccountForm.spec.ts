@@ -106,6 +106,59 @@ describe('PendingOAuthCreateAccountForm', () => {
     expect(turnstileReset).toHaveBeenCalledTimes(2)
   })
 
+  it('does not resubmit the GeeTest proof consumed by pending OAuth send-code', async () => {
+    const geetest = {
+      lot_number: 'lot-number',
+      captcha_output: 'captcha-output',
+      pass_token: 'pass-token',
+      gen_time: '1700000000000'
+    }
+    getPublicSettings.mockResolvedValue({
+      email_verify_enabled: true,
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id'
+    })
+    sendPendingOAuthVerifyCode.mockResolvedValue({ countdown: 0 })
+    verifyAction.mockResolvedValue({ token: '', randstr: '', geetest })
+    const CaptchaChallengeStub = defineComponent({
+      setup(_, { expose }) {
+        expose({ verifyAction, reset: turnstileReset })
+        return () => h('div')
+      }
+    })
+    const wrapper = mount(PendingOAuthCreateAccountForm, {
+      props: {
+        providerName: 'OIDC',
+        testIdPrefix: 'oidc',
+        initialEmail: 'user@example.com',
+        isSubmitting: false
+      },
+      global: {
+        stubs: { TurnstileWidget: CaptchaChallengeStub }
+      }
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-testid="oidc-create-account-password"]').setValue('secret-123')
+    await wrapper.get('[data-testid="oidc-create-account-verify-code"]').setValue('246810')
+    await wrapper.get('[data-testid="oidc-create-account-send-code"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="oidc-create-account-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(verifyAction).toHaveBeenCalledOnce()
+    expect(sendPendingOAuthVerifyCode).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      geetest_lot_number: geetest.lot_number,
+      geetest_captcha_output: geetest.captcha_output,
+      geetest_pass_token: geetest.pass_token,
+      geetest_gen_time: geetest.gen_time
+    })
+    expect(wrapper.emitted('submit')?.[0]?.[0]).not.toHaveProperty('geetest')
+  })
+
   it('emits trimmed email, password, and verify code on submit', async () => {
     const wrapper = mount(PendingOAuthCreateAccountForm, {
       props: {

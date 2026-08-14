@@ -196,6 +196,7 @@ export default {
         secretKeyConfiguredHint: '密钥已配置，留空以保留当前值。'
       },
       captcha: {
+        providerGeetest: 'GeeTest v4',
         title: '人机验证',
         description: '登录和注册的机器人防护',
         enable: '启用人机验证',
@@ -204,6 +205,13 @@ export default {
         providerTurnstile: 'Cloudflare Turnstile',
         providerTencent: '腾讯天御验证码',
         providerAliyun: '阿里云验证码 2.0'
+      },
+      geetest: {
+        captchaId: 'Captcha ID',
+        captchaKey: 'Captcha Key',
+        keepExisting: '留空以保留当前值',
+        configured: '已配置，留空不会覆盖。',
+        required: '启用前必须填写。'
       },
       tencentCaptcha: {
         title: '腾讯天御验证码',

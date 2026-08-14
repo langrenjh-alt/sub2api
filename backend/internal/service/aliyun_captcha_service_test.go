@@ -179,6 +179,21 @@ func TestAuthServiceVerifyCaptchaDispatchesAliyun(t *testing.T) {
 	require.Equal(t, "captcha-verify-param", spy.lastParam)
 }
 
+func TestAuthServiceVerifyCaptchaForPendingOAuthCreatePreservesAliyunVerification(t *testing.T) {
+	spy := &aliyunVerifierSpy{}
+	authService := newAliyunAuthServiceForTest(&config.Config{}, aliyunEnabledSettings(), spy)
+
+	err := authService.VerifyCaptchaForPendingOAuthCreate(
+		context.Background(),
+		CaptchaProof{TurnstileToken: "captcha-verify-param"},
+		"127.0.0.1",
+		"123456",
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, 1, spy.called)
+}
+
 func TestAuthServiceVerifyCaptchaRejectsProviderConflict(t *testing.T) {
 	settings := aliyunEnabledSettings()
 	settings[SettingKeyTurnstileEnabled] = "true"

@@ -302,6 +302,54 @@ func TestSendPendingOAuthVerifyCode_NilServiceReturnsUnavailable(t *testing.T) {
 	require.ErrorIs(t, err, ErrServiceUnavailable)
 }
 
+func TestVerifyOAuthEmailCodeRequiresPurposeBoundGeetestProof(t *testing.T) {
+	tests := []struct {
+		name             string
+		purpose          VerificationCodePurpose
+		geetest          bool
+		requireTurnstile bool
+		wantErr          bool
+	}{
+		{name: "accepts pending oauth code with geetest proof", purpose: VerificationCodePurposePendingOAuth, geetest: true},
+		{name: "geetest replaces required turnstile fallback", purpose: VerificationCodePurposePendingOAuth, geetest: true, requireTurnstile: true},
+		{name: "rejects registration code", purpose: VerificationCodePurposeRegistration, geetest: true, wantErr: true},
+		{name: "rejects code without geetest proof", purpose: VerificationCodePurposePendingOAuth, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authService := newOAuthEmailFlowAuthService(
+				&userRepoStub{},
+				nil,
+				nil,
+				map[string]string{
+					SettingKeyGeetestEnabled:    "true",
+					SettingKeyGeetestCaptchaID:  "captcha-id",
+					SettingKeyGeetestCaptchaKey: "captcha-key",
+				},
+				&emailCacheStub{data: &VerificationCodeData{
+					Code:            "246810",
+					Purpose:         tt.purpose,
+					GeetestVerified: tt.geetest,
+					ExpiresAt:       time.Now().UTC().Add(15 * time.Minute),
+				}},
+				nil,
+			)
+			if tt.requireTurnstile {
+				authService.cfg.Server.Mode = "release"
+				authService.cfg.Turnstile.Required = true
+			}
+
+			err := authService.VerifyOAuthEmailCode(context.Background(), "fresh@example.com", "246810")
+			if tt.wantErr {
+				require.ErrorIs(t, err, ErrInvalidVerifyCode)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestRegisterOAuthEmailAccountSetsNormalizedSignupSourceOnCreatedUser(t *testing.T) {
 	userRepo := &userRepoStub{nextID: 42}
 	emailCache := &emailCacheStub{

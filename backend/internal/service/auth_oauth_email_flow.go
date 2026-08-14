@@ -29,6 +29,15 @@ func normalizeOAuthSignupSource(signupSource string) string {
 // SendPendingOAuthVerifyCode sends a local verification code for pending OAuth
 // account-creation flows without relying on the public registration gate.
 func (s *AuthService) SendPendingOAuthVerifyCode(ctx context.Context, email string, locale ...string) (*SendVerifyCodeResult, error) {
+	return s.SendPendingOAuthVerifyCodeWithCaptcha(ctx, email, CaptchaProof{}, "", locale...)
+}
+
+func (s *AuthService) SendPendingOAuthVerifyCodeWithCaptcha(ctx context.Context, email string, proof CaptchaProof, remoteIP string, locale ...string) (*SendVerifyCodeResult, error) {
+	verification, err := s.VerifyCaptchaWithState(ctx, proof, remoteIP)
+	if err != nil {
+		return nil, err
+	}
+
 	email = strings.TrimSpace(strings.ToLower(email))
 	if email == "" {
 		return nil, ErrEmailVerifyRequired
@@ -50,7 +59,11 @@ func (s *AuthService) SendPendingOAuthVerifyCode(ctx context.Context, email stri
 	if s.settingService != nil {
 		siteName = s.settingService.GetSiteName(ctx)
 	}
-	if err := s.emailService.SendVerifyCode(ctx, email, siteName, firstEmailLocale(locale)); err != nil {
+	if err := s.emailService.SendVerifyCodeWithOptions(ctx, email, siteName, VerificationCodeOptions{
+		Purpose:           VerificationCodePurposePendingOAuth,
+		TurnstileVerified: verification.Turnstile,
+		GeetestVerified:   verification.Geetest,
+	}, firstEmailLocale(locale)); err != nil {
 		return nil, err
 	}
 	return &SendVerifyCodeResult{
@@ -97,7 +110,22 @@ func (s *AuthService) VerifyOAuthEmailCode(ctx context.Context, email, verifyCod
 	if s == nil || s.emailService == nil {
 		return ErrServiceUnavailable
 	}
-	return s.emailService.VerifyCode(ctx, email, verifyCode)
+	geetestRequired, err := s.isGeetestRequired(ctx)
+	if err != nil {
+		return ErrGeetestServiceUnavailable
+	}
+	turnstileRequired, err := s.isTurnstileProofRequired(ctx)
+	if err != nil {
+		return ErrTurnstileNotConfigured
+	}
+	requirements := VerificationCodeRequirements{
+		RequireTurnstile: turnstileRequired,
+		RequireGeetest:   geetestRequired,
+	}
+	if turnstileRequired || geetestRequired {
+		requirements.Purpose = VerificationCodePurposePendingOAuth
+	}
+	return s.emailService.VerifyCodeWithRequirements(ctx, email, verifyCode, requirements)
 }
 
 // RegisterOAuthEmailAccount creates a local account from a third-party first

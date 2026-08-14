@@ -37,6 +37,18 @@ const (
 	TencentCaptchaRceDomain = "https://rce.tencentrio.com"
 	// TencentCaptchaWorkerSource 是天御国际站创建验证码 Web Worker 时使用的来源。
 	TencentCaptchaWorkerSource = "blob:"
+	// GeeTestStaticDomain is the GEETEST v4 loader host.
+	GeeTestStaticDomain = "https://static.geetest.com"
+	// GeeTestFallbackStaticDomain is the loader fallback host.
+	GeeTestFallbackStaticDomain = "https://static.geevisit.com"
+	// GeeTestAPIDomain is the primary GEETEST v4 browser API host.
+	GeeTestAPIDomain = "https://gcaptcha4.geetest.com"
+	// GeeTestFallbackAPIDomain is the first browser API fallback.
+	GeeTestFallbackAPIDomain = "https://gcaptcha4.geevisit.com"
+	// GeeTestSecondaryFallbackAPIDomain is the final browser API fallback.
+	GeeTestSecondaryFallbackAPIDomain = "https://gcaptcha4.gsensebot.com"
+	// GeeTestMonitorDomain receives client diagnostics from the SDK.
+	GeeTestMonitorDomain = "https://monitor.geetest.com"
 	// StripeDomain is the domain for Stripe.js SDK
 	StripeDomain = "https://*.stripe.com"
 	// AirwallexStaticDomain 是 Airwallex 生产环境 SDK 脚本域名。
@@ -68,6 +80,22 @@ var requiredCSPDirectiveValues = []struct {
 	{"frame-src", TencentCaptchaGlobalDomain},
 	{"frame-src", TencentCaptchaPrehandleDomain},
 	{"worker-src", TencentCaptchaWorkerSource},
+	{"script-src", GeeTestStaticDomain},
+	{"script-src", GeeTestFallbackStaticDomain},
+	{"script-src", GeeTestAPIDomain},
+	{"script-src", GeeTestFallbackAPIDomain},
+	{"script-src", GeeTestSecondaryFallbackAPIDomain},
+	{"style-src", GeeTestStaticDomain},
+	{"style-src", GeeTestFallbackStaticDomain},
+	{"connect-src", GeeTestAPIDomain},
+	{"connect-src", GeeTestFallbackAPIDomain},
+	{"connect-src", GeeTestSecondaryFallbackAPIDomain},
+	{"connect-src", GeeTestMonitorDomain},
+	{"frame-src", GeeTestAPIDomain},
+	{"frame-src", GeeTestFallbackAPIDomain},
+	{"frame-src", GeeTestSecondaryFallbackAPIDomain},
+	{"frame-src", "https://*.geetest.com"},
+	{"frame-src", "https://*.geevisit.com"},
 	{"script-src", StripeDomain},
 	{"frame-src", StripeDomain},
 	{"script-src", AirwallexStaticDomain},

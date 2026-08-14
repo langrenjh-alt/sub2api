@@ -210,6 +210,7 @@ export default {
 
   // Auth
   auth: {
+    geetestFailed: 'GeeTest verification failed, please try again',
     welcomeBack: 'Welcome Back',
     signInToAccount: 'Sign in to your account to continue',
     signIn: 'Sign In',

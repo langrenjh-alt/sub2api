@@ -67,12 +67,20 @@
         </div>
 
         <!-- Turnstile Widget for Resend -->
-        <div v-if="actionCaptchaEnabled || (turnstileEnabled && showResendTurnstile)">
+        <div
+          v-if="
+            (actionCaptchaEnabled && !geetestEnabled) ||
+            (turnstileEnabled && showResendTurnstile) ||
+            (geetestEnabled && showResendGeetest)
+          "
+        >
           <TurnstileWidget
             ref="turnstileRef"
             :site-key="turnstileSiteKey"
             :turnstile-enabled="turnstileEnabled"
             :turnstile-site-key="turnstileSiteKey"
+            :geetest-enabled="geetestEnabled"
+            :geetest-captcha-id="geetestCaptchaId"
             :tencent-enabled="tencentCaptchaEnabled"
             :tencent-app-id="tencentCaptchaAppId"
             :tencent-region="tencentCaptchaRegion"
@@ -92,6 +100,8 @@
             :site-key="turnstileSiteKey"
             :turnstile-enabled="turnstileEnabled"
             :turnstile-site-key="turnstileSiteKey"
+            :geetest-enabled="geetestEnabled"
+            :geetest-captcha-id="geetestCaptchaId"
             :tencent-enabled="tencentCaptchaEnabled"
             :tencent-app-id="tencentCaptchaAppId"
             :tencent-region="tencentCaptchaRegion"
@@ -150,12 +160,16 @@
             type="button"
             @click="handleResendCode"
             :disabled="
-              isSendingCode || (turnstileEnabled && showResendTurnstile && !resendTurnstileToken)
+              isSendingCode ||
+              (turnstileEnabled && showResendTurnstile && !resendTurnstileToken) ||
+              (geetestEnabled && showResendGeetest && !resendGeetestValidation)
             "
             class="text-sm text-primary-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:hover:text-primary-300"
           >
             <span v-if="isSendingCode">{{ t('auth.sendingCode') }}</span>
-            <span v-else-if="captchaEnabled && !showResendTurnstile">
+            <span
+              v-else-if="captchaEnabled && !showResendTurnstile && !showResendGeetest"
+            >
               {{ t('auth.clickToResend') }}
             </span>
             <span v-else>{{ t('auth.resendCode') }}</span>
@@ -196,6 +210,8 @@ import {
 import { apiClient } from '@/api/client'
 import { buildAuthErrorMessage } from '@/utils/authError'
 import { extractApiErrorCode } from '@/utils/apiError'
+import { readGeetestValidation, toGeetestRequestFields } from '@/utils/geetest'
+import type { GeetestValidation } from '@/types'
 import {
   formatRegistrationEmailSuffixWhitelistForMessage,
   isRegistrationEmailSuffixAllowed,
@@ -247,6 +263,7 @@ const email = ref<string>('')
 const password = ref<string>('')
 const initialTurnstileToken = ref<string>('')
 const initialTencentCaptchaRandstr = ref<string>('')
+const initialGeetestValidation = ref<GeetestValidation | null>(null)
 const promoCode = ref<string>('')
 const invitationCode = ref<string>('')
 const affCode = ref<string>('')
@@ -263,6 +280,8 @@ const hasRegisterData = ref<boolean>(false)
 // Public settings
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const tencentCaptchaEnabled = ref<boolean>(false)
 const tencentCaptchaAppId = ref<string>('')
 const tencentCaptchaRegion = ref<string>('cn')
@@ -280,9 +299,12 @@ const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const createAccountTurnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const resendTurnstileToken = ref<string>('')
 const resendTencentCaptchaRandstr = ref<string>('')
+const resendGeetestValidation = ref<GeetestValidation | null>(null)
 const createAccountTurnstileToken = ref<string>('')
 const createAccountTencentCaptchaRandstr = ref<string>('')
+const createAccountGeetestValidation = ref<GeetestValidation | null>(null)
 const showResendTurnstile = ref<boolean>(false)
+const showResendGeetest = ref<boolean>(false)
 const aliyunCaptchaReady = computed(
   () =>
     aliyunCaptchaEnabled.value &&
@@ -292,6 +314,7 @@ const aliyunCaptchaReady = computed(
 // 动作触发式验证码（腾讯/阿里云）：重发验证码、创建账号时弹窗验证
 const actionCaptchaEnabled = computed(
   () =>
+    (geetestEnabled.value && Boolean(geetestCaptchaId.value)) ||
     (tencentCaptchaEnabled.value && Boolean(tencentCaptchaAppId.value)) ||
     aliyunCaptchaReady.value
 )
@@ -312,7 +335,11 @@ const pendingOAuthCreateTurnstileRequired = computed(
   () => isPendingOAuthFlow() && turnstileEnabled.value
 )
 const pendingOAuthCreateCaptchaEnabled = computed(
-  () => isPendingOAuthFlow() && captchaEnabled.value
+  () =>
+    isPendingOAuthFlow() &&
+    ((turnstileEnabled.value && Boolean(turnstileSiteKey.value)) ||
+      (tencentCaptchaEnabled.value && Boolean(tencentCaptchaAppId.value)) ||
+      aliyunCaptchaReady.value)
 )
 
 watch(validationToastMessage, (value, previousValue) => {
@@ -336,6 +363,7 @@ onMounted(async () => {
       initialTurnstileToken.value =
         registerData.tencent_captcha_ticket || registerData.turnstile_token || ''
       initialTencentCaptchaRandstr.value = registerData.tencent_captcha_randstr || ''
+      initialGeetestValidation.value = readGeetestValidation(registerData)
       promoCode.value = registerData.promo_code || ''
       invitationCode.value = registerData.invitation_code || ''
       affCode.value = registerData.aff_code || loadAffiliateReferralCode()
@@ -365,6 +393,8 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     tencentCaptchaEnabled.value = settings.tencent_captcha_enabled === true
     tencentCaptchaAppId.value = settings.tencent_captcha_app_id || ''
     tencentCaptchaRegion.value = settings.tencent_captcha_region || 'cn'
@@ -383,7 +413,14 @@ onMounted(async () => {
 
   // Auto-send verification code if we have valid data
   if (hasRegisterData.value) {
-    await sendCode()
+    const needsTurnstile = turnstileEnabled.value && !initialTurnstileToken.value
+    const needsGeetest = geetestEnabled.value && !initialGeetestValidation.value
+    if (needsTurnstile || needsGeetest) {
+      showResendTurnstile.value = needsTurnstile
+      showResendGeetest.value = needsGeetest
+    } else {
+      await sendCode()
+    }
   }
 })
 
@@ -417,45 +454,52 @@ function startCountdown(seconds: number): void {
 
 // ==================== Turnstile Handlers ====================
 
-function onTurnstileVerify(token: string, randstr = ''): void {
+function onTurnstileVerify(token: string, randstr = '', geetest?: GeetestValidation): void {
   resendTurnstileToken.value = token
   resendTencentCaptchaRandstr.value = randstr
+  resendGeetestValidation.value = geetest ?? null
   errors.value.turnstile = ''
 }
 
 function onTurnstileExpire(): void {
   resendTurnstileToken.value = ''
   resendTencentCaptchaRandstr.value = ''
+  resendGeetestValidation.value = null
   errors.value.turnstile = t('auth.turnstileExpired')
 }
 
 function onTurnstileError(): void {
   resendTurnstileToken.value = ''
   resendTencentCaptchaRandstr.value = ''
+  resendGeetestValidation.value = null
   errors.value.turnstile = t('auth.turnstileFailed')
 }
 
-function onCreateAccountTurnstileVerify(token: string, randstr = ''): void {
+function onCreateAccountTurnstileVerify(token: string, randstr = '', geetest?: GeetestValidation): void {
   createAccountTurnstileToken.value = token
   createAccountTencentCaptchaRandstr.value = randstr
+  createAccountGeetestValidation.value = geetest ?? null
   errors.value.turnstile = ''
 }
 
 function onCreateAccountTurnstileExpire(): void {
   createAccountTurnstileToken.value = ''
   createAccountTencentCaptchaRandstr.value = ''
+  createAccountGeetestValidation.value = null
   errors.value.turnstile = t('auth.turnstileExpired')
 }
 
 function onCreateAccountTurnstileError(): void {
   createAccountTurnstileToken.value = ''
   createAccountTencentCaptchaRandstr.value = ''
+  createAccountGeetestValidation.value = null
   errors.value.turnstile = t('auth.turnstileFailed')
 }
 
 function resetCreateAccountTurnstile(): void {
   createAccountTurnstileToken.value = ''
   createAccountTencentCaptchaRandstr.value = ''
+  createAccountGeetestValidation.value = null
   createAccountTurnstileRef.value?.reset()
 }
 
@@ -463,14 +507,21 @@ async function acquireResendActionProof(): Promise<boolean> {
   if (!actionCaptchaEnabled.value) return true
 
   const proof = await turnstileRef.value?.verifyAction()
-  if (!proof) return false
+  if (!proof) {
+    if (geetestEnabled.value) {
+      errors.value.turnstile = t('auth.completeVerification')
+    }
+    return false
+  }
 
   resendTurnstileToken.value = proof.token
   resendTencentCaptchaRandstr.value = proof.randstr
+  resendGeetestValidation.value = proof.geetest ?? null
   return true
 }
 
 async function acquireCreateAccountActionProof(): Promise<boolean> {
+  if (geetestEnabled.value) return true
   if (!isPendingOAuthFlow() || !actionCaptchaEnabled.value) return true
 
   const proof = await createAccountTurnstileRef.value?.verifyAction()
@@ -478,6 +529,7 @@ async function acquireCreateAccountActionProof(): Promise<boolean> {
 
   createAccountTurnstileToken.value = proof.token
   createAccountTencentCaptchaRandstr.value = proof.randstr
+  createAccountGeetestValidation.value = proof.geetest ?? null
   return true
 }
 
@@ -552,10 +604,15 @@ async function sendCode(): Promise<void> {
         : undefined,
       tencent_captcha_randstr: tencentCaptchaEnabled.value
         ? resendTencentCaptchaRandstr.value || initialTencentCaptchaRandstr.value || undefined
-        : undefined
+        : undefined,
+      ...toGeetestRequestFields(
+        resendGeetestValidation.value || initialGeetestValidation.value
+      )
     } as Parameters<typeof sendVerifyCode>[0]
     captchaProofUsed = Boolean(
-      requestPayload.turnstile_token || requestPayload.tencent_captcha_ticket
+      requestPayload.turnstile_token ||
+        requestPayload.tencent_captcha_ticket ||
+        requestPayload.geetest_lot_number
     )
     const response = isPendingOAuthFlow()
       ? await sendPendingOAuthVerifyCode(requestPayload)
@@ -581,6 +638,7 @@ async function sendCode(): Promise<void> {
     startCountdown(response.countdown)
 
     showResendTurnstile.value = false
+    showResendGeetest.value = false
   } catch (error: unknown) {
     errorMessage.value = buildRegistrationErrorMessage(error, t('auth.sendCodeFailed'))
 
@@ -590,11 +648,16 @@ async function sendCode(): Promise<void> {
       clearStoredCaptchaProof()
       initialTurnstileToken.value = ''
       initialTencentCaptchaRandstr.value = ''
+      initialGeetestValidation.value = null
       resendTurnstileToken.value = ''
       resendTencentCaptchaRandstr.value = ''
+      resendGeetestValidation.value = null
       turnstileRef.value?.reset()
       if (!requestSucceeded && turnstileEnabled.value) {
         showResendTurnstile.value = true
+      }
+      if (!requestSucceeded && geetestEnabled.value) {
+        showResendGeetest.value = true
       }
     }
     isSendingCode.value = false
@@ -610,6 +673,10 @@ function clearStoredCaptchaProof(): void {
     delete registerData.turnstile_token
     delete registerData.tencent_captcha_ticket
     delete registerData.tencent_captcha_randstr
+    delete registerData.geetest_lot_number
+    delete registerData.geetest_captcha_output
+    delete registerData.geetest_pass_token
+    delete registerData.geetest_gen_time
     sessionStorage.setItem('register_data', JSON.stringify(registerData))
   } catch {
     // Invalid registration state is handled by the existing onMounted parser.
@@ -620,12 +687,20 @@ function clearStoredCaptchaProof(): void {
 
 async function handleResendCode(): Promise<void> {
   // Turnstile stays staged; Tencent is acquired from this action.
-  if (turnstileEnabled.value && !showResendTurnstile.value) {
-    showResendTurnstile.value = true
+  if (
+    (turnstileEnabled.value && !showResendTurnstile.value) ||
+    (geetestEnabled.value && !showResendGeetest.value)
+  ) {
+    showResendTurnstile.value = turnstileEnabled.value
+    showResendGeetest.value = geetestEnabled.value
     return
   }
 
   if (turnstileEnabled.value && !resendTurnstileToken.value) {
+    errors.value.turnstile = t('auth.completeVerification')
+    return
+  }
+  if (geetestEnabled.value && !resendGeetestValidation.value) {
     errors.value.turnstile = t('auth.completeVerification')
     return
   }
@@ -751,6 +826,7 @@ async function handleVerify(): Promise<void> {
   } finally {
     initialTurnstileToken.value = ''
     initialTencentCaptchaRandstr.value = ''
+    initialGeetestValidation.value = null
     if (pendingOAuthCreateCaptchaEnabled.value) {
       resetCreateAccountTurnstile()
     }

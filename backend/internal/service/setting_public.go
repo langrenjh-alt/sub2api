@@ -172,6 +172,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyLoginAgreementDocuments,
 		SettingKeyTurnstileEnabled,
 		SettingKeyTurnstileSiteKey,
+		SettingKeyGeetestEnabled,
+		SettingKeyGeetestCaptchaID,
 		SettingKeyTencentCaptchaEnabled,
 		SettingKeyTencentCaptchaAppID,
 		SettingKeyTencentCaptchaRegion,
@@ -312,6 +314,8 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		LoginAgreementDocuments:             loginAgreementDocuments,
 		TurnstileEnabled:                    settings[SettingKeyTurnstileEnabled] == "true",
 		TurnstileSiteKey:                    settings[SettingKeyTurnstileSiteKey],
+		GeetestEnabled:                      settings[SettingKeyGeetestEnabled] == "true",
+		GeetestCaptchaID:                    settings[SettingKeyGeetestCaptchaID],
 		TencentCaptchaEnabled:               settings[SettingKeyTencentCaptchaEnabled] == "true",
 		TencentCaptchaAppID:                 settings[SettingKeyTencentCaptchaAppID],
 		TencentCaptchaRegion:                normalizeTencentCaptchaRegion(settings[SettingKeyTencentCaptchaRegion]),
@@ -554,6 +558,8 @@ type PublicSettingsInjectionPayload struct {
 	LoginAgreementDocuments             []LoginAgreementDocument `json:"login_agreement_documents"`
 	TurnstileEnabled                    bool                     `json:"turnstile_enabled"`
 	TurnstileSiteKey                    string                   `json:"turnstile_site_key"`
+	GeetestEnabled                      bool                     `json:"geetest_enabled"`
+	GeetestCaptchaID                    string                   `json:"geetest_captcha_id"`
 	TencentCaptchaEnabled               bool                     `json:"tencent_captcha_enabled"`
 	TencentCaptchaAppID                 string                   `json:"tencent_captcha_app_id"`
 	TencentCaptchaRegion                string                   `json:"tencent_captcha_region"`
@@ -639,6 +645,8 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		LoginAgreementDocuments:             settings.LoginAgreementDocuments,
 		TurnstileEnabled:                    settings.TurnstileEnabled,
 		TurnstileSiteKey:                    settings.TurnstileSiteKey,
+		GeetestEnabled:                      settings.GeetestEnabled,
+		GeetestCaptchaID:                    settings.GeetestCaptchaID,
 		TencentCaptchaEnabled:               settings.TencentCaptchaEnabled,
 		TencentCaptchaAppID:                 settings.TencentCaptchaAppID,
 		TencentCaptchaRegion:                settings.TencentCaptchaRegion,

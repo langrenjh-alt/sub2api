@@ -492,6 +492,9 @@ export interface SystemSettings {
   turnstile_enabled: boolean;
   turnstile_site_key: string;
   turnstile_secret_key_configured: boolean;
+  geetest_enabled: boolean;
+  geetest_captcha_id: string;
+  geetest_captcha_key_configured: boolean;
   tencent_captcha_enabled: boolean;
   tencent_captcha_app_id: string;
   tencent_captcha_app_secret_key_configured: boolean;
@@ -827,6 +830,9 @@ export interface UpdateSettingsRequest {
   turnstile_enabled?: boolean;
   turnstile_site_key?: string;
   turnstile_secret_key?: string;
+  geetest_enabled?: boolean;
+  geetest_captcha_id?: string;
+  geetest_captcha_key?: string;
   tencent_captcha_enabled?: boolean;
   tencent_captcha_app_id?: string;
   tencent_captcha_app_secret_key?: string;

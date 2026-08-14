@@ -4,6 +4,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
@@ -97,4 +98,79 @@ func TestAuthService_VerifyTurnstileForRegister_NoSkipWhenEmailVerifyDisabled(t 
 	require.NoError(t, err)
 	require.Equal(t, 1, verifier.called)
 	require.Equal(t, "turnstile-token", verifier.lastToken)
+}
+
+func TestTurnstileService_VerifyTokenWithState_ReportsExactVerificationState(t *testing.T) {
+	verifier := &turnstileVerifierSpy{}
+	disabledSettings := NewSettingService(&settingRepoStub{values: map[string]string{
+		SettingKeyTurnstileEnabled: "false",
+	}}, &config.Config{})
+
+	verified, err := NewTurnstileService(disabledSettings, verifier).
+		VerifyTokenWithState(context.Background(), "unused", "127.0.0.1")
+	require.NoError(t, err)
+	require.False(t, verified)
+	require.Zero(t, verifier.called)
+
+	enabledSettings := NewSettingService(&settingRepoStub{values: map[string]string{
+		SettingKeyTurnstileEnabled:   "true",
+		SettingKeyTurnstileSecretKey: "secret",
+	}}, &config.Config{})
+	verified, err = NewTurnstileService(enabledSettings, verifier).
+		VerifyTokenWithState(context.Background(), "turnstile-token", "127.0.0.1")
+	require.NoError(t, err)
+	require.True(t, verified)
+	require.Equal(t, 1, verifier.called)
+}
+
+func TestTurnstileService_VerifyTokenWithState_SettingsFailureIsFailClosed(t *testing.T) {
+	verifier := &turnstileVerifierSpy{}
+	settings := NewSettingService(&settingRepoStub{err: errors.New("database unavailable")}, &config.Config{})
+
+	verified, err := NewTurnstileService(settings, verifier).
+		VerifyTokenWithState(context.Background(), "turnstile-token", "127.0.0.1")
+
+	require.ErrorIs(t, err, ErrTurnstileNotConfigured)
+	require.False(t, verified)
+	require.Zero(t, verifier.called)
+}
+
+func TestTurnstileService_VerifyTokenWithState_MissingVerifierIsFailClosed(t *testing.T) {
+	settings := NewSettingService(&settingRepoStub{values: map[string]string{
+		SettingKeyTurnstileEnabled:   "true",
+		SettingKeyTurnstileSecretKey: "secret",
+	}}, &config.Config{})
+
+	verified, err := NewTurnstileService(settings, nil).
+		VerifyTokenWithState(context.Background(), "turnstile-token", "127.0.0.1")
+
+	require.ErrorIs(t, err, ErrTurnstileNotConfigured)
+	require.False(t, verified)
+}
+
+func TestAuthService_VerifyTurnstileWithState_MissingServiceIsFailClosedWhenEnabled(t *testing.T) {
+	settings := NewSettingService(&settingRepoStub{values: map[string]string{
+		SettingKeyTurnstileEnabled:   "true",
+		SettingKeyTurnstileSecretKey: "secret",
+	}}, &config.Config{})
+	authService := NewAuthService(
+		nil,
+		&userRepoStub{},
+		nil,
+		nil,
+		&config.Config{},
+		settings,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
+
+	verified, err := authService.VerifyTurnstileWithState(context.Background(), "turnstile-token", "127.0.0.1")
+
+	require.ErrorIs(t, err, ErrTurnstileNotConfigured)
+	require.False(t, verified)
 }

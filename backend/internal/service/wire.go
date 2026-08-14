@@ -63,6 +63,7 @@ func ProvideAuthService(
 	settingService *SettingService,
 	emailService *EmailService,
 	turnstileService *TurnstileService,
+	geetestService *GeetestService,
 	tencentCaptchaService *TencentCaptchaService,
 	aliyunCaptchaService *AliyunCaptchaService,
 	emailQueueService *EmailQueueService,
@@ -88,6 +89,7 @@ func ProvideAuthService(
 	)
 	svc.SetTencentCaptchaService(tencentCaptchaService)
 	svc.SetAliyunCaptchaService(aliyunCaptchaService)
+	svc.SetGeetestService(geetestService)
 	return svc
 }
 
@@ -819,6 +821,7 @@ var ProviderSet = wire.NewSet(
 	NewNotificationEmailService,
 	ProvideEmailQueueService,
 	NewTurnstileService,
+	NewGeetestService,
 	NewTencentCaptchaService,
 	NewAliyunCaptchaService,
 	NewSubscriptionService,

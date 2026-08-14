@@ -30,6 +30,7 @@ import { AuthLayout } from '@/components/layout'
 import PendingOAuthCreateAccountForm, {
   type PendingOAuthCreateAccountPayload
 } from '@/components/auth/PendingOAuthCreateAccountForm.vue'
+import { toGeetestRequestFields } from '@/utils/geetest'
 import { apiClient } from '@/api/client'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
@@ -89,6 +90,7 @@ async function handleCreateAccount(payload: PendingOAuthCreateAccountPayload) {
               tencent_captcha_randstr: payload.tencentCaptchaRandstr
           }
           : {}),
+        ...toGeetestRequestFields(payload.geetest),
         invitation_code: payload.invitationCode || undefined
       }
     )

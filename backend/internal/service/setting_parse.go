@@ -334,6 +334,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		TurnstileEnabled:                       settings[SettingKeyTurnstileEnabled] == "true",
 		TurnstileSiteKey:                       settings[SettingKeyTurnstileSiteKey],
 		TurnstileSecretKeyConfigured:           settings[SettingKeyTurnstileSecretKey] != "",
+		GeetestEnabled:                         settings[SettingKeyGeetestEnabled] == "true",
+		GeetestCaptchaID:                       settings[SettingKeyGeetestCaptchaID],
+		GeetestCaptchaKeyConfigured:            settings[SettingKeyGeetestCaptchaKey] != "",
 		TencentCaptchaEnabled:                  settings[SettingKeyTencentCaptchaEnabled] == "true",
 		TencentCaptchaAppID:                    settings[SettingKeyTencentCaptchaAppID],
 		TencentCaptchaAppSecretKeyConfigured:   settings[SettingKeyTencentCaptchaAppSecretKey] != "",
@@ -417,6 +420,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// 敏感信息直接返回，方便测试连接时使用
 	result.SMTPPassword = settings[SettingKeySMTPPassword]
 	result.TurnstileSecretKey = settings[SettingKeyTurnstileSecretKey]
+	result.GeetestCaptchaKey = settings[SettingKeyGeetestCaptchaKey]
 	result.TencentCaptchaAppSecretKey = settings[SettingKeyTencentCaptchaAppSecretKey]
 	result.TencentCaptchaCloudSecretID = settings[SettingKeyTencentCaptchaCloudSecretID]
 	result.TencentCaptchaCloudSecretKey = settings[SettingKeyTencentCaptchaCloudSecretKey]

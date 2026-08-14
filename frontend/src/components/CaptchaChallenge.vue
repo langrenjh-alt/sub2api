@@ -7,6 +7,14 @@
     @expire="emit('expire')"
     @error="emit('error')"
   />
+  <GeetestWidget
+    v-else-if="geetestEnabled && geetestCaptchaId"
+    ref="geetestRef"
+    :captcha-id="geetestCaptchaId"
+    @verify="(validation) => emit('verify', '', '', validation)"
+    @invalid="emit('expire')"
+    @error="emit('error')"
+  />
   <TencentCaptchaGate
     v-else-if="tencentEnabled && tencentAppId"
     ref="tencentRef"
@@ -30,18 +38,23 @@ import { ref } from 'vue'
 import TurnstileWidget from '@/components/TurnstileWidget.vue'
 import TencentCaptchaGate from '@/components/TencentCaptchaGate.vue'
 import AliyunCaptchaWidget from '@/components/AliyunCaptchaWidget.vue'
+import GeetestWidget from '@/components/GeetestWidget.vue'
+import type { GeetestValidation } from '@/types'
 
 // ActionCaptchaResult 动作触发式验证（腾讯/阿里云弹窗）的结果：
 // 腾讯 token=ticket、randstr 非空；阿里云 token=captchaVerifyParam、randstr 恒为空。
 export interface ActionCaptchaResult {
   token: string
   randstr: string
+  geetest?: GeetestValidation
 }
 
 const props = defineProps<{
   siteKey?: string
   turnstileEnabled: boolean
   turnstileSiteKey: string
+  geetestEnabled?: boolean
+  geetestCaptchaId?: string
   tencentEnabled: boolean
   tencentAppId: string
   tencentRegion?: string
@@ -52,17 +65,19 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  verify: [tokenOrTicket: string, randstr: string]
+  verify: [tokenOrTicket: string, randstr: string, geetest?: GeetestValidation]
   expire: []
   error: []
 }>()
 
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
+const geetestRef = ref<InstanceType<typeof GeetestWidget> | null>(null)
 const tencentRef = ref<InstanceType<typeof TencentCaptchaGate> | null>(null)
 const aliyunRef = ref<InstanceType<typeof AliyunCaptchaWidget> | null>(null)
 
 function reset(): void {
   turnstileRef.value?.reset()
+  geetestRef.value?.reset()
   tencentRef.value?.reset()
   aliyunRef.value?.reset()
 }
@@ -70,6 +85,10 @@ function reset(): void {
 // verifyAction 弹出当前启用的动作触发式验证码（腾讯/阿里云）并等待结果；
 // 用户关闭弹窗返回 null，验证异常 emit('error') 并返回 null。
 async function verifyAction(): Promise<ActionCaptchaResult | null> {
+  if (props.geetestEnabled && props.geetestCaptchaId) {
+    const validation = geetestRef.value?.getValidation() ?? null
+    return validation ? { token: '', randstr: '', geetest: validation } : null
+  }
   if (props.tencentEnabled && props.tencentAppId) {
     try {
       const proof = (await tencentRef.value?.verify()) ?? null

@@ -196,6 +196,62 @@ describe('EmailVerifyView', () => {
     }))
   })
 
+  it('hides the consumed GeeTest challenge until the user requests another code', async () => {
+    getPublicSettingsMock.mockResolvedValue({
+      turnstile_enabled: false,
+      turnstile_site_key: '',
+      geetest_enabled: true,
+      geetest_captcha_id: 'captcha-id',
+      site_name: 'Sub2API',
+      registration_email_suffix_whitelist: [],
+    })
+    sendVerifyCodeMock.mockResolvedValue({ countdown: 0 })
+    sessionStorage.setItem(
+      'register_data',
+      JSON.stringify({
+        email: 'fresh@example.com',
+        password: 'secret-123',
+        geetest_lot_number: 'lot-number',
+        geetest_captcha_output: 'captcha-output',
+        geetest_pass_token: 'pass-token',
+        geetest_gen_time: '1700000000',
+      })
+    )
+
+    const CaptchaChallengeStub = defineComponent({
+      setup(_, { expose }) {
+        expose({ verifyAction: verifyActionMock, reset: createTurnstileResetMock })
+        return () => h('div', { 'data-testid': 'captcha-challenge' })
+      },
+    })
+    const wrapper = mount(EmailVerifyView, {
+      global: {
+        stubs: {
+          AuthLayout: { template: '<div><slot /><slot name="footer" /></div>' },
+          Icon: true,
+          TurnstileWidget: CaptchaChallengeStub,
+          transition: false,
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(sendVerifyCodeMock).toHaveBeenCalledWith(expect.objectContaining({
+      geetest_lot_number: 'lot-number',
+    }))
+    expect(wrapper.find('[data-testid="captcha-challenge"]').exists()).toBe(false)
+
+    const resendButton = wrapper.findAll('button').find((button) =>
+      button.text().includes('auth.clickToResend')
+    )!
+    await resendButton.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="captcha-challenge"]').exists()).toBe(true)
+    expect(sendVerifyCodeMock).toHaveBeenCalledTimes(1)
+  })
+
   it('uses the pending oauth verify-code endpoint when register data carries a pending auth session', async () => {
     authStoreState.pendingAuthSession = {
       token: 'pending-token-1',

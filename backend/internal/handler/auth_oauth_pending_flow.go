@@ -66,6 +66,7 @@ type bindPendingOAuthLoginRequest struct {
 }
 
 type createPendingOAuthAccountRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	VerifyCode            string `json:"verify_code,omitempty"`
 	Password              string `json:"password" binding:"required,min=6"`
@@ -79,6 +80,7 @@ type createPendingOAuthAccountRequest struct {
 }
 
 type sendPendingOAuthVerifyCodeRequest struct {
+	GeetestChallengeRequest
 	Email                 string `json:"email" binding:"required,email"`
 	TurnstileToken        string `json:"turnstile_token,omitempty"`
 	TencentCaptchaTicket  string `json:"tencent_captcha_ticket,omitempty"`
@@ -569,12 +571,6 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		return
 	}
 
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
-	if err := h.authService.VerifyCaptcha(c.Request.Context(), proof, ip.GetClientIP(c)); err != nil {
-		response.ErrorFrom(c, err)
-		return
-	}
-
 	_, session, _, err := readPendingOAuthBrowserSession(c, h)
 	if err != nil {
 		response.ErrorFrom(c, err)
@@ -605,7 +601,8 @@ func (h *AuthHandler) SendPendingOAuthVerifyCode(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authService.SendPendingOAuthVerifyCode(c.Request.Context(), req.Email, c.GetHeader("Accept-Language"))
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
+	result, err := h.authService.SendPendingOAuthVerifyCodeWithCaptcha(c.Request.Context(), req.Email, proof, ip.GetClientIP(c), c.GetHeader("Accept-Language"))
 	if err != nil {
 		response.ErrorFrom(c, err)
 		return
@@ -1760,8 +1757,8 @@ func (h *AuthHandler) createPendingOAuthAccount(c *gin.Context, provider string)
 		response.ErrorFrom(c, err)
 		return
 	}
-	proof := captchaProof(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr)
-	if err := h.authService.VerifyCaptcha(c.Request.Context(), proof, ip.GetClientIP(c)); err != nil {
+	proof := captchaProofWithGeetest(req.TurnstileToken, req.TencentCaptchaTicket, req.TencentCaptchaRandstr, req.GeetestChallengeRequest)
+	if err := h.authService.VerifyCaptchaForPendingOAuthCreate(c.Request.Context(), proof, ip.GetClientIP(c), req.VerifyCode); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

@@ -84,6 +84,8 @@
             ref="turnstileRef"
             :turnstile-enabled="turnstileEnabled"
             :turnstile-site-key="turnstileSiteKey"
+            :geetest-enabled="geetestEnabled"
+            :geetest-captcha-id="geetestCaptchaId"
             :tencent-enabled="tencentCaptchaEnabled"
             :tencent-app-id="tencentCaptchaAppId"
             :tencent-region="tencentCaptchaRegion"
@@ -100,7 +102,11 @@
         <!-- Submit Button -->
         <button
           type="submit"
-          :disabled="authActionDisabled || (turnstileEnabled && !turnstileToken)"
+          :disabled="
+            authActionDisabled ||
+            (turnstileEnabled && !turnstileToken) ||
+            (geetestEnabled && !geetestValidation)
+          "
           class="btn btn-primary w-full"
         >
           <svg
@@ -246,11 +252,13 @@ import {
 } from '@/api/auth'
 import type {
   ActionCaptchaRequestProof,
+  GeetestValidation,
   LoginAgreementDocument,
   TotpLoginResponse
 } from '@/types'
 import { extractI18nErrorMessage } from '@/utils/apiError'
 import { clearAllAffiliateReferralCodes } from '@/utils/oauthAffiliate'
+import { toGeetestRequestFields } from '@/utils/geetest'
 
 const { t } = useI18n()
 const LOGIN_AGREEMENT_STORAGE_KEY = 'sub2api_login_agreement_consent'
@@ -272,6 +280,8 @@ const publicSettingsLoaded = ref<boolean>(false)
 // Public settings
 const turnstileEnabled = ref<boolean>(false)
 const turnstileSiteKey = ref<string>('')
+const geetestEnabled = ref<boolean>(false)
+const geetestCaptchaId = ref<string>('')
 const tencentCaptchaEnabled = ref<boolean>(false)
 const tencentCaptchaAppId = ref<string>('')
 const tencentCaptchaRegion = ref<string>('cn')
@@ -301,6 +311,7 @@ const showAgreementModal = ref<boolean>(false)
 const turnstileRef = ref<InstanceType<typeof TurnstileWidget> | null>(null)
 const turnstileToken = ref<string>('')
 const tencentCaptchaRandstr = ref<string>('')
+const geetestValidation = ref<GeetestValidation | null>(null)
 const aliyunCaptchaReady = computed(
   () =>
     aliyunCaptchaEnabled.value &&
@@ -310,6 +321,7 @@ const aliyunCaptchaReady = computed(
 // 动作触发式验证码（腾讯/阿里云）：提交、OAuth 启动、passkey 时弹窗验证
 const actionCaptchaEnabled = computed(
   () =>
+    (geetestEnabled.value && Boolean(geetestCaptchaId.value)) ||
     (tencentCaptchaEnabled.value && Boolean(tencentCaptchaAppId.value)) ||
     aliyunCaptchaReady.value
 )
@@ -383,6 +395,8 @@ onMounted(async () => {
     const settings = await getPublicSettings()
     turnstileEnabled.value = settings.turnstile_enabled
     turnstileSiteKey.value = settings.turnstile_site_key || ''
+    geetestEnabled.value = settings.geetest_enabled === true
+    geetestCaptchaId.value = settings.geetest_captcha_id || ''
     tencentCaptchaEnabled.value = settings.tencent_captcha_enabled === true
     tencentCaptchaAppId.value = settings.tencent_captcha_app_id || ''
     tencentCaptchaRegion.value = settings.tencent_captcha_region || 'cn'
@@ -475,21 +489,24 @@ function rejectLoginAgreement(): void {
 
 // ==================== Turnstile Handlers ====================
 
-function onTurnstileVerify(token: string, randstr = ''): void {
+function onTurnstileVerify(token: string, randstr = '', geetest?: GeetestValidation): void {
   turnstileToken.value = token
   tencentCaptchaRandstr.value = randstr
+  geetestValidation.value = geetest ?? null
   errors.turnstile = ''
 }
 
 function onTurnstileExpire(): void {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = t('auth.turnstileExpired')
 }
 
 function onTurnstileError(): void {
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = t('auth.turnstileFailed')
 }
 
@@ -497,6 +514,7 @@ function resetCaptchaProof(): void {
   turnstileRef.value?.reset()
   turnstileToken.value = ''
   tencentCaptchaRandstr.value = ''
+  geetestValidation.value = null
   errors.turnstile = ''
 }
 
@@ -504,10 +522,16 @@ async function acquireActionProof(): Promise<boolean> {
   if (!actionCaptchaEnabled.value) return true
 
   const proof = await turnstileRef.value?.verifyAction()
-  if (!proof) return false
+  if (!proof) {
+    if (geetestEnabled.value) {
+      errors.turnstile = t('auth.completeVerification')
+    }
+    return false
+  }
 
   turnstileToken.value = proof.token
   tencentCaptchaRandstr.value = proof.randstr
+  geetestValidation.value = proof.geetest ?? null
   return true
 }
 
@@ -552,6 +576,10 @@ function validateForm(): boolean {
     errors.turnstile = t('auth.completeVerification')
     isValid = false
   }
+  if (geetestEnabled.value && !geetestValidation.value) {
+    errors.turnstile = t('auth.completeVerification')
+    isValid = false
+  }
 
   return isValid
 }
@@ -583,7 +611,8 @@ async function handleLogin(): Promise<void> {
       tencent_captcha_ticket: tencentCaptchaEnabled.value ? turnstileToken.value : undefined,
       tencent_captcha_randstr: tencentCaptchaEnabled.value
         ? tencentCaptchaRandstr.value
-        : undefined
+        : undefined,
+      ...toGeetestRequestFields(geetestValidation.value)
     })
 
     // Check if 2FA is required
@@ -630,8 +659,15 @@ async function handlePasskeyLogin(): Promise<void> {
     let proof: ActionCaptchaRequestProof | undefined
     if (actionCaptchaEnabled.value) {
       const result = await turnstileRef.value?.verifyAction()
-      if (!result) return
-      proof = tencentCaptchaEnabled.value
+      if (!result) {
+        if (geetestEnabled.value) {
+          errors.turnstile = t('auth.completeVerification')
+        }
+        return
+      }
+      proof = result.geetest
+        ? toGeetestRequestFields(result.geetest)
+        : tencentCaptchaEnabled.value
         ? {
             tencent_captcha_ticket: result.token,
             tencent_captcha_randstr: result.randstr
@@ -669,11 +705,18 @@ async function handleOAuthStart(request: OAuthLoginStart): Promise<void> {
   isLoading.value = true
   try {
     const proof = await turnstileRef.value?.verifyAction()
-    if (!proof) return
+    if (!proof) {
+      if (geetestEnabled.value) {
+        errors.turnstile = t('auth.completeVerification')
+      }
+      return
+    }
 
     const result = await startOAuthLogin(
       request,
-      tencentCaptchaEnabled.value
+      proof.geetest
+        ? toGeetestRequestFields(proof.geetest)
+        : tencentCaptchaEnabled.value
         ? {
             tencent_captcha_ticket: proof.token,
             tencent_captcha_randstr: proof.randstr

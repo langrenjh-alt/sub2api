@@ -202,8 +202,16 @@ export default {
         enableHint: 'Require human verification on login, registration and related flows',
         provider: 'Provider',
         providerTurnstile: 'Cloudflare Turnstile',
+        providerGeetest: 'GeeTest v4',
         providerTencent: 'Tencent Captcha',
         providerAliyun: 'Aliyun Captcha 2.0'
+      },
+      geetest: {
+        captchaId: 'Captcha ID',
+        captchaKey: 'Captcha Key',
+        keepExisting: 'Leave empty to keep current value',
+        configured: 'Configured. Leave empty to keep it.',
+        required: 'Required before enabling.'
       },
       tencentCaptcha: {
         title: 'Tencent Captcha',
