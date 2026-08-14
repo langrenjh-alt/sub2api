@@ -333,10 +333,12 @@ type UpdateSettingsRequest struct {
 	PaymentAlipayMobilePrecreateDeepLink *bool `json:"payment_alipay_mobile_precreate_deep_link"`
 
 	// Channel Monitor feature switch
-	ChannelMonitorEnabled                *bool   `json:"channel_monitor_enabled"`
-	ChannelMonitorMode                   *string `json:"channel_monitor_mode"`
-	ChannelMonitorDefaultIntervalSeconds *int    `json:"channel_monitor_default_interval_seconds"`
-	ChannelMonitorHideThroughput         *bool   `json:"channel_monitor_hide_throughput"`
+	ChannelMonitorEnabled                *bool    `json:"channel_monitor_enabled"`
+	ChannelMonitorMode                   *string  `json:"channel_monitor_mode"`
+	ChannelMonitorDefaultIntervalSeconds *int     `json:"channel_monitor_default_interval_seconds"`
+	ChannelMonitorHideThroughput         *bool    `json:"channel_monitor_hide_throughput"`
+	HomepageStatusEnabled                *bool    `json:"homepage_status_enabled"`
+	HomepageStatusGroupIDs               *[]int64 `json:"homepage_status_group_ids"`
 
 	// Grok model mapping policy
 	GrokDefaultTextModel           *string `json:"grok_default_text_model"`
@@ -1918,6 +1920,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ChannelMonitorHideThroughput
 		}(),
+		HomepageStatusEnabled: func() bool {
+			if req.HomepageStatusEnabled != nil {
+				return *req.HomepageStatusEnabled
+			}
+			return previousSettings.HomepageStatusEnabled
+		}(),
+		HomepageStatusGroupIDs: func() []int64 {
+			if req.HomepageStatusGroupIDs != nil {
+				return append([]int64(nil), (*req.HomepageStatusGroupIDs)...)
+			}
+			return append([]int64(nil), previousSettings.HomepageStatusGroupIDs...)
+		}(),
 		GrokDefaultTextModel: func() string {
 			if req.GrokDefaultTextModel != nil {
 				return *req.GrokDefaultTextModel
@@ -2374,6 +2388,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ChannelMonitorMode:                   updatedSettings.ChannelMonitorMode,
 		ChannelMonitorDefaultIntervalSeconds: updatedSettings.ChannelMonitorDefaultIntervalSeconds,
 		ChannelMonitorHideThroughput:         updatedSettings.ChannelMonitorHideThroughput,
+		HomepageStatusEnabled:                updatedSettings.HomepageStatusEnabled,
+		HomepageStatusGroupIDs:               updatedSettings.HomepageStatusGroupIDs,
 
 		GrokDefaultTextModel:           updatedSettings.GrokDefaultTextModel,
 		GrokCrossClientModelMapEnabled: updatedSettings.GrokCrossClientModelMapEnabled,

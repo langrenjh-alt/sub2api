@@ -32,6 +32,20 @@ export default {
           hideThroughputHint:
             'When on, the user Channel Monitor page and user APIs omit RPM and TPM so fleet volume cannot be reverse-estimated from rates × window. Admins still see full metrics. Error rates, latency, and cache rates remain visible.',
         },
+        homepageStatus: {
+          title: 'Homepage Groups and Channel Status',
+          description: 'Publicly show selected group rates and the 7-day uptime of enabled channel monitors on the default homepage.',
+          enabled: 'Enable Homepage Status',
+          enabledHint: 'Only affects the default homepage. Custom homepage content never loads or renders this public data.',
+          groups: 'Displayed Groups',
+          groupsHint: 'Only active groups can be selected, up to {max}. With none selected, the homepage can still show channel status.',
+          selectedCount: '{count}/{max} groups selected',
+          loadingGroups: 'Loading active groups...',
+          groupsLoadError: 'Failed to load active groups. Please retry.',
+          retryGroups: 'Retry',
+          emptyGroups: 'No active groups are available.',
+          selectionLimitReached: 'The {max}-group limit is reached. Deselect a group before choosing another.',
+        },
         availableChannels: {
           title: 'Available Channels',
           description: 'Show logged-in users an aggregate view of the channels, models and pricing they can access. Disabled by default.',

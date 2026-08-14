@@ -190,6 +190,8 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyChannelMonitorMode:                   ChannelMonitorModeV1,
 		SettingKeyChannelMonitorDefaultIntervalSeconds: "60",
 		SettingKeyChannelMonitorHideThroughput:         "true",
+		SettingKeyHomepageStatusEnabled:                "false",
+		SettingKeyHomepageStatusGroupIDs:               "[]",
 
 		// Grok: safe defaults — no cross-vendor model rewrite unless operators enable it.
 		SettingKeyGrokDefaultTextModel:           "grok-4.5",
@@ -802,6 +804,8 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	// 默认隐藏吞吐（迁移 206 的隐私默认）：未配置时必须与 setting_public.go 的
 	// 公开读取路径给出同一个值，否则管理端看到“未隐藏”而用户端实际已隐藏。
 	result.ChannelMonitorHideThroughput = !isFalseSettingValue(settings[SettingKeyChannelMonitorHideThroughput])
+	result.HomepageStatusEnabled = settings[SettingKeyHomepageStatusEnabled] == "true"
+	result.HomepageStatusGroupIDs = parseHomepageStatusGroupIDs(settings[SettingKeyHomepageStatusGroupIDs])
 
 	// Grok default mapping policy
 	result.GrokDefaultTextModel = strings.TrimSpace(settings[SettingKeyGrokDefaultTextModel])

@@ -422,6 +422,12 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 		updates[SettingKeyChannelMonitorDefaultIntervalSeconds] = strconv.Itoa(v)
 	}
 	updates[SettingKeyChannelMonitorHideThroughput] = strconv.FormatBool(settings.ChannelMonitorHideThroughput)
+	updates[SettingKeyHomepageStatusEnabled] = strconv.FormatBool(settings.HomepageStatusEnabled)
+	homepageGroupIDs, err := json.Marshal(normalizeHomepageStatusGroupIDs(settings.HomepageStatusGroupIDs))
+	if err != nil {
+		return nil, fmt.Errorf("marshal homepage status group ids: %w", err)
+	}
+	updates[SettingKeyHomepageStatusGroupIDs] = string(homepageGroupIDs)
 
 	// Grok model mapping policy
 	if v := strings.TrimSpace(settings.GrokDefaultTextModel); v != "" {

@@ -430,6 +430,13 @@ const (
 	// Default false (show rates). Admin endpoints always keep full metrics.
 	SettingKeyChannelMonitorHideThroughput = "channel_monitor_hide_throughput"
 
+	// SettingKeyHomepageStatusEnabled controls the anonymous homepage summary.
+	// It is opt-in because enabling it exposes selected group rates and monitor uptime publicly.
+	SettingKeyHomepageStatusEnabled = "homepage_status_enabled"
+
+	// SettingKeyHomepageStatusGroupIDs stores the selected group IDs as a JSON array.
+	SettingKeyHomepageStatusGroupIDs = "homepage_status_group_ids"
+
 	// SettingKeyGrokDefaultTextModel is the fallback Grok text model for empty
 	// request models and built-in Grok aliases (e.g. "grok" → this id). Default grok-4.5.
 	SettingKeyGrokDefaultTextModel = "grok_default_text_model"

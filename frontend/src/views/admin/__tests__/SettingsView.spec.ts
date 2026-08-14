@@ -528,6 +528,8 @@ const baseSettingsResponse = {
   subscription_expiry_notify_enabled: true,
   account_quota_notify_enabled: false,
   account_quota_notify_emails: [],
+  homepage_status_enabled: false,
+  homepage_status_group_ids: [],
   // 平台限额嵌套字段（新后端契约）
   default_platform_quotas: {
     anthropic:   { daily: null, weekly: null, monthly: null },
@@ -595,6 +597,16 @@ async function openUsersTab(wrapper: ReturnType<typeof mountView>) {
 
   expect(usersTabButton).toBeDefined();
   await usersTabButton?.trigger("click");
+  await flushPromises();
+}
+
+async function openFeaturesTab(wrapper: ReturnType<typeof mountView>) {
+  const featuresTabButton = wrapper
+    .findAll("button")
+    .find((node) => node.text().includes("admin.settings.tabs.features"));
+
+  expect(featuresTabButton).toBeDefined();
+  await featuresTabButton?.trigger("click");
   await flushPromises();
 }
 
@@ -1259,6 +1271,171 @@ describe("admin SettingsView payment visible method controls", () => {
       "默认关闭。开启后仅影响本网关在 OpenAI 账号间的实验性调度选择逻辑",
     );
     expect(wrapper.text()).not.toContain("OpenAI 高级调度器");
+  });
+
+  it("configures homepage group rates between channel monitor and available channels", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      homepage_status_enabled: false,
+      homepage_status_group_ids: [11, 11, -1, 1.5],
+    });
+    getGroups.mockResolvedValueOnce([
+      {
+        id: 11,
+        name: "Claude Standard",
+        platform: "anthropic",
+        rate_multiplier: 0.5,
+        status: "active",
+        subscription_type: "standard",
+      },
+      {
+        id: 22,
+        name: "Codex Subscription",
+        platform: "openai",
+        rate_multiplier: 0.12,
+        status: "active",
+        subscription_type: "subscription",
+      },
+      {
+        id: 33,
+        name: "Disabled Group",
+        platform: "gemini",
+        rate_multiplier: 1,
+        status: "inactive",
+        subscription_type: "standard",
+      },
+    ]);
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openFeaturesTab(wrapper);
+
+    const card = wrapper.get('[data-testid="homepage-status-card"]');
+    const allCards = wrapper.findAll(".card");
+    const channelMonitorIndex = allCards.findIndex((node) =>
+      node.text().includes("admin.settings.features.channelMonitor.title"),
+    );
+    const homepageStatusIndex = allCards.findIndex(
+      (node) => node.attributes("data-testid") === "homepage-status-card",
+    );
+    const availableChannelsIndex = allCards.findIndex((node) =>
+      node.text().includes("admin.settings.features.availableChannels.title"),
+    );
+
+    expect(channelMonitorIndex).toBeGreaterThanOrEqual(0);
+    expect(homepageStatusIndex).toBeGreaterThan(channelMonitorIndex);
+    expect(availableChannelsIndex).toBeGreaterThan(homepageStatusIndex);
+    expect(card.find('[data-testid="homepage-status-group-option-11"]').exists()).toBe(false);
+
+    const toggle = card.get('[data-testid="homepage-status-toggle"]');
+    expect(toggle.attributes("aria-label")).toBe(
+      "admin.settings.features.homepageStatus.enabled",
+    );
+    await toggle.setValue(true);
+
+    const claudeGroup = card.get('[data-testid="homepage-status-group-option-11"]');
+    const codexGroup = card.get('[data-testid="homepage-status-group-option-22"]');
+    expect(claudeGroup.attributes("data-group-name")).toBe("Claude Standard");
+    expect(claudeGroup.attributes("data-group-rate")).toBe("0.5");
+    expect(codexGroup.attributes("data-group-name")).toBe("Codex Subscription");
+    expect(card.find('[data-testid="homepage-status-group-option-33"]').exists()).toBe(false);
+    expect((claudeGroup.get('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(true);
+
+    await codexGroup.get('input[type="checkbox"]').setValue(true);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateSettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        homepage_status_enabled: true,
+        homepage_status_group_ids: [11, 22],
+      }),
+    );
+  });
+
+  it("shows a retryable homepage group error instead of an empty state", async () => {
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      homepage_status_enabled: true,
+    });
+    getGroups
+      .mockRejectedValueOnce(new Error("groups unavailable"))
+      .mockResolvedValueOnce([
+        {
+          id: 44,
+          name: "Recovered Group",
+          platform: "openai",
+          rate_multiplier: 1,
+          status: "active",
+          subscription_type: "standard",
+        },
+      ]);
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openFeaturesTab(wrapper);
+
+    const card = wrapper.get('[data-testid="homepage-status-card"]');
+    expect(card.find('[data-testid="homepage-status-groups-error"]').exists()).toBe(true);
+    expect(card.find('[data-testid="homepage-status-empty-groups"]').exists()).toBe(false);
+
+    await card.get('[data-testid="homepage-status-groups-retry"]').trigger("click");
+    await flushPromises();
+
+    expect(getGroups).toHaveBeenCalledTimes(2);
+    expect(card.find('[data-testid="homepage-status-groups-error"]').exists()).toBe(false);
+    expect(card.find('[data-testid="homepage-status-group-option-44"]').exists()).toBe(true);
+  });
+
+  it("limits homepage group selection to 100 while keeping selected groups removable", async () => {
+    const groupIDs = Array.from({ length: 105 }, (_, index) => index + 1);
+    getSettings.mockResolvedValueOnce({
+      ...baseSettingsResponse,
+      homepage_status_enabled: true,
+      homepage_status_group_ids: groupIDs,
+    });
+    getGroups.mockResolvedValueOnce(
+      groupIDs.map((id) => ({
+        id,
+        name: `Group ${id}`,
+        platform: "openai",
+        rate_multiplier: 1,
+        status: "active",
+        subscription_type: "standard",
+      })),
+    );
+
+    const wrapper = mountView();
+    await flushPromises();
+    await openFeaturesTab(wrapper);
+
+    const card = wrapper.get('[data-testid="homepage-status-card"]');
+    const firstGroup = card.get(
+      '[data-testid="homepage-status-group-option-1"] input[type="checkbox"]',
+    );
+    const overflowGroup = card.get(
+      '[data-testid="homepage-status-group-option-101"] input[type="checkbox"]',
+    );
+
+    expect((firstGroup.element as HTMLInputElement).checked).toBe(true);
+    expect(firstGroup.attributes("disabled")).toBeUndefined();
+    expect((overflowGroup.element as HTMLInputElement).checked).toBe(false);
+    expect(overflowGroup.attributes("disabled")).toBeDefined();
+    expect(card.find('[data-testid="homepage-status-selection-limit"]').exists()).toBe(true);
+
+    await firstGroup.setValue(false);
+    await flushPromises();
+    expect(overflowGroup.attributes("disabled")).toBeUndefined();
+
+    await overflowGroup.setValue(true);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    const savedGroupIDs = updateSettings.mock.calls.at(-1)?.[0]
+      .homepage_status_group_ids as number[];
+    expect(savedGroupIDs).toHaveLength(100);
+    expect(savedGroupIDs).toContain(101);
+    expect(savedGroupIDs).not.toContain(1);
   });
 
   it("loads and saves upstream billing probe settings from the gateway tab", async () => {

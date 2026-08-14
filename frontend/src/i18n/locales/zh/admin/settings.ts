@@ -32,6 +32,20 @@ export default {
           hideThroughputHint:
             '开启后，用户端渠道监控页面与用户 API 不返回 RPM/TPM，避免用「速率 × 时间窗」反推集群规模。管理员仍可见完整指标；错误率、延迟、缓存率照常展示。',
         },
+        homepageStatus: {
+          title: '首页分组与渠道状态',
+          description: '在默认首页公开展示所选分组的倍率，以及已启用渠道监控的 7 日可用率。',
+          enabled: '启用首页状态展示',
+          enabledHint: '仅影响默认首页；配置了自定义首页内容时不会加载或展示这些公开数据。',
+          groups: '展示分组',
+          groupsHint: '只可选择当前启用的分组，最多 {max} 个；未选择时首页仅展示渠道状态。',
+          selectedCount: '已选择 {count}/{max} 个分组',
+          loadingGroups: '正在加载启用分组...',
+          groupsLoadError: '启用分组加载失败，请重试。',
+          retryGroups: '重试',
+          emptyGroups: '暂无可选择的启用分组。',
+          selectionLimitReached: '已达到 {max} 个分组上限；请先取消一个已选分组再继续。',
+        },
         availableChannels: {
           title: '可用渠道',
           description: '向已登录用户展示他们能访问的渠道、模型和定价聚合视图。默认关闭。',

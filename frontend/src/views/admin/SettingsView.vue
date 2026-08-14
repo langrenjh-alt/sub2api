@@ -7094,6 +7094,151 @@
           </div>
         </div>
 
+        <div class="card" data-testid="homepage-status-card">
+          <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+              {{ t('admin.settings.features.homepageStatus.title') }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {{ t('admin.settings.features.homepageStatus.description') }}
+            </p>
+          </div>
+          <div class="space-y-5 p-6">
+            <div class="flex items-center justify-between gap-6">
+              <div>
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {{ t('admin.settings.features.homepageStatus.enabled') }}
+                </label>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{ t('admin.settings.features.homepageStatus.enabledHint') }}
+                </p>
+              </div>
+              <Toggle
+                v-model="form.homepage_status_enabled"
+                :aria-label="t('admin.settings.features.homepageStatus.enabled')"
+                data-testid="homepage-status-toggle"
+              />
+            </div>
+
+            <div
+              v-if="form.homepage_status_enabled"
+              class="border-t border-gray-100 pt-5 dark:border-dark-700"
+            >
+              <div class="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {{ t('admin.settings.features.homepageStatus.groups') }}
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{
+                      t('admin.settings.features.homepageStatus.groupsHint', {
+                        max: homepageStatusGroupSelectionLimit,
+                      })
+                    }}
+                  </p>
+                </div>
+                <span class="text-xs text-gray-400 dark:text-dark-400">
+                  {{
+                    t('admin.settings.features.homepageStatus.selectedCount', {
+                      count: form.homepage_status_group_ids.length,
+                      max: homepageStatusGroupSelectionLimit,
+                    })
+                  }}
+                </span>
+              </div>
+
+              <div
+                v-if="homepageStatusGroupsLoading"
+                class="mt-4 flex items-center gap-2 rounded border border-gray-200 px-4 py-3 text-sm text-gray-500 dark:border-dark-600 dark:text-gray-400"
+                role="status"
+                data-testid="homepage-status-groups-loading"
+              >
+                <span
+                  class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"
+                  aria-hidden="true"
+                ></span>
+                {{ t('admin.settings.features.homepageStatus.loadingGroups') }}
+              </div>
+
+              <div
+                v-else-if="homepageStatusGroupsLoadError"
+                class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded border border-red-200 bg-red-50/60 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/20 dark:text-red-300"
+                role="alert"
+                data-testid="homepage-status-groups-error"
+              >
+                <span>{{ t('admin.settings.features.homepageStatus.groupsLoadError') }}</span>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm inline-flex items-center gap-1.5"
+                  data-testid="homepage-status-groups-retry"
+                  @click="loadGroups"
+                >
+                  <Icon name="refresh" size="sm" />
+                  {{ t('admin.settings.features.homepageStatus.retryGroups') }}
+                </button>
+              </div>
+
+              <div
+                v-else-if="activeGroups.length === 0"
+                class="mt-4 rounded border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-dark-600 dark:text-gray-400"
+                data-testid="homepage-status-empty-groups"
+              >
+                {{ t('admin.settings.features.homepageStatus.emptyGroups') }}
+              </div>
+
+              <div v-else class="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+                <label
+                  v-for="group in activeGroups"
+                  :key="group.id"
+                  :class="[
+                    'flex min-h-12 items-center gap-3 rounded-md border border-gray-200 px-3 py-2.5 transition-colors dark:border-dark-600',
+                    isHomepageStatusGroupSelectionDisabled(group.id)
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'cursor-pointer hover:border-primary-300 hover:bg-primary-50/40 dark:hover:border-primary-700 dark:hover:bg-primary-900/10',
+                  ]"
+                  :data-group-name="group.name"
+                  :data-group-rate="group.rate_multiplier"
+                  :data-testid="`homepage-status-group-option-${group.id}`"
+                >
+                  <input
+                    v-model="form.homepage_status_group_ids"
+                    type="checkbox"
+                    :value="group.id"
+                    :disabled="isHomepageStatusGroupSelectionDisabled(group.id)"
+                    :aria-label="`${t('admin.settings.features.homepageStatus.groups')}: ${group.name}`"
+                    class="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-500 dark:bg-dark-800"
+                  />
+                  <GroupBadge
+                    class="min-w-0"
+                    :name="group.name"
+                    :platform="group.platform"
+                    :subscription-type="group.subscription_type"
+                    :rate-multiplier="group.rate_multiplier"
+                    always-show-rate
+                  />
+                </label>
+              </div>
+
+              <p
+                v-if="
+                  !homepageStatusGroupsLoading &&
+                  !homepageStatusGroupsLoadError &&
+                  homepageStatusGroupSelectionLimitReached
+                "
+                class="mt-3 text-xs font-medium text-amber-600 dark:text-amber-400"
+                role="status"
+                data-testid="homepage-status-selection-limit"
+              >
+                {{
+                  t('admin.settings.features.homepageStatus.selectionLimitReached', {
+                    max: homepageStatusGroupSelectionLimit,
+                  })
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -8894,6 +9039,10 @@ const adminApiKeyExists = ref(false);
 const adminApiKeyMasked = ref("");
 const adminApiKeyOperating = ref(false);
 const newAdminApiKey = ref("");
+const homepageStatusGroupSelectionLimit = 100;
+const homepageStatusGroupsLoading = ref(true);
+const homepageStatusGroupsLoadError = ref(false);
+const activeGroups = ref<AdminGroup[]>([]);
 const subscriptionGroups = ref<AdminGroup[]>([]);
 
 // Upstream billing probe state
@@ -9738,6 +9887,9 @@ const form = reactive<SettingsForm>({
   channel_monitor_mode: 'v1' as 'v1' | 'v2',
   channel_monitor_default_interval_seconds: 60,
   channel_monitor_hide_throughput: false,
+  // Public homepage group rates and channel uptime summary
+  homepage_status_enabled: false,
+  homepage_status_group_ids: [] as number[],
   // Available Channels feature switch
   available_channels_enabled: false,
   // Model Plaza feature switches + description
@@ -9749,6 +9901,12 @@ const form = reactive<SettingsForm>({
   // Allow user view error requests
   allow_user_view_error_requests: false,
 });
+
+const homepageStatusGroupSelectionLimitReached = computed(
+  () =>
+    form.homepage_status_group_ids.length >=
+    homepageStatusGroupSelectionLimit,
+);
 
 // 人机验证 UI 状态：单卡片「总开关 + 服务商单选」，落库仍是三个独立
 // enabled 键（与上游一致），由下面的映射保证同一时间至多一家启用。
@@ -10763,6 +10921,9 @@ async function loadSettings() {
     form.default_subscriptions = normalizeDefaultSubscriptionSettings(
       settings.default_subscriptions,
     );
+    form.homepage_status_group_ids = normalizeHomepageStatusGroupIDs(
+      form.homepage_status_group_ids,
+    );
     registrationEmailSuffixWhitelistTags.value =
       normalizeRegistrationEmailSuffixDomains(
         settings.registration_email_suffix_whitelist,
@@ -10876,15 +11037,41 @@ async function loadSettings() {
   }
 }
 
-async function loadSubscriptionGroups() {
+function normalizeHomepageStatusGroupIDs(ids: unknown): number[] {
+  if (!Array.isArray(ids)) return [];
+  return Array.from(
+    new Set(
+      ids.filter(
+        (id): id is number =>
+          typeof id === "number" && Number.isSafeInteger(id) && id > 0,
+      ),
+    ),
+  ).slice(0, homepageStatusGroupSelectionLimit);
+}
+
+function isHomepageStatusGroupSelectionDisabled(groupID: number): boolean {
+  return (
+    homepageStatusGroupSelectionLimitReached.value &&
+    !form.homepage_status_group_ids.includes(groupID)
+  );
+}
+
+async function loadGroups() {
+  homepageStatusGroupsLoading.value = true;
+  homepageStatusGroupsLoadError.value = false;
   try {
     const groups = await adminAPI.groups.getAll();
-    subscriptionGroups.value = groups.filter(
+    activeGroups.value = groups.filter((group) => group.status === "active");
+    subscriptionGroups.value = activeGroups.value.filter(
       (group) =>
-        group.subscription_type === "subscription" && group.status === "active",
+        group.subscription_type === "subscription",
     );
   } catch (_error: unknown) {
+    activeGroups.value = [];
     subscriptionGroups.value = [];
+    homepageStatusGroupsLoadError.value = true;
+  } finally {
+    homepageStatusGroupsLoading.value = false;
   }
 }
 
@@ -11398,6 +11585,11 @@ async function saveSettings() {
       channel_monitor_default_interval_seconds:
         Number(form.channel_monitor_default_interval_seconds) || 60,
       channel_monitor_hide_throughput: Boolean(form.channel_monitor_hide_throughput),
+      // Public homepage group rates and channel uptime summary
+      homepage_status_enabled: form.homepage_status_enabled,
+      homepage_status_group_ids: normalizeHomepageStatusGroupIDs(
+        form.homepage_status_group_ids,
+      ),
       // Available Channels feature switch
       available_channels_enabled: form.available_channels_enabled,
       // Model Plaza feature switches + description
@@ -11456,6 +11648,9 @@ async function saveSettings() {
         (form as Record<string, unknown>)[key] = value;
       }
     }
+    form.homepage_status_group_ids = normalizeHomepageStatusGroupIDs(
+      form.homepage_status_group_ids,
+    );
     Object.assign(authSourceDefaults, buildAuthSourceDefaultsState(updated));
     form.default_platform_quotas = normalizePlatformQuotasMap(updated.default_platform_quotas);
     form.account_scheduling_thresholds = normalizeAccountSchedulingThresholdsMap(
@@ -12477,7 +12672,7 @@ async function handleDeleteProvider() {
 
 onMounted(() => {
   loadSettings();
-  loadSubscriptionGroups();
+  loadGroups();
   loadAdminApiKey();
   loadUpstreamBillingProbeSettings();
   loadOllamaCloudUsageSettings();
