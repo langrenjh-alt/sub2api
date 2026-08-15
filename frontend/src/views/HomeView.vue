@@ -98,6 +98,9 @@
           <a href="#capabilities">{{ t('home.landing.sections.overview') }}</a>
           <a href="#compatibility">{{ t('home.landing.sections.compatibility') }}</a>
           <a href="#access">{{ t('home.landing.sections.accessSteps') }}</a>
+          <RouterLink v-if="modelPlazaEnabled" to="/model-plaza" class="home-model-plaza-nav">
+            {{ t('nav.modelPlaza') }}
+          </RouterLink>
         </nav>
 
         <div class="home-topbar-actions">
@@ -150,6 +153,14 @@
             <Icon name="creditCard" size="sm" />
             {{ t('home.landing.actions.rechargeNow') }}
           </a>
+          <RouterLink
+            v-if="modelPlazaEnabled"
+            to="/model-plaza"
+            class="home-button home-button-dark home-model-plaza-cta"
+          >
+            <Icon name="grid" size="sm" />
+            {{ t('nav.modelPlaza') }}
+          </RouterLink>
         </div>
       </div>
 
@@ -539,6 +550,7 @@ const heroDescription = computed(
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const apiBaseUrl = computed(() => appStore.cachedPublicSettings?.api_base_url || appStore.apiBaseUrl || '')
 const customEndpoints = computed(() => appStore.cachedPublicSettings?.custom_endpoints ?? [])
+const modelPlazaEnabled = computed(() => appStore.cachedPublicSettings?.model_plaza_enabled === true)
 
 const rechargeUrl = 'https://z30.top/purchase'
 const baseUrl = computed(() => {

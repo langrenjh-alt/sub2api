@@ -167,6 +167,26 @@ describe('HomeView', () => {
     expect(links.some((link) => link.attributes('href') === 'https://docs.example.com/')).toBe(true)
   })
 
+  it('shows model plaza entries in the top navigation and hero when enabled', async () => {
+    appState.cachedPublicSettings = { model_plaza_enabled: true }
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(wrapper.find('.home-model-plaza-nav').attributes('href')).toBe('/model-plaza')
+    expect(wrapper.find('.home-model-plaza-cta').attributes('href')).toBe('/model-plaza')
+    expect(wrapper.findAll('a[href="/model-plaza"]')).toHaveLength(2)
+  })
+
+  it('hides model plaza entries when the feature is disabled', async () => {
+    appState.cachedPublicSettings = { model_plaza_enabled: false }
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(wrapper.find('a[href="/model-plaza"]').exists()).toBe(false)
+  })
+
   it('routes authenticated users to the correct dashboard', async () => {
     authState.isAuthenticated = true
     authState.isAdmin = true
