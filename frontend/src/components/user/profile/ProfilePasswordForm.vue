@@ -2,7 +2,7 @@
   <div :class="props.embedded ? 'space-y-4' : 'card'">
     <div
       v-if="!props.embedded"
-      class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+      class="border-b border-[var(--geist-border-100)] px-6 py-4 dark:border-[var(--geist-border-100)]"
     >
       <h2 class="text-lg font-medium text-gray-900 dark:text-white">
         {{ t('profile.changePassword') }}

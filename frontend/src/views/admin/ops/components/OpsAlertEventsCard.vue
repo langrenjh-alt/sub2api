@@ -343,7 +343,7 @@ function statusBadgeClass(status: string | undefined): string {
   if (s === 'firing') return 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-500/30'
   if (s === 'resolved') return 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/30 dark:text-green-300 dark:ring-green-500/30'
   if (s === 'manual_resolved') return 'bg-slate-50 text-slate-700 ring-slate-600/20 dark:bg-slate-900/30 dark:text-slate-300 dark:ring-slate-500/30'
-  return 'bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-500/30'
+  return 'bg-[var(--geist-background-200)] text-gray-700 ring-gray-600/20 dark:bg-gray-900/30 dark:text-gray-300 dark:ring-gray-500/30'
 }
 
 function formatStatusLabel(status: string | undefined): string {
@@ -359,7 +359,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
 </script>
 
 <template>
-  <div class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 dark:bg-dark-800 dark:ring-dark-700">
+  <div class="card p-6">
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
       <div>
         <h3 class="text-sm font-bold text-gray-900 dark:text-white">{{ t('admin.ops.alertEvents.title') }}</h3>
@@ -402,7 +402,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
           <div
             v-for="row in events"
             :key="row.id"
-            class="cursor-pointer space-y-2 p-4 hover:bg-gray-50 dark:hover:bg-dark-700/50"
+            class="cursor-pointer space-y-2 p-4 hover:bg-[var(--geist-background-200)] dark:hover:bg-dark-700/50"
             @click="openDetail(row)"
           >
             <div class="flex flex-wrap items-center gap-2">
@@ -442,7 +442,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
           </div>
         </div>
         <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
-          <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-dark-900">
+          <thead class="sticky top-0 z-10 bg-[var(--geist-background-200)] dark:bg-[var(--geist-background-200)]">
             <tr>
               <th class="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 {{ t('admin.ops.alertEvents.table.time') }}
@@ -474,7 +474,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
             <tr
               v-for="row in events"
               :key="row.id"
-              class="cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-700/50"
+              class="cursor-pointer hover:bg-[var(--geist-background-200)] dark:hover:bg-dark-700/50"
               @click="openDetail(row)"
               :title="row.title || ''"
             >
@@ -563,7 +563,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
       </div>
 
       <div v-else class="space-y-5">
-        <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
+        <div class="rounded-xl bg-[var(--geist-background-200)] p-4 dark:bg-[var(--geist-background-200)]">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div class="flex flex-wrap items-center gap-2">
@@ -606,27 +606,27 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
         </div>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
+            <div class="rounded-xl bg-[var(--geist-background-200)] p-4 dark:bg-[var(--geist-background-200)]">
               <div class="text-xs font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.alertEvents.detail.firedAt') }}</div>
               <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ formatDateTime(selected.fired_at || selected.created_at) }}</div>
             </div>
-            <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
+            <div class="rounded-xl bg-[var(--geist-background-200)] p-4 dark:bg-[var(--geist-background-200)]">
               <div class="text-xs font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.alertEvents.detail.resolvedAt') }}</div>
               <div class="mt-1 text-sm font-medium text-gray-900 dark:text-white">{{ selected.resolved_at ? formatDateTime(selected.resolved_at) : '-' }}</div>
             </div>
-            <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
+            <div class="rounded-xl bg-[var(--geist-background-200)] p-4 dark:bg-[var(--geist-background-200)]">
               <div class="text-xs font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.alertEvents.detail.ruleId') }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-2">
                 <div class="font-mono text-sm font-bold text-gray-900 dark:text-white">#{{ selected.rule_id }}</div>
                 <a
-                  class="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 dark:bg-dark-800 dark:text-gray-200 dark:ring-dark-700 dark:hover:bg-dark-700"
+                  class="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-gray-700 ring-1 ring-gray-200 hover:bg-[var(--geist-background-200)] dark:bg-dark-800 dark:text-gray-200 dark:ring-dark-700 dark:hover:bg-dark-700"
                   :href="`/admin/ops?open_alert_rules=1&alert_rule_id=${selected.rule_id}`"
                 >
                   <Icon name="externalLink" size="xs" />
                   {{ t('admin.ops.alertEvents.detail.viewRule') }}
                 </a>
                 <a
-                  class="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50 dark:bg-dark-800 dark:text-gray-200 dark:ring-dark-700 dark:hover:bg-dark-700"
+                  class="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-gray-700 ring-1 ring-gray-200 hover:bg-[var(--geist-background-200)] dark:bg-dark-800 dark:text-gray-200 dark:ring-dark-700 dark:hover:bg-dark-700"
                   :href="`/admin/ops?platform=${encodeURIComponent(getDimensionString(selected,'platform')||'')}&group_id=${selected.dimensions?.group_id || ''}&error_type=request&open_error_details=1`"
                 >
                   <Icon name="externalLink" size="xs" />
@@ -634,7 +634,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
                 </a>
               </div>
             </div>
-            <div class="rounded-xl bg-gray-50 p-4 dark:bg-dark-900">
+            <div class="rounded-xl bg-[var(--geist-background-200)] p-4 dark:bg-[var(--geist-background-200)]">
               <div class="text-xs font-bold uppercase tracking-wider text-gray-400">{{ t('admin.ops.alertEvents.detail.dimensions') }}</div>
               <div class="mt-1 text-sm text-gray-900 dark:text-white">
                 <div v-if="getDimensionString(selected, 'platform')">platform={{ getDimensionString(selected, 'platform') }}</div>
@@ -662,7 +662,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
           </div>
           <div v-else class="overflow-hidden rounded-lg border border-gray-100 dark:border-dark-700">
             <table class="min-w-full divide-y divide-gray-100 dark:divide-dark-700">
-              <thead class="bg-gray-50 dark:bg-dark-900">
+              <thead class="bg-[var(--geist-background-200)] dark:bg-[var(--geist-background-200)]">
                 <tr>
                   <th class="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('admin.ops.alertEvents.table.time') }}</th>
                   <th class="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ t('admin.ops.alertEvents.table.status') }}</th>
@@ -670,7 +670,7 @@ const empty = computed(() => events.value.length === 0 && !loading.value)
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-dark-700">
-                <tr v-for="it in history" :key="it.id" class="hover:bg-gray-50 dark:hover:bg-dark-700/50">
+                <tr v-for="it in history" :key="it.id" class="hover:bg-[var(--geist-background-200)] dark:hover:bg-dark-700/50">
                   <td class="px-3 py-2 text-xs text-gray-600 dark:text-gray-300">{{ formatDateTime(it.fired_at || it.created_at) }}</td>
                   <td class="px-3 py-2 text-xs">
                     <span class="inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ring-1 ring-inset" :class="statusBadgeClass(it.status)">

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-50 px-4 dark:bg-dark-950"
+    class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--geist-background-200)] px-4 text-[var(--geist-foreground-100)]"
   >
     <!-- Background Decoration -->
     <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -16,12 +16,12 @@
       <!-- 404 Display -->
       <div class="mb-8">
         <div class="relative inline-block">
-          <span class="text-[12rem] font-bold leading-none text-gray-100 dark:text-dark-800"
+          <span class="text-[12rem] font-bold leading-none text-[var(--geist-background-300)] dark:text-[var(--geist-background-300)]"
             >404</span
           >
           <div class="absolute inset-0 flex items-center justify-center">
             <div
-              class="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-lg shadow-primary-500/30"
+              class="flex h-24 w-24 items-center justify-center rounded-lg bg-[var(--geist-foreground-100)] text-[var(--geist-background-100)]"
             >
               <svg
                 class="h-12 w-12 text-white"

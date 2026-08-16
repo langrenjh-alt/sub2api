@@ -2,7 +2,7 @@
   <div :class="props.embedded ? 'space-y-4' : 'card overflow-hidden'">
     <div
       v-if="!props.embedded"
-      class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+      class="border-b border-[var(--geist-border-100)] px-6 py-4 dark:border-[var(--geist-border-100)]"
     >
       <h2 class="text-lg font-medium text-gray-900 dark:text-white">
         {{ t('profile.authBindings.title') }}
@@ -31,7 +31,7 @@
           <div class="flex min-w-0 flex-1 items-start gap-4">
             <div
               :class="providerIconClass(item.provider)"
-              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-semibold"
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-sm font-semibold"
             >
               <Icon
                 v-if="item.provider === 'email'"
@@ -284,8 +284,8 @@ const compact = computed(() => props.compact)
 const rowClass = computed(() =>
   props.embedded
     ? compact.value
-      ? 'rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-900/40'
-      : 'rounded-2xl border border-gray-100 bg-gray-50/70 p-4 dark:border-dark-700 dark:bg-dark-900/30'
+      ? 'rounded-lg border border-[var(--geist-border-100)] bg-[var(--geist-background-100)] p-4 dark:border-[var(--geist-border-100)] dark:bg-[var(--geist-background-100)]'
+      : 'rounded-lg border border-[var(--geist-border-100)] bg-[var(--geist-background-200)] p-4 dark:border-[var(--geist-border-100)] dark:bg-[var(--geist-background-200)]'
     : 'px-6 py-5'
 )
 const emailBound = computed(() => getBindingStatus('email'))
