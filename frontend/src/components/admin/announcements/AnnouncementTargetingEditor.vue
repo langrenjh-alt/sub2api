@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-800/50">
+  <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-800/50">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -62,7 +62,7 @@
       <div
         v-for="(group, groupIndex) in anyOf"
         :key="groupIndex"
-        class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800"
+        class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-dark-700 dark:bg-dark-800"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">

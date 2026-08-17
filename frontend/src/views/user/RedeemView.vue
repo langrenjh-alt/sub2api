@@ -3,17 +3,17 @@
     <div class="mx-auto max-w-2xl space-y-6">
       <!-- Current Balance Card -->
       <div class="card overflow-hidden">
-        <div class="bg-gradient-to-br from-primary-500 to-primary-600 px-6 py-8 text-center">
+        <div class="bg-[var(--geist-foreground-100)] px-6 py-8 text-center">
           <div
-            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm"
+            class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--geist-background-100)_15%,transparent)] backdrop-blur-sm"
           >
-            <Icon name="creditCard" size="xl" class="text-white" />
+            <Icon name="creditCard" size="xl" class="text-[var(--geist-background-100)]" />
           </div>
-          <p class="text-sm font-medium text-primary-100">{{ t('redeem.currentBalance') }}</p>
-          <p class="mt-2 text-4xl font-bold text-white">
+          <p class="text-sm font-medium text-[var(--geist-background-200)]">{{ t('redeem.currentBalance') }}</p>
+          <p class="mt-2 text-4xl font-bold text-[var(--geist-background-100)]">
             ${{ user?.balance?.toFixed(2) || '0.00' }}
           </p>
-          <p class="mt-2 text-sm text-primary-100">
+          <p class="mt-2 text-sm text-[var(--geist-background-200)]">
             {{ t('redeem.concurrency') }}: {{ user?.concurrency || 0 }} {{ t('redeem.requests') }}
           </p>
         </div>
@@ -241,10 +241,8 @@
                         ? 'bg-emerald-100 dark:bg-emerald-900/30'
                         : 'bg-red-100 dark:bg-red-900/30'
                       : isSubscriptionType(item.type)
-                        ? 'bg-purple-100 dark:bg-purple-900/30'
-                        : item.value >= 0
-                          ? 'bg-blue-100 dark:bg-blue-900/30'
-                          : 'bg-orange-100 dark:bg-orange-900/30'
+                        ? 'bg-gray-100 dark:bg-dark-800'
+                        : 'bg-gray-100 dark:bg-dark-800'
                   ]"
                 >
                   <!-- 余额类型图标 -->
@@ -263,18 +261,14 @@
                     v-else-if="isSubscriptionType(item.type)"
                     name="badge"
                     size="md"
-                    class="text-purple-600 dark:text-purple-400"
+                    class="text-gray-600 dark:text-gray-300"
                   />
                   <!-- 并发类型图标 -->
                   <Icon
                     v-else
                     name="bolt"
                     size="md"
-                    :class="
-                      item.value >= 0
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-orange-600 dark:text-orange-400'
-                    "
+                    class="text-gray-600 dark:text-gray-300"
                   />
                 </div>
                 <div>
@@ -295,10 +289,10 @@
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-red-600 dark:text-red-400'
                       : isSubscriptionType(item.type)
-                        ? 'text-purple-600 dark:text-purple-400'
+                        ? 'text-gray-600 dark:text-gray-300'
                         : item.value >= 0
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-orange-600 dark:text-orange-400'
+                          ? 'text-gray-600 dark:text-gray-300'
+                          : 'text-gray-600 dark:text-gray-300'
                   ]"
                 >
                   {{ formatHistoryValue(item) }}
@@ -327,7 +321,7 @@
           <!-- Empty State -->
           <div v-else class="empty-state py-8">
             <div
-              class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-dark-800"
+              class="mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 dark:bg-dark-800"
             >
               <Icon name="clock" size="xl" class="text-gray-400 dark:text-dark-500" />
             </div>

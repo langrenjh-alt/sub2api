@@ -191,31 +191,29 @@
   }
 
   .btn-stripe {
-    @apply bg-[#635bff] text-white shadow-md shadow-[#635bff]/25;
-    @apply hover:bg-[#5851ea] hover:shadow-lg hover:shadow-[#635bff]/30;
-    @apply dark:bg-[#7a73ff] dark:shadow-[#7a73ff]/20;
+    @apply bg-[#635bff] text-white;
+    @apply hover:bg-[#5851ea];
+    @apply dark:bg-[#7a73ff];
     @apply dark:hover:bg-[#635bff];
   }
 
   .btn-airwallex {
-    @apply bg-[#14171A] text-white shadow-md shadow-emerald-500/20;
-    @apply hover:bg-[#20252a] hover:shadow-lg hover:shadow-emerald-500/25;
-    @apply dark:bg-[#7AF0C4] dark:text-gray-950 dark:shadow-emerald-500/20;
+    @apply bg-[#14171A] text-white;
+    @apply hover:bg-[#20252a];
+    @apply dark:bg-[#7AF0C4] dark:text-gray-950;
     @apply dark:hover:bg-[#62d9ad];
   }
 
   .btn-alipay {
-    @apply bg-[#00AEEF] text-white shadow-md shadow-[#00AEEF]/25;
-    @apply hover:bg-[#009dd6] hover:shadow-lg hover:shadow-[#00AEEF]/30;
+    @apply bg-[#00AEEF] text-white;
+    @apply hover:bg-[#009dd6];
     @apply active:bg-[#008cbe];
-    @apply dark:shadow-[#00AEEF]/20;
   }
 
   .btn-wxpay {
-    @apply bg-[#2BB741] text-white shadow-md shadow-[#2BB741]/25;
-    @apply hover:bg-[#24a038] hover:shadow-lg hover:shadow-[#2BB741]/30;
+    @apply bg-[#2BB741] text-white;
+    @apply hover:bg-[#24a038];
     @apply active:bg-[#1d8a2f];
-    @apply dark:shadow-[#2BB741]/20;
   }
 
   .btn-sm {
@@ -328,8 +326,8 @@
   }
 
   .card-header {
-    @apply border-b border-gray-100 dark:border-dark-700;
     @apply px-6 py-4;
+    border-bottom: 1px solid var(--geist-border-100);
   }
 
   .card-body {
@@ -337,8 +335,8 @@
   }
 
   .card-footer {
-    @apply border-t border-gray-100 dark:border-dark-700;
     @apply px-6 py-4;
+    border-top: 1px solid var(--geist-border-100);
   }
 
   /* ============ 統計卡片 ============ */
@@ -493,14 +491,16 @@
   }
 
   .modal-header {
-    @apply border-b border-gray-200 px-4 py-3 dark:border-dark-700;
+    @apply px-4 py-3;
     @apply sm:px-6 sm:py-4;
     @apply flex items-center justify-between;
     @apply flex-shrink-0;
+    border-bottom: 1px solid var(--geist-border-100);
   }
 
   .modal-title {
-    @apply text-lg font-semibold text-gray-900 dark:text-white;
+    @apply text-lg font-semibold;
+    color: var(--geist-foreground-100);
   }
 
   .modal-body {
@@ -510,10 +510,11 @@
   }
 
   .modal-footer {
-    @apply border-t border-gray-200 px-4 py-3 dark:border-dark-700;
+    @apply px-4 py-3;
     @apply sm:px-6 sm:py-4;
     @apply flex items-center justify-end gap-3;
     @apply flex-shrink-0;
+    border-top: 1px solid var(--geist-border-100);
   }
 
   /* 防止 body 滾動的工具類 */
@@ -579,13 +580,15 @@
   .dialog-container {
     @apply flex w-full flex-col;
     @apply max-h-[90vh];
-    @apply rounded-lg bg-white dark:bg-[#161616];
-    @apply shadow-xl;
+    @apply rounded-lg;
+    background: var(--geist-background-100);
+    box-shadow: var(--geist-shadow-modal);
   }
 
   .dialog-header {
-    @apply border-b border-gray-100 px-6 py-4 dark:border-dark-700;
+    @apply px-6 py-4;
     @apply flex items-center justify-between;
+    border-bottom: 1px solid var(--geist-border-100);
   }
 
   .dialog-body {
@@ -593,8 +596,9 @@
   }
 
   .dialog-footer {
-    @apply border-t border-gray-100 px-6 py-4 dark:border-dark-700;
-    @apply bg-gray-50/60 dark:bg-dark-900/40;
+    @apply px-6 py-4;
+    border-top: 1px solid var(--geist-border-100);
+    background: var(--geist-background-200);
     @apply flex items-center justify-end gap-3;
   }
 
@@ -623,7 +627,7 @@
   }
 
   .toast-info {
-    @apply border-l-primary-500;
+    border-left-color: var(--geist-blue);
   }
 
   /* ============ 側邊欄 ============ */
@@ -676,7 +680,7 @@
   .sidebar-section-title {
     @apply mb-2 px-3;
     @apply text-xs font-semibold uppercase tracking-wider;
-    @apply text-gray-400 dark:text-dark-500;
+    color: var(--geist-foreground-400);
   }
 
   /* ============ 頁面頭部 ============ */
@@ -702,15 +706,17 @@
 
   .empty-state-icon {
     @apply mb-4 h-16 w-16;
-    @apply text-gray-300 dark:text-dark-600;
+    color: var(--geist-foreground-400);
   }
 
   .empty-state-title {
-    @apply mb-1 text-lg font-medium text-gray-900 dark:text-white;
+    @apply mb-1 text-lg font-medium;
+    color: var(--geist-foreground-100);
   }
 
   .empty-state-description {
-    @apply max-w-sm text-sm text-gray-500 dark:text-dark-400;
+    @apply max-w-sm text-sm;
+    color: var(--geist-foreground-300);
   }
 
   /* ============ 載入狀態 ============ */
@@ -720,12 +726,14 @@
   }
 
   .skeleton {
-    @apply animate-pulse rounded bg-gray-200 dark:bg-dark-700;
+    @apply animate-pulse rounded;
+    background: var(--geist-background-300);
   }
 
   /* ============ 分隔线 ============ */
   .divider {
-    @apply my-4 h-px bg-gray-200 dark:bg-dark-700;
+    @apply my-4 h-px;
+    background: var(--geist-border-100);
   }
 
   /* ============ 标签页 ============ */
@@ -740,8 +748,8 @@
     border-radius: 6px;
     color: var(--geist-foreground-200);
     @apply transition-all duration-200;
-    @apply hover:text-gray-900 dark:hover:text-white;
   }
+  .tab:hover { color: var(--geist-foreground-100); }
 
   .tab-active {
     background: var(--geist-background-100);
@@ -751,7 +759,8 @@
 
   /* ============ 进度条 ============ */
   .progress {
-    @apply h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-dark-700;
+    @apply h-2 overflow-hidden rounded-full;
+    background: var(--geist-background-300);
   }
 
   .progress-bar {
@@ -763,12 +772,12 @@
   /* ============ 開關 ============ */
   .switch {
     @apply relative h-6 w-11 cursor-pointer rounded-full;
-    @apply bg-gray-300 dark:bg-dark-600;
+    background: var(--geist-border-300);
     @apply transition-colors duration-200;
   }
 
   .switch-active {
-    @apply bg-primary-500;
+    background: var(--geist-foreground-100);
   }
 
   .switch-thumb {
@@ -800,7 +809,8 @@
 
   /* ============ Tour Description ============ */
   .tour-step-description {
-    @apply space-y-3 text-sm leading-relaxed text-gray-700 dark:text-gray-200;
+    @apply space-y-3 text-sm leading-relaxed;
+    color: var(--geist-foreground-200);
   }
 
   .tour-step-description ul {

@@ -1,8 +1,8 @@
 <template>
   <div
     :class="[
-      'group relative flex flex-col overflow-hidden rounded-2xl border transition-all',
-      'hover:shadow-xl hover:-translate-y-0.5',
+      'group relative flex flex-col overflow-hidden rounded-lg border transition-all',
+      ' hover:-translate-y-0.5',
       borderClass,
       'bg-white dark:bg-dark-800',
     ]"

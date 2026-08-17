@@ -389,7 +389,7 @@
               <button
                 v-if="row.platform === 'composite'"
                 @click="handleCompositeRoutes(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-cyan-600 dark:hover:bg-dark-700 dark:hover:text-cyan-400"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-dark-700 dark:hover:text-white"
               >
                 <Icon name="swap" size="sm" />
                 <span class="text-xs">{{
@@ -835,7 +835,7 @@
                 <input
                   v-model="item.selected"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="min-w-0 flex-1 break-all text-sm text-gray-700 dark:text-gray-300">
                   {{ item.id }}
@@ -879,7 +879,7 @@
               <input
                 v-model="createForm.allow_image_generation"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(imagePricingI18nKey(createForm.platform, "allowImageGeneration")) }}
             </label>
@@ -887,7 +887,7 @@
               <input
                 v-model="createForm.image_rate_independent"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(imagePricingI18nKey(createForm.platform, "independentMultiplier")) }}
             </label>
@@ -966,7 +966,7 @@
               <input
                 v-model="createForm.allow_batch_image_generation"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t("admin.groups.imagePricing.allowBatchImageGeneration") }}
             </label>
@@ -1031,7 +1031,7 @@
               <input
                 v-model="createForm.video_rate_independent"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(videoPricingI18nKey("independentMultiplier")) }}
             </label>
@@ -1151,7 +1151,7 @@
               <input
                 v-model="createForm.peak_rate_enabled"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span>{{ t("admin.groups.peakRate.enable") }}</span>
             </label>
@@ -1197,7 +1197,7 @@
             <input
               v-model="createForm.profit_control_enabled"
               type="checkbox"
-              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
             />
             <span>{{ t("admin.groups.profitControl.enable") }}</span>
           </label>
@@ -1277,7 +1277,7 @@
                 type="checkbox"
                 :checked="createForm.supported_model_scopes.includes('claude')"
                 @change="toggleCreateScope('claude')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.claude")
@@ -1290,7 +1290,7 @@
                   createForm.supported_model_scopes.includes('gemini_text')
                 "
                 @change="toggleCreateScope('gemini_text')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.geminiText")
@@ -1303,7 +1303,7 @@
                   createForm.supported_model_scopes.includes('gemini_image')
                 "
                 @change="toggleCreateScope('gemini_image')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.geminiImage")
@@ -1752,7 +1752,7 @@
                   <div
                     v-for="row in createForm.exact_model_mappings"
                     :key="getCreateMessagesDispatchRowKey(row)"
-                    class="group relative rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 hover:shadow-md dark:border-dark-600 dark:bg-dark-700 dark:hover:border-primary-700"
+                    class="group relative rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 dark:border-dark-600 dark:bg-dark-700 dark:hover:border-primary-700"
                   >
                     <div class="flex items-center gap-4">
                       <div
@@ -2561,7 +2561,7 @@
                 <input
                   v-model="item.selected"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="min-w-0 flex-1 break-all text-sm text-gray-700 dark:text-gray-300">
                   {{ item.id }}
@@ -2605,7 +2605,7 @@
               <input
                 v-model="editForm.allow_image_generation"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(imagePricingI18nKey(editForm.platform, "allowImageGeneration")) }}
             </label>
@@ -2613,7 +2613,7 @@
               <input
                 v-model="editForm.image_rate_independent"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(imagePricingI18nKey(editForm.platform, "independentMultiplier")) }}
             </label>
@@ -2692,7 +2692,7 @@
               <input
                 v-model="editForm.allow_batch_image_generation"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t("admin.groups.imagePricing.allowBatchImageGeneration") }}
             </label>
@@ -2757,7 +2757,7 @@
               <input
                 v-model="editForm.video_rate_independent"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               {{ t(videoPricingI18nKey("independentMultiplier")) }}
             </label>
@@ -2877,7 +2877,7 @@
               <input
                 v-model="editForm.peak_rate_enabled"
                 type="checkbox"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span>{{ t("admin.groups.peakRate.enable") }}</span>
             </label>
@@ -2923,7 +2923,7 @@
             <input
               v-model="editForm.profit_control_enabled"
               type="checkbox"
-              class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              class="rounded border-gray-300 text-blue-600 focus:ring-[var(--geist-foreground-300)]"
             />
             <span>{{ t("admin.groups.profitControl.enable") }}</span>
           </label>
@@ -3003,7 +3003,7 @@
                 type="checkbox"
                 :checked="editForm.supported_model_scopes.includes('claude')"
                 @change="toggleEditScope('claude')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.claude")
@@ -3016,7 +3016,7 @@
                   editForm.supported_model_scopes.includes('gemini_text')
                 "
                 @change="toggleEditScope('gemini_text')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.geminiText")
@@ -3029,7 +3029,7 @@
                   editForm.supported_model_scopes.includes('gemini_image')
                 "
                 @change="toggleEditScope('gemini_image')"
-                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               />
               <span class="text-sm text-gray-700 dark:text-gray-300">{{
                 t("admin.groups.supportedScopes.geminiImage")
@@ -3474,7 +3474,7 @@
                   <div
                     v-for="row in editForm.exact_model_mappings"
                     :key="getEditMessagesDispatchRowKey(row)"
-                    class="group relative rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 hover:shadow-md dark:border-dark-600 dark:bg-dark-700 dark:hover:border-primary-700"
+                    class="group relative rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-primary-300 dark:border-dark-600 dark:bg-dark-700 dark:hover:border-primary-700"
                   >
                     <div class="flex items-center gap-4">
                       <div
@@ -3934,7 +3934,7 @@
           <div
             v-for="group in sortableGroups"
             :key="group.id"
-            class="flex cursor-grab items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 transition-shadow hover:shadow-md active:cursor-grabbing dark:border-dark-600 dark:bg-dark-700"
+            class="flex cursor-grab items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 transition-shadow active:cursor-grabbing dark:border-dark-600 dark:bg-dark-700"
           >
             <div class="text-gray-400">
               <Icon name="menu" size="md" />
@@ -4249,7 +4249,7 @@
                 <input
                   v-model="compositeRouteForm.enabled"
                   type="checkbox"
-                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
                 />
                 {{ t("admin.groups.compositeRoutes.enabled") }}
               </label>

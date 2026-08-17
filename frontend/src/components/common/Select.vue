@@ -478,7 +478,7 @@ onUnmounted(() => {
   @apply border border-gray-200 dark:border-dark-600;
   @apply text-gray-900 dark:text-gray-100;
   @apply transition-all duration-200;
-  @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+  @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)];
   @apply hover:border-gray-300 dark:hover:border-dark-500;
   @apply cursor-pointer;
 }
@@ -488,7 +488,7 @@ onUnmounted(() => {
 }
 
 .select-trigger-error {
-  @apply border-red-500 focus:border-red-500 focus:ring-red-500/30;
+  @apply border-red-500 focus:border-red-500 focus:ring-[var(--geist-foreground-300)];
 }
 
 .select-trigger-disabled {

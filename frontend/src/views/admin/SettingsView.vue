@@ -6114,7 +6114,7 @@
             @click.self="wsTestDialogOpen = false"
           >
             <div
-              class="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-dark-800"
+              class="mx-4 w-full max-w-lg rounded-xl bg-white p-6 shadow-sm dark:bg-dark-800"
             >
               <h3
                 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white"
@@ -7206,7 +7206,7 @@
                     :value="group.id"
                     :disabled="isHomepageStatusGroupSelectionDisabled(group.id)"
                     :aria-label="`${t('admin.settings.features.homepageStatus.groups')}: ${group.name}`"
-                    class="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-500 dark:bg-dark-800"
+                    class="h-4 w-4 flex-none rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-500 dark:bg-dark-800"
                   />
                   <GroupBadge
                     class="min-w-0"
@@ -7629,7 +7629,7 @@
           class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           @click.self="closeAffiliateModal"
         >
-          <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-dark-900">
+          <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-sm dark:bg-dark-900">
             <h3 class="mb-4 text-lg font-semibold">
               {{ affiliateModal.mode === 'add' ? t('admin.settings.features.affiliate.modal.addTitle') : t('admin.settings.features.affiliate.modal.editTitle') }}
             </h3>
@@ -7754,7 +7754,7 @@
           class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           @click.self="affiliateBatchModal.open = false"
         >
-          <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-dark-900">
+          <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-sm dark:bg-dark-900">
             <h3 class="mb-4 text-lg font-semibold">
               {{ t('admin.settings.features.affiliate.batchModal.title', { count: affiliateState.selected.length }) }}
             </h3>
@@ -8102,7 +8102,7 @@
                       <button
                         type="button"
                         :class="[
-                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
                           form.payment_cancel_rate_limit_enabled
                             ? 'bg-primary-500'
                             : 'bg-gray-300 dark:bg-dark-600',
@@ -8192,7 +8192,7 @@
                       <button
                         type="button"
                         :class="[
-                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
                           form.payment_alipay_force_qrcode
                             ? 'bg-primary-500'
                             : 'bg-gray-300 dark:bg-dark-600',
@@ -8224,7 +8224,7 @@
                       <button
                         type="button"
                         :class="[
-                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
                           form.payment_alipay_mobile_precreate_deep_link
                             ? 'bg-primary-500'
                             : 'bg-gray-300 dark:bg-dark-600',
@@ -13065,7 +13065,7 @@ watch(
 
 /* ============ 系统设置 Tab 导航 ============ */
 .settings-tabs-shell {
-  @apply sticky z-20 -mx-1 rounded-2xl border border-white/80 bg-white/90 p-1.5 backdrop-blur-xl;
+  @apply sticky z-20 -mx-1 rounded-lg border border-white/80 bg-white/90 p-1.5 backdrop-blur-xl;
   top: 4.75rem;
   box-shadow:
     0 12px 28px rgb(15 23 42 / 0.07),
@@ -13138,7 +13138,7 @@ watch(
   height: 2px;
   border-radius: 9999px;
   content: "";
-  background: linear-gradient(90deg, #14b8a6, #0ea5e9);
+  background: var(--geist-foreground-100);
 }
 
 .settings-tab-icon {

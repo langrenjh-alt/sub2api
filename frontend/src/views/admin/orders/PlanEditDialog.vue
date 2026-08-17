@@ -69,7 +69,7 @@
         <button
           type="button"
           :class="[
-            'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+            'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
             planForm.for_sale ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
           ]"
           @click="planForm.for_sale = !planForm.for_sale"

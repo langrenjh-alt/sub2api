@@ -3,7 +3,7 @@
     <div class="flex min-h-full items-center justify-center p-4">
       <div class="fixed inset-0 bg-black/50 transition-opacity"></div>
 
-      <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all dark:bg-dark-800">
+      <div class="relative w-full max-w-md transform rounded-xl bg-white p-6 shadow-sm transition-all dark:bg-dark-800">
         <!-- Header -->
         <div class="mb-6 text-center">
           <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30">
@@ -46,7 +46,7 @@
               inputmode="numeric"
               pattern="[0-9]"
               autocomplete="off"
-              class="h-12 w-10 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-700"
+              class="h-12 w-10 rounded-lg border border-gray-300 text-center text-lg font-semibold focus:border-primary-500 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-700"
               :disabled="verifying"
               @input="handleCodeInput($event, index)"
               @keydown="handleKeydown($event, index)"

@@ -101,7 +101,7 @@
           <template #header-select>
             <input
               type="checkbox"
-              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
               :checked="allVisibleSelected"
               @click.stop
               @change="toggleSelectAllVisible($event)"
@@ -111,7 +111,7 @@
           <template #cell-select="{ row }">
             <input
               type="checkbox"
-              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              class="h-4 w-4 cursor-pointer rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
               :checked="selectedProxyIds.has(row.id)"
               @click.stop
               @change="toggleSelectRow(row.id, $event)"

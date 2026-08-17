@@ -210,7 +210,7 @@ onMounted(async () => {
 }
 
 .legal-document-content :deep(a) {
-  @apply text-primary-600 underline underline-offset-4 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200;
+  @apply text-[var(--geist-blue)] underline underline-offset-4 hover:opacity-80;
 }
 
 .legal-document-content :deep(ul) {

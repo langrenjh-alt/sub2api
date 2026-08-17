@@ -226,7 +226,7 @@ const planBadgeClass = computed(() => {
     }
     // SuperGrok → cyan
     if (normalizedPlanType.value.includes('supergrok')) {
-      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300'
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
     }
     // Any other non-free Grok plan (future tiers) → amber so it still stands out
     return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'

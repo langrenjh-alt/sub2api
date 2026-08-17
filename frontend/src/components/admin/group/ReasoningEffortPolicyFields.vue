@@ -24,7 +24,7 @@
         </label>
         <button
           type="button"
-          class="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:text-primary-400 dark:hover:bg-primary-900/20 dark:hover:text-primary-300"
+          class="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-primary-600 transition-colors hover:bg-primary-50 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] dark:text-primary-400 dark:hover:bg-primary-900/20 dark:hover:text-primary-300"
           @click="addMapping"
         >
           <Icon name="plus" size="sm" />
@@ -97,7 +97,7 @@
 
             <button
               type="button"
-              class="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/30 md:mt-6 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+              class="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] md:mt-6 dark:hover:bg-red-900/20 dark:hover:text-red-400"
               :title="t('admin.groups.form.removeReasoningEffortMapping')"
               :aria-label="t('admin.groups.form.removeReasoningEffortMapping')"
               @click="removeMapping(row.id)"

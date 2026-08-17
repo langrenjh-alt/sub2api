@@ -1,6 +1,6 @@
 <template>
   <section
-    class="card flex min-h-[360px] flex-col overflow-visible !rounded-3xl !border-0 !p-6 shadow-sm ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700"
+    class="card flex min-h-[360px] flex-col overflow-visible !rounded-lg !border-0 !p-6 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700"
   >
     <div class="card-header mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3 !border-0 !p-0">
       <div class="min-w-0">
@@ -32,7 +32,7 @@
       <div
         v-if="rows.length"
         ref="scrollRef"
-        class="matrix-scroll max-h-[min(42vh,420px)] max-w-full overflow-auto rounded-2xl bg-gray-50/60 p-2 dark:bg-dark-900/30"
+        class="matrix-scroll max-h-[min(42vh,420px)] max-w-full overflow-auto rounded-lg bg-gray-50/60 p-2 dark:bg-dark-900/30"
         @wheel="onMatrixWheel"
       >
         <div class="matrix-table w-full" :style="tableStyle">

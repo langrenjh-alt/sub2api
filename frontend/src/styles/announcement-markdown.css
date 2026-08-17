@@ -25,7 +25,13 @@
 }
 
 .markdown-body a {
-  @apply font-medium text-blue-600 underline decoration-blue-600/30 decoration-2 underline-offset-2 transition-all hover:decoration-blue-600 dark:text-blue-400 dark:decoration-blue-400/30 dark:hover:decoration-blue-400;
+  @apply font-medium underline decoration-2 underline-offset-2 transition-all;
+  color: var(--geist-foreground-100);
+  text-decoration-color: var(--geist-border-300);
+}
+
+.markdown-body a:hover {
+  text-decoration-color: var(--geist-foreground-100);
 }
 
 .markdown-body ul,
@@ -46,20 +52,26 @@
 }
 
 .markdown-body li::marker {
-  @apply text-blue-600 dark:text-blue-400;
+  color: var(--geist-foreground-300);
 }
 
 .markdown-body blockquote {
-  @apply relative my-5 border-l-4 border-blue-500 bg-blue-50/50 py-3 pl-5 pr-4 italic text-gray-700 dark:border-blue-400 dark:bg-blue-900/10 dark:text-gray-300;
+  @apply relative my-5 py-3 pl-5 pr-4 italic text-gray-700 dark:text-gray-300;
+  border-left: 4px solid var(--geist-border-300);
+  background: var(--geist-background-200);
 }
 
 .markdown-body blockquote::before {
   content: '"';
-  @apply absolute -left-1 top-0 font-serif text-5xl text-blue-500/20 dark:text-blue-400/20;
+  @apply absolute -left-1 top-0 font-serif text-5xl;
+  color: var(--geist-foreground-400);
+  opacity: 0.4;
 }
 
 .markdown-body code {
-  @apply rounded-lg bg-gray-100 px-2 py-1 font-mono text-[13px] text-pink-600 dark:bg-dark-700 dark:text-pink-400;
+  @apply rounded-lg px-2 py-1 font-mono text-[13px];
+  background: var(--geist-background-300);
+  color: var(--geist-foreground-100);
 }
 
 .markdown-body pre {
@@ -93,7 +105,8 @@
 }
 
 .markdown-body th {
-  @apply bg-gradient-to-br from-blue-50 to-indigo-50 font-semibold text-gray-900 dark:from-blue-900/20 dark:to-indigo-900/10 dark:text-white;
+  @apply font-semibold text-gray-900 dark:text-white;
+  background: var(--geist-background-200);
 }
 
 .markdown-body tbody tr {
@@ -101,7 +114,7 @@
 }
 
 .markdown-body img {
-  @apply my-5 max-w-full rounded-xl border border-gray-200 shadow-md dark:border-dark-600;
+  @apply my-5 max-w-full rounded-xl border border-gray-200 dark:border-dark-600;
 }
 
 .markdown-body strong {

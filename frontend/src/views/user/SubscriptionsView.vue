@@ -28,7 +28,7 @@
         <div
           v-for="subscription in subscriptions"
           :key="subscription.id"
-          class="overflow-hidden rounded-2xl border bg-white dark:bg-dark-800"
+          class="overflow-hidden rounded-lg border bg-white dark:bg-dark-800"
           :class="platformBorderClass(subscription.group?.platform || '')"
         >
           <!-- Header -->
@@ -226,15 +226,15 @@
                 !subscription.group?.weekly_limit_usd &&
                 !subscription.group?.monthly_limit_usd
               "
-              class="flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 py-6 dark:from-emerald-900/20 dark:to-teal-900/20"
+              class="flex items-center justify-center rounded-xl bg-gray-100 py-6 dark:bg-dark-800"
             >
               <div class="flex items-center gap-3">
-                <span class="text-4xl text-emerald-600 dark:text-emerald-400">∞</span>
+                <span class="text-4xl text-gray-600 dark:text-gray-300">∞</span>
                 <div>
-                  <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
                     {{ t('userSubscriptions.unlimited') }}
                   </p>
-                  <p class="text-xs text-emerald-600/70 dark:text-emerald-400/70">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
                     {{ t('userSubscriptions.unlimitedDesc') }}
                   </p>
                 </div>
@@ -266,14 +266,8 @@ import {
   type RemainingDurationParts
 } from '@/utils/subscriptionQuota'
 
-function platformAccentDotClass(p: string): string {
-  switch (p) {
-    case 'anthropic': return 'bg-orange-500'
-    case 'openai': return 'bg-emerald-500'
-    case 'antigravity': return 'bg-purple-500'
-    case 'gemini': return 'bg-blue-500'
-    default: return 'bg-gray-400'
-  }
+function platformAccentDotClass(_p: string): string {
+  return 'bg-gray-400'
 }
 
 const { t } = useI18n()

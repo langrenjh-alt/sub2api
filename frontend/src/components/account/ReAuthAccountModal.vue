@@ -13,14 +13,7 @@
         <div class="flex items-center gap-3">
           <div
             :class="[
-              'flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br',
-              isOpenAILike
-                ? 'from-green-500 to-green-600'
-                : isGemini
-                  ? 'from-blue-500 to-blue-600'
-                  : isAntigravity
-                    ? 'from-purple-500 to-purple-600'
-                    : 'from-orange-500 to-orange-600'
+              'flex h-10 w-10 items-center justify-center rounded-lg bg-gray-700 dark:bg-gray-600',
             ]"
           >
             <Icon name="sparkles" size="md" class="text-white" />
@@ -53,7 +46,7 @@
               v-model="addMethod"
               type="radio"
               value="oauth"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
             />
             <span class="text-sm text-gray-700 dark:text-gray-300">{{
               t('admin.accounts.types.oauth')
@@ -64,7 +57,7 @@
               v-model="addMethod"
               type="radio"
               value="setup-token"
-              class="mr-2 text-primary-600 focus:ring-primary-500"
+              class="mr-2 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
             />
             <span class="text-sm text-gray-700 dark:text-gray-300">{{
               t('admin.accounts.setupTokenLongLived')

@@ -20,7 +20,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="manual"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.manualAuth')
@@ -31,7 +31,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="cookie"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.cookieAutoAuth')
@@ -42,7 +42,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="refresh_token"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t(getOAuthKey('refreshTokenAuth'))
@@ -53,7 +53,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="sso_cookie"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t(getOAuthKey('ssoCookieAuth'))
@@ -64,7 +64,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="email_password"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t(getOAuthKey('emailPasswordAuth'))
@@ -75,7 +75,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="mobile_refresh_token"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.openai.mobileRefreshTokenAuth')
@@ -86,7 +86,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="session_token"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t(getOAuthKey('sessionTokenAuth'))
@@ -97,7 +97,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="access_token"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.openai.accessTokenAuth')
@@ -108,7 +108,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="codex_session"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.openai.codexSessionAuth')
@@ -119,7 +119,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="agent_identity"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.openai.agentIdentityAuth')
@@ -130,7 +130,7 @@
                 v-model="inputMethod"
                 type="radio"
                 value="codex_pat"
-                class="text-blue-600 focus:ring-blue-500"
+                class="text-blue-600 focus:ring-[var(--geist-foreground-300)]"
               />
               <span class="text-sm text-blue-900 dark:text-blue-200">{{
                 t('admin.accounts.oauth.openai.codexPatAuth')

@@ -210,7 +210,7 @@
                 <input
                   type="checkbox"
                   v-model="form.restrict_models"
-                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="input-label mb-0">{{ t('admin.channels.form.restrictModels', 'Restrict Models') }}</span>
               </label>
@@ -243,7 +243,7 @@
                   <input
                     type="checkbox"
                     :checked="activePlatforms.includes(p)"
-                    class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                     @change="togglePlatform(p)"
                   />
                   <PlatformIcon :platform="p" size="xs" :class="platformTextClass(p)" />
@@ -307,7 +307,7 @@
                       type="checkbox"
                       :checked="section.group_ids.includes(group.id)"
                       :disabled="isGroupInOtherChannel(group.id, section.platform)"
-                      class="h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      class="h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                       @change="toggleGroupInSection(sIdx, group.id)"
                     />
                     <span :class="['font-medium', platformTextClass(group.platform)]">{{ group.name }}</span>
@@ -503,7 +503,7 @@
                         ? 'border-primary-300 bg-primary-50 dark:border-primary-700 dark:bg-primary-900/20'
                         : 'border-gray-200 hover:bg-gray-50 dark:border-dark-600 dark:hover:bg-dark-700'"
                     >
-                      <input type="checkbox" :checked="rule.group_ids.includes(gid)" class="h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-primary-500" @change="rule.group_ids.includes(gid) ? rule.group_ids.splice(rule.group_ids.indexOf(gid), 1) : rule.group_ids.push(gid)" />
+                      <input type="checkbox" :checked="rule.group_ids.includes(gid)" class="h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]" @change="rule.group_ids.includes(gid) ? rule.group_ids.splice(rule.group_ids.indexOf(gid), 1) : rule.group_ids.push(gid)" />
                       <span :class="['font-medium', platformTextClass(section.platform)]">{{ getGroupNameById(gid) }}</span>
                     </label>
                   </div>

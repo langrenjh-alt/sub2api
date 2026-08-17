@@ -41,7 +41,7 @@
           <button
             type="button"
             :class="[
-              'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+              'relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
               value ? 'bg-primary-500' : 'bg-gray-300 dark:bg-dark-600'
             ]"
             @click="toggleForSale(row)"

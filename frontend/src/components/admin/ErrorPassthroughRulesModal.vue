@@ -164,7 +164,7 @@
                 <button
                   @click="toggleEnabled(rule)"
                   :class="[
-                    'relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                    'relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[var(--geist-foreground-300)] focus:ring-offset-0',
                     rule.enabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
                   ]"
                 >
@@ -291,7 +291,7 @@
                   type="radio"
                   :value="option.value"
                   v-model="form.match_mode"
-                  class="mt-0.5 h-3.5 w-3.5 border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="mt-0.5 h-3.5 w-3.5 border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <div class="flex-1">
                   <span class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ option.label }}</span>
@@ -313,7 +313,7 @@
                   type="checkbox"
                   :value="platform.value"
                   v-model="form.platforms"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="text-xs text-gray-700 dark:text-gray-300">{{ platform.label }}</span>
               </label>
@@ -334,7 +334,7 @@
                 <input
                   type="checkbox"
                   v-model="form.passthrough_code"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.errorPassthrough.form.passthroughCode') }}
@@ -357,7 +357,7 @@
                 <input
                   type="checkbox"
                   v-model="form.passthrough_body"
-                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
                 />
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.errorPassthrough.form.passthroughBody') }}
@@ -381,7 +381,7 @@
           <input
             type="checkbox"
             v-model="form.skip_monitoring"
-            class="h-3.5 w-3.5 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            class="h-3.5 w-3.5 rounded border-gray-300 text-yellow-600 focus:ring-[var(--geist-foreground-300)]"
           />
           <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
             {{ t('admin.errorPassthrough.form.skipMonitoring') }}
@@ -394,7 +394,7 @@
           <input
             type="checkbox"
             v-model="form.enabled"
-            class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            class="h-3.5 w-3.5 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
           />
           <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
             {{ t('admin.errorPassthrough.form.enabled') }}

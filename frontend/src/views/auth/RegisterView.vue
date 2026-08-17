@@ -103,8 +103,8 @@
               :disabled="registrationActionDisabled"
               class="input pl-11 pr-10"
               :class="{
-                'border-green-500 focus:border-green-500 focus:ring-green-500': invitationValidation.valid,
-                'border-red-500 focus:border-red-500 focus:ring-red-500': invitationValidation.invalid || errors.invitation_code
+                'border-green-500 focus:border-green-500 focus:ring-[var(--geist-foreground-300)]': invitationValidation.valid,
+                'border-red-500 focus:border-red-500 focus:ring-[var(--geist-foreground-300)]': invitationValidation.invalid || errors.invitation_code
               }"
               :placeholder="t('auth.invitationCodePlaceholder')"
               @input="handleInvitationCodeInput"
@@ -172,8 +172,8 @@
               :disabled="registrationActionDisabled"
               class="input pl-11 pr-10"
               :class="{
-                'border-green-500 focus:border-green-500 focus:ring-green-500': promoValidation.valid,
-                'border-red-500 focus:border-red-500 focus:ring-red-500': promoValidation.invalid
+                'border-green-500 focus:border-green-500 focus:ring-[var(--geist-foreground-300)]': promoValidation.valid,
+                'border-red-500 focus:border-red-500 focus:ring-[var(--geist-foreground-300)]': promoValidation.invalid
               }"
               :placeholder="t('auth.promoCodePlaceholder')"
               @input="handlePromoCodeInput"
@@ -327,7 +327,7 @@
         {{ t('auth.alreadyHaveAccount') }}
         <router-link
           to="/login"
-          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          class="font-medium text-[var(--geist-blue)] transition-colors hover:underline"
         >
           {{ t('auth.signIn') }}
         </router-link>

@@ -164,7 +164,7 @@
               (turnstileEnabled && showResendTurnstile && !resendTurnstileToken) ||
               (geetestEnabled && showResendGeetest && !resendGeetestValidation)
             "
-            class="text-sm text-primary-600 transition-colors hover:text-primary-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-primary-400 dark:hover:text-primary-300"
+            class="text-sm text-[var(--geist-blue)] transition-colors hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:no-underline"
           >
             <span v-if="isSendingCode">{{ t('auth.sendingCode') }}</span>
             <span

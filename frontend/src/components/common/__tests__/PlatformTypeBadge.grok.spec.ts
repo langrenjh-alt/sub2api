@@ -61,13 +61,12 @@ describe('PlatformTypeBadge Grok plans', () => {
     })
     expect(free.html()).toContain('bg-gray-100')
     expect(free.html()).not.toContain('bg-purple-100')
-    expect(free.html()).not.toContain('bg-cyan-100')
 
     const superGrok = mount(PlatformTypeBadge, {
       props: { platform: 'grok', type: 'oauth', planType: 'supergrok' },
     })
     expect(superGrok.text()).toContain('SuperGrok')
-    expect(superGrok.html()).toContain('bg-cyan-100')
+    expect(superGrok.html()).toContain('bg-gray-100')
     expect(superGrok.find('[data-testid="grok-plan-icon"]').exists()).toBe(true)
 
     const heavy = mount(PlatformTypeBadge, {
@@ -81,7 +80,7 @@ describe('PlatformTypeBadge Grok plans', () => {
       props: { platform: 'grok', type: 'oauth', planType: 'supergrok_lite' },
     })
     expect(lite.text()).toContain('SuperGrok Lite')
-    expect(lite.html()).toContain('bg-cyan-100')
+    expect(lite.html()).toContain('bg-gray-100')
   })
 
   it('uses a dedicated 12px currentColor Grok mark with a Free sparkle', () => {
