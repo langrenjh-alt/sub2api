@@ -13141,7 +13141,7 @@ watch(
 
 /* ============ 系统设置 Tab 导航 ============ */
 .settings-tabs-shell {
-  @apply sticky z-20 -mx-1 rounded-lg border border-[var(--geist-border-100)] bg-[var(--geist-background-100)]/90 p-1.5 backdrop-blur-xl;
+  @apply sticky z-20 -mx-1 rounded-lg border border-[var(--geist-border-100)] bg-[var(--geist-background-100)] p-1.5;
   top: 4.75rem;
   box-shadow:
     0 12px 28px rgb(15 23 42 / 0.07),

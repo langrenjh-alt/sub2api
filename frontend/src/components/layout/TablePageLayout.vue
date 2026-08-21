@@ -80,7 +80,6 @@ onUnmounted(() => {
 
 .table-scroll-container :deep(thead) {
   background: var(--geist-background-200);
-  @apply backdrop-blur-sm;
 }
 
 .table-scroll-container :deep(tbody) {

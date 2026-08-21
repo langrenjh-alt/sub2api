@@ -295,16 +295,14 @@
     -moz-appearance: textfield;
   }
 
-  /* ============ 玻璃效果 ============ */
+  /* ============ 粘性表面(扁平化,去除磨砂模糊) ============ */
   .glass {
     border-color: var(--geist-border-100);
-    background: color-mix(in srgb, var(--geist-background-100) 88%, transparent);
-    @apply backdrop-blur-xl;
+    background: var(--geist-background-100);
   }
 
   .glass-card {
     background: var(--geist-background-100);
-    @apply backdrop-blur-xl;
     border: 1px solid var(--geist-border-100);
     border-radius: 8px;
     @apply shadow-none;
@@ -327,7 +325,6 @@
 
   .card-glass {
     background: var(--geist-background-100);
-    @apply backdrop-blur-xl;
     border: 1px solid var(--geist-border-100);
     @apply shadow-none;
   }
@@ -856,11 +853,6 @@
   /* 文字漸變 */
   .text-gradient {
     color: var(--geist-foreground-100);
-  }
-
-  /* 玻璃效果 */
-  .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
   }
 
   /* 隱藏捲軸 */
