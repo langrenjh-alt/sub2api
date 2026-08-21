@@ -56,8 +56,13 @@
   }
 
   html {
-    @apply antialiased;
+    @apply scroll-smooth antialiased;
     font-family: 'Geist Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
   }
 
   body {

@@ -192,9 +192,10 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyChannelMonitorHideThroughput:         "true",
 		SettingKeyHomepageStatusEnabled:                "false",
 		SettingKeyHomepageStatusGroupIDs:               "[]",
+		SettingKeyChannelMonitorShowQuota:              "false",
 
 		// Grok: safe defaults — no cross-vendor model rewrite unless operators enable it.
-		SettingKeyGrokDefaultTextModel:           "grok-4.5",
+		SettingKeyGrokDefaultTextModel:           "grok-4.6",
 		SettingKeyGrokCrossClientModelMapEnabled: "true",
 		SettingKeyGrokDefaultBaseURLMode:         GrokDefaultBaseURLModeCLI,
 
@@ -806,11 +807,14 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	result.ChannelMonitorHideThroughput = !isFalseSettingValue(settings[SettingKeyChannelMonitorHideThroughput])
 	result.HomepageStatusEnabled = settings[SettingKeyHomepageStatusEnabled] == "true"
 	result.HomepageStatusGroupIDs = parseHomepageStatusGroupIDs(settings[SettingKeyHomepageStatusGroupIDs])
+	// 配额展示默认关闭且 fail-closed：仅字面 "true" 视为开启
+	// （与 setting_public.go 公开读取路径保持一致）。
+	result.ChannelMonitorShowQuota = settings[SettingKeyChannelMonitorShowQuota] == "true"
 
 	// Grok default mapping policy
 	result.GrokDefaultTextModel = strings.TrimSpace(settings[SettingKeyGrokDefaultTextModel])
 	if result.GrokDefaultTextModel == "" {
-		result.GrokDefaultTextModel = "grok-4.5"
+		result.GrokDefaultTextModel = "grok-4.6"
 	}
 	// Default true (missing/empty → enabled) so Claude/Codex→Grok mapping keeps working.
 	// Operators can set false to disable silent cross-client rewrite.
