@@ -24,12 +24,10 @@
                   {{ t('announcements.unread') }}
                 </span>
               </div>
-
               <!-- Title -->
               <h2 class="mb-2 text-2xl font-bold leading-tight text-gray-900 dark:text-white">
                 {{ displayedAnnouncement.title }}
               </h2>
-
               <!-- Time -->
               <div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -39,7 +37,6 @@
               </div>
             </div>
           </div>
-
           <!-- Body -->
           <div class="max-h-[50vh] overflow-y-auto bg-white px-8 py-8 dark:bg-dark-800">
             <div
@@ -47,9 +44,8 @@
               v-html="renderedContent"
             ></div>
           </div>
-
           <!-- Footer -->
-          <div class="border-t border-gray-100 bg-gray-50/50 px-8 py-5 dark:border-dark-700 dark:bg-dark-900/30">
+          <div class="border-t border-[var(--geist-border-100)] bg-[var(--geist-background-200)] px-8 py-5 dark:border-[var(--geist-border-100)] dark:bg-[var(--geist-background-200)]">
             <div class="flex items-center justify-end">
               <button
                 @click="handleDismiss"
@@ -73,7 +69,6 @@
     </Transition>
   </Teleport>
 </template>
-
 <script setup lang="ts">
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -84,9 +79,7 @@ import { formatRelativeWithDateTime } from '@/utils/format'
 import { acquireBodyScrollLock } from '@/utils/bodyScrollLock'
 import type { Announcement, UserAnnouncement } from '@/types'
 import '@/styles/announcement-markdown.css'
-
 type PreviewAnnouncement = Pick<Announcement | UserAnnouncement, 'title' | 'content' | 'created_at'>
-
 const props = withDefaults(defineProps<{
   announcement?: PreviewAnnouncement | null
   preview?: boolean
@@ -94,29 +87,24 @@ const props = withDefaults(defineProps<{
   announcement: null,
   preview: false,
 })
-
 const emit = defineEmits<{
   close: []
 }>()
-
 const { t } = useI18n()
 const announcementStore = useAnnouncementStore()
 const displayedAnnouncement = computed(() => (
   props.preview ? props.announcement : announcementStore.currentPopup
 ))
-
 marked.setOptions({
   breaks: true,
   gfm: true,
 })
-
 const renderedContent = computed(() => {
   const content = displayedAnnouncement.value?.content
   if (!content) return ''
   const html = marked.parse(content) as string
   return DOMPurify.sanitize(html)
 })
-
 function handleDismiss() {
   if (props.preview) {
     emit('close')
@@ -124,9 +112,7 @@ function handleDismiss() {
   }
   announcementStore.dismissPopup()
 }
-
 let releaseBodyScrollLock: (() => void) | null = null
-
 function syncBodyScrollLock(active: boolean) {
   if (active && !releaseBodyScrollLock) {
     releaseBodyScrollLock = acquireBodyScrollLock()
@@ -135,7 +121,6 @@ function syncBodyScrollLock(active: boolean) {
     releaseBodyScrollLock = null
   }
 }
-
 watch(
   displayedAnnouncement,
   (popup) => {
@@ -143,45 +128,36 @@ watch(
   },
   { immediate: true },
 )
-
 onBeforeUnmount(() => {
   syncBodyScrollLock(false)
 })
 </script>
-
 <style scoped>
 .popup-fade-enter-active {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .popup-fade-leave-active {
   transition: all 0.2s cubic-bezier(0.4, 0, 1, 1);
 }
-
 .popup-fade-enter-from,
 .popup-fade-leave-to {
   opacity: 0;
 }
-
 .popup-fade-enter-from > div {
   transform: scale(0.94) translateY(-12px);
   opacity: 0;
 }
-
 .popup-fade-leave-to > div {
   transform: scale(0.96) translateY(-8px);
   opacity: 0;
 }
-
 /* Scrollbar Styling */
 .overflow-y-auto::-webkit-scrollbar {
   width: 8px;
 }
-
 .overflow-y-auto::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .overflow-y-auto::-webkit-scrollbar-thumb {
   background: var(--geist-border-300);
   border-radius: 4px;

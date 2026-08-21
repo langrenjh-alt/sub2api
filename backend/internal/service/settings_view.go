@@ -205,6 +205,7 @@ type SystemSettings struct {
 	ChannelMonitorMode                   string  `json:"channel_monitor_mode"`
 	ChannelMonitorDefaultIntervalSeconds int     `json:"channel_monitor_default_interval_seconds"`
 	ChannelMonitorHideThroughput         bool    `json:"channel_monitor_hide_throughput"`
+	ChannelMonitorShowQuota              bool    `json:"channel_monitor_show_quota"`
 	HomepageStatusEnabled                bool    `json:"homepage_status_enabled"`
 	HomepageStatusGroupIDs               []int64 `json:"homepage_status_group_ids"`
 
@@ -386,6 +387,7 @@ type PublicSettings struct {
 	ChannelMonitorMode                   string `json:"channel_monitor_mode"`
 	ChannelMonitorDefaultIntervalSeconds int    `json:"channel_monitor_default_interval_seconds"`
 	ChannelMonitorHideThroughput         bool   `json:"channel_monitor_hide_throughput"`
+	ChannelMonitorShowQuota              bool   `json:"channel_monitor_show_quota"`
 
 	// Grok model mapping policy (admin settings).
 	GrokDefaultTextModel           string `json:"grok_default_text_model"`

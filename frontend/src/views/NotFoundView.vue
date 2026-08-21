@@ -1,12 +1,12 @@
 <template>
   <div
-    class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-50 px-4 dark:bg-dark-950"
+    class="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--geist-background-200)] px-4 text-[var(--geist-foreground-100)]"
   >
     <div class="relative z-10 w-full max-w-md text-center">
       <!-- 404 Display -->
       <div class="mb-8">
         <div class="relative inline-block">
-          <span class="text-[12rem] font-bold leading-none text-gray-100 dark:text-dark-800"
+          <span class="text-[12rem] font-bold leading-none text-[var(--geist-background-300)] dark:text-[var(--geist-background-300)]"
             >404</span
           >
           <div class="absolute inset-0 flex items-center justify-center">

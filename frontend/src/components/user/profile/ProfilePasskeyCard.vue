@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <div class="flex items-start justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700">
+    <div class="flex items-start justify-between border-b border-[var(--geist-border-100)] px-6 py-4 dark:border-[var(--geist-border-100)]">
       <div>
         <h2 class="text-lg font-medium text-gray-900 dark:text-white">
           {{ t('profile.passkey.title') }}
@@ -30,7 +30,7 @@
       <div>
         <form
           v-if="enabled && supported && showAddForm"
-          class="mb-5 flex flex-col gap-3 rounded-lg border border-gray-200 p-4 dark:border-dark-700"
+          class="mb-5 flex flex-col gap-3 rounded-lg border border-[var(--geist-border-100)] p-4 dark:border-[var(--geist-border-100)]"
           @submit.prevent="addPasskey"
         >
           <div class="grid gap-3 sm:grid-cols-2">
@@ -75,7 +75,7 @@
 
         <div
           v-else-if="credentials.length === 0"
-          class="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500 dark:border-dark-700 dark:text-gray-400"
+          class="rounded-lg border border-dashed border-[var(--geist-border-100)] px-4 py-8 text-center text-sm text-[var(--geist-foreground-300)] dark:border-[var(--geist-border-100)] dark:text-[var(--geist-foreground-300)]"
         >
           {{ t('profile.passkey.empty') }}
         </div>

@@ -433,7 +433,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div v-if="!draftAlert.silencing.entries?.length" class="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-500 dark:bg-dark-900 dark:text-gray-400">
+            <div v-if="!draftAlert.silencing.entries?.length" class="mt-3 rounded-lg bg-[var(--geist-background-200)] p-3 text-xs text-gray-500 dark:bg-[var(--geist-background-200)] dark:text-gray-400">
               {{ t('admin.ops.runtime.silencing.entries.empty') }}
             </div>
 
@@ -441,7 +441,7 @@ onMounted(() => {
               <div
                 v-for="(entry, idx) in draftAlert.silencing.entries"
                 :key="idx"
-                class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-dark-700 dark:bg-dark-900"
+                class="rounded-lg border border-gray-200 bg-[var(--geist-background-200)] p-4 dark:border-dark-700 dark:bg-[var(--geist-background-200)]"
               >
                 <div class="mb-3 flex items-center justify-between">
                   <div class="text-xs font-bold text-gray-900 dark:text-white">
@@ -499,7 +499,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <details class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-dark-600 dark:bg-dark-800">
+      <details class="rounded-lg border border-gray-200 bg-[var(--geist-background-200)] p-3 dark:border-dark-600 dark:bg-dark-800">
         <summary class="cursor-pointer text-xs font-medium text-gray-600 dark:text-gray-400">{{ t('admin.ops.runtime.advancedSettingsSummary') }}</summary>
         <div class="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
