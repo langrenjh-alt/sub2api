@@ -40,6 +40,15 @@
           >
             <Icon name="book" size="md" />
           </a>
+          <router-link
+            v-if="showModelPlazaEntry"
+            to="/model-plaza"
+            class="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:text-dark-400 dark:hover:bg-dark-800 dark:hover:text-white"
+            :title="t('nav.modelPlaza')"
+          >
+            <Icon name="grid" size="md" />
+            <span class="hidden sm:inline">{{ t('nav.modelPlaza') }}</span>
+          </router-link>
           <button
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 dark:text-dark-400 dark:hover:bg-dark-800"
             :title="isDark ? t('home.switchToLight') : t('home.switchToDark')"
@@ -98,7 +107,7 @@
           <a href="#capabilities">{{ t('home.landing.sections.overview') }}</a>
           <a href="#compatibility">{{ t('home.landing.sections.compatibility') }}</a>
           <a href="#access">{{ t('home.landing.sections.accessSteps') }}</a>
-          <RouterLink v-if="modelPlazaEnabled" to="/model-plaza" class="home-model-plaza-nav">
+          <RouterLink v-if="showModelPlazaEntry" to="/model-plaza" class="home-model-plaza-nav">
             {{ t('nav.modelPlaza') }}
           </RouterLink>
         </nav>
@@ -154,7 +163,7 @@
             {{ t('home.landing.actions.rechargeNow') }}
           </a>
           <RouterLink
-            v-if="modelPlazaEnabled"
+            v-if="showModelPlazaEntry"
             to="/model-plaza"
             class="home-button home-button-dark home-model-plaza-cta"
           >
@@ -491,6 +500,7 @@ import {
 } from '@/api/homepageStatus'
 import { formatMultiplier } from '@/utils/formatters'
 import { sanitizeUrl } from '@/utils/url'
+import { FeatureFlags, isFeatureFlagEnabled } from '@/utils/featureFlags'
 
 type IconName = InstanceType<typeof Icon>['$props']['name']
 
@@ -550,7 +560,7 @@ const heroDescription = computed(
 const docUrl = computed(() => sanitizeUrl(appStore.cachedPublicSettings?.doc_url || appStore.docUrl || ''))
 const apiBaseUrl = computed(() => appStore.cachedPublicSettings?.api_base_url || appStore.apiBaseUrl || '')
 const customEndpoints = computed(() => appStore.cachedPublicSettings?.custom_endpoints ?? [])
-const modelPlazaEnabled = computed(() => appStore.cachedPublicSettings?.model_plaza_enabled === true)
+const modelPlazaEnabled = computed(() => isFeatureFlagEnabled(FeatureFlags.modelPlaza))
 
 const rechargeUrl = 'https://z30.top/purchase'
 const baseUrl = computed(() => {
@@ -561,6 +571,12 @@ const baseUrl = computed(() => {
 
 const fieldActive = ref(true)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const modelPlazaRequiresAuth = computed(
+  () => appStore.cachedPublicSettings?.model_plaza_require_auth === true,
+)
+const showModelPlazaEntry = computed(
+  () => modelPlazaEnabled.value && (isAuthenticated.value || !modelPlazaRequiresAuth.value),
+)
 const isAdmin = computed(() => authStore.isAdmin)
 const workspacePath = computed(() =>
   isAuthenticated.value ? (isAdmin.value ? '/admin/dashboard' : '/dashboard') : '/login'

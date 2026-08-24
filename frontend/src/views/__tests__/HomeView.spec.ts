@@ -41,6 +41,10 @@ vi.mock('@/stores', () => ({
   useAppStore: () => appState,
 }))
 
+vi.mock('@/stores/app', () => ({
+  useAppStore: () => appState,
+}))
+
 vi.mock('@/components/common/LocaleSwitcher.vue', () => ({
   default: defineComponent({
     name: 'LocaleSwitcherStub',
@@ -185,6 +189,32 @@ describe('HomeView', () => {
     await flushPromises()
 
     expect(wrapper.find('a[href="/model-plaza"]').exists()).toBe(false)
+  })
+
+  it('hides model plaza entries from anonymous visitors when sign-in is required', async () => {
+    appState.cachedPublicSettings = {
+      model_plaza_enabled: true,
+      model_plaza_require_auth: true,
+    }
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(wrapper.find('a[href="/model-plaza"]').exists()).toBe(false)
+  })
+
+  it('shows model plaza entries to authenticated visitors when sign-in is required', async () => {
+    authState.isAuthenticated = true
+    appState.cachedPublicSettings = {
+      model_plaza_enabled: true,
+      model_plaza_require_auth: true,
+    }
+
+    const wrapper = mount(HomeView)
+    await flushPromises()
+
+    expect(wrapper.find('.home-model-plaza-nav').attributes('href')).toBe('/model-plaza')
+    expect(wrapper.find('.home-model-plaza-cta').attributes('href')).toBe('/model-plaza')
   })
 
   it('routes authenticated users to the correct dashboard', async () => {
