@@ -192,6 +192,27 @@
                 <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
               </button>
             </div>
+            <div
+              v-else-if="field.multi && field.options?.length"
+              class="flex flex-wrap gap-2"
+            >
+              <label
+                v-for="option in field.options"
+                :key="option.value"
+                class="inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all"
+                :class="isMultiSelected(field.key, option.value)
+                  ? 'border-primary-500 bg-primary-50 text-gray-900 dark:bg-primary-950 dark:text-gray-100'
+                  : 'border-gray-300 bg-white text-gray-700 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-200'"
+              >
+                <input
+                  type="checkbox"
+                  class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  :checked="isMultiSelected(field.key, option.value)"
+                  @change="toggleMultiValue(field.key, option.value, field.options)"
+                />
+                {{ option.label }}
+              </label>
+            </div>
             <Select
               v-else-if="field.options?.length"
               v-model="config[field.key]"
@@ -609,6 +630,22 @@ function applyDefaults() {
   for (const f of PROVIDER_CONFIG_FIELDS[form.provider_key] || []) {
     if (f.defaultValue && !config[f.key]) config[f.key] = f.defaultValue
   }
+}
+
+function multiValues(key: string): string[] {
+  return (config[key] || '').split(',').map(value => value.trim()).filter(Boolean)
+}
+
+function isMultiSelected(key: string, value: string): boolean {
+  return multiValues(key).includes(value)
+}
+
+function toggleMultiValue(key: string, value: string, options: { value: string }[] = []) {
+  const selected = new Set(multiValues(key))
+  if (selected.has(value)) selected.delete(value)
+  else selected.add(value)
+  const order = options.map(option => option.value)
+  config[key] = (order.length ? order.filter(item => selected.has(item)) : [...selected]).join(',')
 }
 
 function getLimitVal(paymentType: string, field: string): string {

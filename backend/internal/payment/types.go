@@ -115,6 +115,10 @@ type CreatePaymentRequest struct {
 	// alipay.trade.precreate instead of alipay.trade.wap.pay.
 	AlipayMobilePrecreate bool
 	InstanceSubMethods    string // Comma-separated sub-methods from instance supported_types (for Stripe)
+	// TradeType is the upstream checkout type for providers that expose more
+	// than one rail under a single visible method. BEpusdt uses this as
+	// trade_type (for example usdt.bep20).
+	TradeType string
 }
 
 // CreatePaymentResultType describes the shape of the create-payment result.

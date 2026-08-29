@@ -423,6 +423,137 @@ describe('PaymentView subscription confirmation amounts', () => {
   })
 })
 
+describe('PaymentView BEpusdt network selection', () => {
+  beforeEach(() => {
+    routeState.path = '/purchase'
+    routeState.query = {}
+    createOrder.mockReset()
+    getCheckoutInfo.mockReset()
+    fetchActiveSubscriptions.mockReset().mockResolvedValue(undefined)
+    window.localStorage.clear()
+  })
+
+  it('includes the selected crypto network when creating a BEpusdt order', async () => {
+    getCheckoutInfo.mockResolvedValue(checkoutInfoFixture({
+      methods: {
+        bepusdt: {
+          daily_limit: 0,
+          daily_used: 0,
+          daily_remaining: 0,
+          single_min: 0,
+          single_max: 0,
+          fee_rate: 0,
+          available: true,
+          networks: ['bsc', 'sol'],
+        },
+      },
+    }))
+    createOrder.mockResolvedValue({
+      order_id: 42,
+      amount: 20,
+      pay_amount: 20,
+      fee_rate: 0,
+      expires_at: '2099-01-01T00:10:00.000Z',
+      pay_url: '',
+      qr_code: 'usdt-qr',
+      payment_mode: 'qrcode',
+      payment_type: 'bepusdt',
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          PaymentMethodSelector: { template: '<div />' },
+          CryptoNetworkSelector: { template: '<div data-test="crypto-network-selector" />' },
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    const vm = wrapper.vm as unknown as {
+      amount: number
+      selectedMethod: string
+      selectedNetwork: string
+      handleSubmitRecharge: () => Promise<void>
+    }
+    vm.amount = 20
+    vm.selectedMethod = 'bepusdt'
+    vm.selectedNetwork = 'sol'
+    await vm.handleSubmitRecharge()
+    await flushPromises()
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      payment_type: 'bepusdt',
+      network: 'sol',
+      amount: 20,
+    }))
+  })
+
+  it('hides the network picker when the backend returns an empty list', async () => {
+    getCheckoutInfo.mockResolvedValue(checkoutInfoFixture({
+      methods: {
+        bepusdt: {
+          daily_limit: 0,
+          daily_used: 0,
+          daily_remaining: 0,
+          single_min: 0,
+          single_max: 0,
+          fee_rate: 0,
+          available: true,
+          networks: [],
+        },
+      },
+    }))
+    createOrder.mockResolvedValue({
+      order_id: 43,
+      amount: 20,
+      pay_amount: 20,
+      fee_rate: 0,
+      expires_at: '2099-01-01T00:10:00.000Z',
+      pay_url: '',
+      qr_code: 'usdt-qr',
+      payment_mode: 'qrcode',
+      payment_type: 'bepusdt',
+    })
+
+    const wrapper = shallowMount(PaymentView, {
+      global: {
+        stubs: {
+          AppLayout: { template: '<div><slot /></div>' },
+          PaymentMethodSelector: { template: '<div />' },
+          CryptoNetworkSelector: { template: '<div data-test="crypto-network-selector" />' },
+          Teleport: true,
+          Transition: false,
+        },
+      },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="crypto-network-selector"]').exists()).toBe(false)
+
+    const vm = wrapper.vm as unknown as {
+      amount: number
+      selectedMethod: string
+      handleSubmitRecharge: () => Promise<void>
+    }
+    vm.amount = 20
+    vm.selectedMethod = 'bepusdt'
+    await vm.handleSubmitRecharge()
+    await flushPromises()
+
+    expect(createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      payment_type: 'bepusdt',
+      amount: 20,
+    }))
+    expect(createOrder.mock.calls[0][0]).not.toHaveProperty('network')
+  })
+})
+
 describe('PaymentView payment recovery', () => {
   beforeEach(() => {
     vi.useRealTimers()

@@ -13,6 +13,7 @@ export interface ConfigFieldDef {
   defaultValue?: string
   hintKey?: string
   options?: TypeOption[]
+  multi?: boolean
 }
 
 export interface TypeOption {
@@ -67,6 +68,52 @@ export const PAYMENT_MODE_POPUP = 'popup'
  * literal (case-insensitive); other values fall back to the default
  * precreate→pagepay flow. */
 export const PAYMENT_MODE_REDIRECT = 'redirect'
+
+export const BEPUSDT_NETWORKS = ['tron', 'bsc', 'eth', 'sol'] as const
+
+export type BEpusdtNetwork = typeof BEPUSDT_NETWORKS[number]
+
+export const BEPUSDT_NETWORK_OPTIONS: TypeOption[] = [
+  { value: 'tron', label: 'TRON' },
+  { value: 'bsc', label: 'BSC' },
+  { value: 'eth', label: 'Ethereum' },
+  { value: 'sol', label: 'Solana' },
+]
+
+export function parseBEpusdtNetworks(raw?: string | string[] | null): BEpusdtNetwork[] {
+  const values = Array.isArray(raw)
+    ? raw
+    : String(raw || '').split(',')
+  const seen = new Set<BEpusdtNetwork>()
+  for (const value of values) {
+    const network = normalizeBEpusdtNetwork(value)
+    if (!network || seen.has(network)) continue
+    seen.add(network)
+  }
+  return BEPUSDT_NETWORKS.filter(network => seen.has(network))
+}
+
+export function normalizeBEpusdtNetwork(raw: string): BEpusdtNetwork | '' {
+  switch (raw.trim().toLowerCase()) {
+    case 'tron':
+    case 'trx':
+    case 'trc20':
+      return 'tron'
+    case 'bsc':
+    case 'bnb':
+    case 'bep20':
+      return 'bsc'
+    case 'eth':
+    case 'ethereum':
+    case 'erc20':
+      return 'eth'
+    case 'sol':
+    case 'solana':
+      return 'sol'
+    default:
+      return ''
+  }
+}
 
 export const PAYMENT_CURRENCY_OPTIONS: TypeOption[] = [
   { value: 'CNY', label: 'CNY' },
@@ -167,7 +214,8 @@ export const PROVIDER_CONFIG_FIELDS: Record<string, ConfigFieldDef[]> = {
   bepusdt: [
     { key: 'apiBase', label: '', sensitive: false, hintKey: 'admin.settings.payment.field_bepusdtApiBaseHint' },
     { key: 'token', label: '', sensitive: true },
-    { key: 'tradeType', label: '', sensitive: false, optional: true, defaultValue: 'usdt.trc20' },
+    { key: 'networks', label: '', sensitive: false, optional: true, defaultValue: 'tron,bsc,eth,sol', hintKey: 'admin.settings.payment.field_networksHint', options: BEPUSDT_NETWORK_OPTIONS, multi: true },
+    { key: 'tradeType', label: '', sensitive: false, optional: true, defaultValue: 'usdt.trc20', hintKey: 'admin.settings.payment.field_tradeTypeHint' },
     { key: 'fiat', label: '', sensitive: false, optional: true, defaultValue: 'CNY' },
     { key: 'currencies', label: '', sensitive: false, optional: true },
     { key: 'address', label: '', sensitive: false, optional: true },

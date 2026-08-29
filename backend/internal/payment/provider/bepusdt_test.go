@@ -64,3 +64,50 @@ func TestBEpusdtValueStringNormalizesJSONNumbers(t *testing.T) {
 		}
 	}
 }
+
+func TestBEpusdtCreatePaymentUsesRequestTradeType(t *testing.T) {
+	const token = "test-token"
+	var gotTradeType string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(body, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if got, want := payload["signature"], bepusdtSign(payload, token); got != want {
+			t.Fatalf("signature = %v, want %s; payload = %s", got, want, body)
+		}
+		gotTradeType, _ = payload["trade_type"].(string)
+		_, _ = w.Write([]byte(`{"status_code":200,"message":"success","data":{"trade_id":"trade-2","payment_url":"https://pay.example/checkout/trade-2"}}`))
+	}))
+	defer server.Close()
+
+	prov, err := NewBEpusdt("1", map[string]string{
+		"apiBase":   server.URL,
+		"token":     token,
+		"notifyUrl": "https://merchant.example/api/v1/payment/webhook/bepusdt",
+		"returnUrl": "https://merchant.example/payment/result",
+		"tradeType": "usdt.trc20",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := prov.CreatePayment(context.Background(), payment.CreatePaymentRequest{
+		OrderID:   "order-2",
+		Amount:    "20.00",
+		Subject:   "Sub2API 20.00 CNY",
+		TradeType: "usdt.bep20",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.TradeNo != "trade-2" {
+		t.Fatalf("unexpected response: %+v", resp)
+	}
+	if gotTradeType != "usdt.bep20" {
+		t.Fatalf("trade_type = %q, want usdt.bep20", gotTradeType)
+	}
+}

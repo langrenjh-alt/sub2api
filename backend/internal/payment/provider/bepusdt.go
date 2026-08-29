@@ -26,7 +26,7 @@ const (
 
 // BEpusdt implements the BEpusdt cryptocurrency cashier API.
 // Config keys: apiBase, token, notifyUrl, returnUrl. Optional keys are
-// tradeType, fiat, currencies, address, timeout and rate.
+// tradeType, networks, fiat, currencies, address, timeout and rate.
 type BEpusdt struct {
 	instanceID string
 	config     map[string]string
@@ -94,6 +94,9 @@ func (b *BEpusdt) CreatePayment(ctx context.Context, req payment.CreatePaymentRe
 				continue
 			}
 		}
+	}
+	if tradeType := strings.TrimSpace(req.TradeType); tradeType != "" {
+		payload["trade_type"] = tradeType
 	}
 	payload["signature"] = bepusdtSign(payload, b.config["token"])
 	var response bepusdtEnvelope

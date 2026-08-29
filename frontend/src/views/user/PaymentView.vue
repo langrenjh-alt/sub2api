@@ -60,6 +60,13 @@
                 :selected="selectedMethod"
                 @select="selectedMethod = $event"
               />
+              <CryptoNetworkSelector
+                v-if="showCryptoNetworkSelector"
+                class="mt-5"
+                :networks="bepusdtNetworks"
+                :selected="selectedNetwork"
+                @select="selectedNetwork = $event"
+              />
             </div>
             <div v-if="validAmount > 0" class="card p-6">
               <div class="space-y-2 text-sm">
@@ -154,6 +161,13 @@
                   :methods="subMethodOptions"
                   :selected="selectedMethod"
                   @select="selectedMethod = $event"
+                />
+                <CryptoNetworkSelector
+                  v-if="showCryptoNetworkSelector"
+                  class="mt-5"
+                  :networks="bepusdtNetworks"
+                  :selected="selectedNetwork"
+                  @select="selectedNetwork = $event"
                 />
               </div>
               <div v-if="feeRate > 0 && selectedPlan.price > 0" class="card p-6">
@@ -271,7 +285,8 @@ import type { SubscriptionPlan, CheckoutInfoResponse, CreateOrderResult, OrderTy
 import AppLayout from '@/components/layout/AppLayout.vue'
 import AmountInput from '@/components/payment/AmountInput.vue'
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector.vue'
-import { METHOD_ORDER, getPaymentPopupFeatures, isBuiltInAlipayMethod, isBuiltInWxpayMethod } from '@/components/payment/providerConfig'
+import { METHOD_ORDER, getPaymentPopupFeatures, isBuiltInAlipayMethod, isBuiltInWxpayMethod, parseBEpusdtNetworks, type BEpusdtNetwork } from '@/components/payment/providerConfig'
+import CryptoNetworkSelector from '@/components/payment/CryptoNetworkSelector.vue'
 import {
   PAYMENT_RECOVERY_STORAGE_KEY,
   buildCreateOrderPayload,
@@ -325,6 +340,7 @@ const errorHintMessage = ref('')
 const activeTab = ref<'recharge' | 'subscription'>('recharge')
 const amount = ref<number | null>(null)
 const selectedMethod = ref('')
+const selectedNetwork = ref('')
 const selectedPlan = ref<SubscriptionPlan | null>(null)
 const previewImage = ref('')
 
@@ -559,6 +575,16 @@ const globalMaxAmount = computed(() => {
 
 // Selected method's limits (for validation and error messages)
 const selectedLimit = computed(() => visibleMethods.value[selectedMethod.value])
+const bepusdtNetworks = computed<BEpusdtNetwork[]>(() => {
+  if (normalizeVisibleMethod(selectedMethod.value) !== 'bepusdt') return []
+  const raw = selectedLimit.value?.networks
+  if (Array.isArray(raw)) return parseBEpusdtNetworks(raw)
+  // Missing field means an older API; keep the default USDT checkout chains.
+  // An explicit empty array means the instance uses a custom tradeType and
+  // the picker should stay hidden.
+  return parseBEpusdtNetworks(['tron', 'bsc', 'eth', 'sol'])
+})
+const showCryptoNetworkSelector = computed(() => bepusdtNetworks.value.length > 0)
 const selectedCurrency = computed(() => normalizePaymentCurrency(selectedLimit.value?.currency))
 const localeCode = computed(() => {
   const raw = i18n.locale as unknown
@@ -649,6 +675,7 @@ const canSubmit = computed(() =>
   validAmount.value > 0
     && amountFitsMethod(validAmount.value, selectedMethod.value)
     && selectedLimit.value?.available !== false
+    && (!showCryptoNetworkSelector.value || !!selectedNetwork.value)
 )
 
 const subPaymentAmount = computed(() => {
@@ -692,6 +719,7 @@ const canSubmitSubscription = computed(() =>
   selectedPlan.value !== null
     && amountFitsMethod(subTotalAmount.value, selectedMethod.value)
     && selectedLimit.value?.available !== false
+    && (!showCryptoNetworkSelector.value || !!selectedNetwork.value)
 )
 
 // Auto-switch to first available method when current selection can't handle the amount
@@ -700,6 +728,16 @@ watch(() => [validAmount.value, selectedMethod.value] as const, ([amt, method]) 
   const available = enabledMethods.value.find((m) => amountFitsMethod(amt, m))
   if (available) selectedMethod.value = available
 })
+
+watch(() => [selectedMethod.value, bepusdtNetworks.value] as const, ([, networks]) => {
+  if (!networks.length) {
+    selectedNetwork.value = ''
+    return
+  }
+  if (!networks.includes(selectedNetwork.value as BEpusdtNetwork)) {
+    selectedNetwork.value = networks[0]
+  }
+}, { immediate: true })
 
 // Payment button class: follows selected payment method color
 const paymentButtonClass = computed(() => {
@@ -780,6 +818,7 @@ async function createOrder(orderAmount: number, orderType: OrderType, planId?: n
       isWechatBrowser: typeof window !== 'undefined' && /MicroMessenger/i.test(window.navigator.userAgent),
       forceQRCode: !!(checkout.value.alipay_force_qrcode && normalizeVisibleMethod(requestType) === 'alipay'),
       mobilePrecreateDeepLink: checkout.value.alipay_mobile_precreate_deep_link === true,
+      network: normalizeVisibleMethod(requestType) === 'bepusdt' ? selectedNetwork.value : undefined,
     })
     if (options.openid) {
       payload.openid = options.openid
@@ -1006,6 +1045,7 @@ async function attemptMobileQrFallback(err: unknown, context: MobileQrFallbackCo
       origin: typeof window !== 'undefined' ? window.location.origin : '',
       isMobile: false,
       isWechatBrowser: false,
+      network: visibleMethod === 'bepusdt' ? selectedNetwork.value : undefined,
     })
     const result = await paymentStore.createOrder(payload) as CreateOrderResult & { resume_token?: string }
     const stripeMethod = visibleMethod === 'wxpay' ? 'wechat_pay' : 'alipay'

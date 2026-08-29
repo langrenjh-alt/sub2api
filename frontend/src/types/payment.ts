@@ -51,6 +51,7 @@ export interface MethodLimit {
   single_max: number
   fee_rate: number
   available: boolean
+  networks?: string[]
 }
 
 /** Response from /payment/limits API */
@@ -176,6 +177,7 @@ export interface CreateOrderRequest {
   openid?: string
   wechat_resume_token?: string
   is_mobile?: boolean
+  network?: string
 }
 
 export type CreateOrderResultType = 'order_created' | 'oauth_required' | 'jsapi_ready'

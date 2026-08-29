@@ -537,3 +537,25 @@ func TestGetAvailableMethodLimitsPreservesLegacyCrossProviderBehaviorWhenVisible
 	require.Equal(t, 10.0, resp.GlobalMin)
 	require.Equal(t, 400.0, resp.GlobalMax)
 }
+
+func TestGetAvailableMethodLimitsIncludesBEpusdtNetworks(t *testing.T) {
+	ctx := context.Background()
+	client := newPaymentConfigServiceTestClient(t)
+
+	_, err := client.PaymentProviderInstance.Create().
+		SetProviderKey(payment.TypeBEpusdt).
+		SetName("BEpusdt").
+		SetConfig(`{"networks":"sol,bsc"}`).
+		SetSupportedTypes("bepusdt").
+		SetEnabled(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	svc := &PaymentConfigService{entClient: client}
+	resp, err := svc.GetAvailableMethodLimits(ctx)
+	require.NoError(t, err)
+
+	limits, ok := resp.Methods[payment.TypeBEpusdt]
+	require.True(t, ok, "expected BEpusdt method limits to be visible")
+	require.Equal(t, []string{payment.BEpusdtNetworkBSC, payment.BEpusdtNetworkSOL}, limits.Networks)
+}

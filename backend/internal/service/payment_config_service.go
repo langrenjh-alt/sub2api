@@ -121,13 +121,14 @@ type UpdatePaymentConfigRequest struct {
 
 // MethodLimits holds per-payment-type limits.
 type MethodLimits struct {
-	PaymentType string  `json:"payment_type"`
-	DisplayName string  `json:"display_name,omitempty"`
-	Currency    string  `json:"currency"`
-	FeeRate     float64 `json:"fee_rate"`
-	DailyLimit  float64 `json:"daily_limit"`
-	SingleMin   float64 `json:"single_min"`
-	SingleMax   float64 `json:"single_max"`
+	PaymentType string   `json:"payment_type"`
+	DisplayName string   `json:"display_name,omitempty"`
+	Currency    string   `json:"currency"`
+	FeeRate     float64  `json:"fee_rate"`
+	DailyLimit  float64  `json:"daily_limit"`
+	SingleMin   float64  `json:"single_min"`
+	SingleMax   float64  `json:"single_max"`
+	Networks    []string `json:"networks"` // BEpusdt checkout chains; empty disables the picker
 }
 
 // MethodLimitsResponse is the full response for the user-facing /limits API.

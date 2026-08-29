@@ -448,8 +448,12 @@ func (s *PaymentService) invokeProvider(ctx context.Context, order *dbent.Paymen
 		ClientIP:    req.ClientIP,
 		IsMobile:    req.IsMobile,
 		ReturnURL:   providerReturnURL,
+		Network:     req.Network,
 	}, sel, outTradeNo, payAmountStr, subject)
 	providerReq.AlipayMobilePrecreate = shouldUseAlipayMobilePrecreate(req, cfg, sel)
+	if sel != nil && sel.ProviderKey == payment.TypeBEpusdt && strings.TrimSpace(providerReq.TradeType) == "" {
+		return nil, wrapBEpusdtNetworkError(payment.ErrBEpusdtNetworkRequired)
+	}
 	finishProviderCall := servertiming.ObserveDependency(ctx, "payment")
 	pr, err := prov.CreatePayment(ctx, providerReq)
 	finishProviderCall()
@@ -514,7 +518,7 @@ func removePostgresTextNUL(value string) string {
 }
 
 func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.InstanceSelection, orderID, amount, subject string) payment.CreatePaymentRequest {
-	return payment.CreatePaymentRequest{
+	providerReq := payment.CreatePaymentRequest{
 		OrderID:            orderID,
 		Amount:             amount,
 		PaymentType:        req.PaymentType,
@@ -525,6 +529,33 @@ func buildProviderCreatePaymentRequest(req CreateOrderRequest, sel *payment.Inst
 		IsMobile:           req.IsMobile,
 		InstanceSubMethods: selectedInstanceSupportedTypes(sel),
 	}
+	if sel != nil && sel.ProviderKey == payment.TypeBEpusdt {
+		if tradeType, err := payment.ResolveBEpusdtTradeType(req.Network, sel.Config); err == nil {
+			providerReq.TradeType = tradeType
+		}
+	}
+	return providerReq
+}
+
+func validateBEpusdtCreateOrderNetwork(req CreateOrderRequest, sel *payment.InstanceSelection) error {
+	if sel == nil || sel.ProviderKey != payment.TypeBEpusdt {
+		return nil
+	}
+	_, err := payment.ResolveBEpusdtTradeType(req.Network, sel.Config)
+	return wrapBEpusdtNetworkError(err)
+}
+
+func wrapBEpusdtNetworkError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, payment.ErrBEpusdtNetworkRequired) {
+		return infraerrors.BadRequest("PAYMENT_NETWORK_REQUIRED", err.Error())
+	}
+	if errors.Is(err, payment.ErrBEpusdtNetworkUnsupported) {
+		return infraerrors.BadRequest("PAYMENT_NETWORK_UNSUPPORTED", err.Error())
+	}
+	return err
 }
 
 func selectedInstanceSupportedTypes(sel *payment.InstanceSelection) string {
@@ -615,6 +646,9 @@ func (s *PaymentService) buildWeChatOAuthRequiredResponse(ctx context.Context, r
 }
 
 func (s *PaymentService) validateSelectedCreateOrderInstance(ctx context.Context, req CreateOrderRequest, sel *payment.InstanceSelection) error {
+	if err := validateBEpusdtCreateOrderNetwork(req, sel); err != nil {
+		return err
+	}
 	if !requiresWeChatJSAPICompatibleSelection(req, sel) {
 		return nil
 	}

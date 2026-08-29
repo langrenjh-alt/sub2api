@@ -85,6 +85,7 @@ type CreateOrderRequest struct {
 	OrderType       string
 	PlanID          int64
 	Locale          string
+	Network         string
 }
 
 type CreateOrderResponse struct {

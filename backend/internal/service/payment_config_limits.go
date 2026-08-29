@@ -34,6 +34,7 @@ func (s *PaymentConfigService) GetAvailableMethodLimits(ctx context.Context) (*M
 		ml := pcAggregateMethodLimits(pt, insts)
 		ml.DisplayName = s.pcAggregateMethodDisplayName(pt, insts)
 		ml.Currency = currency
+		ml.Networks = s.pcAggregateMethodNetworks(pt, insts)
 		resp.Methods[ml.PaymentType] = ml
 	}
 	resp.GlobalMin, resp.GlobalMax = pcComputeGlobalRange(resp.Methods)
@@ -97,6 +98,7 @@ func (s *PaymentConfigService) GetMethodLimits(ctx context.Context, types []stri
 		ml := pcAggregateMethodLimits(pt, matching)
 		ml.DisplayName = s.pcAggregateMethodDisplayName(pt, matching)
 		ml.Currency = currency
+		ml.Networks = s.pcAggregateMethodNetworks(pt, matching)
 		result = append(result, ml)
 	}
 	return result, nil
@@ -169,6 +171,38 @@ func (s *PaymentConfigService) pcInstancePaymentCurrency(inst *dbent.PaymentProv
 type easyPayCustomMethodDisplayConfig struct {
 	Type        string `json:"type"`
 	DisplayName string `json:"displayName"`
+}
+
+func (s *PaymentConfigService) pcAggregateMethodNetworks(pt string, instances []*dbent.PaymentProviderInstance) []string {
+	if NormalizeVisibleMethod(pt) != payment.TypeBEpusdt && pt != payment.TypeBEpusdt {
+		return nil
+	}
+	seen := make(map[string]struct{})
+	networks := make([]string, 0, len(payment.DefaultBEpusdtNetworks))
+	for _, inst := range instances {
+		for _, network := range payment.ParseBEpusdtNetworks(s.pcInstanceConfig(inst)) {
+			if _, exists := seen[network]; exists {
+				continue
+			}
+			seen[network] = struct{}{}
+			networks = append(networks, network)
+		}
+	}
+	return payment.SortBEpusdtNetworks(networks)
+}
+
+func (s *PaymentConfigService) pcInstanceConfig(inst *dbent.PaymentProviderInstance) map[string]string {
+	if inst == nil {
+		return map[string]string{}
+	}
+	if s == nil {
+		return map[string]string{}
+	}
+	cfg, err := s.decryptConfig(inst.Config)
+	if err != nil || cfg == nil {
+		return map[string]string{}
+	}
+	return cfg
 }
 
 func (s *PaymentConfigService) pcAggregateMethodDisplayName(pt string, instances []*dbent.PaymentProviderInstance) string {

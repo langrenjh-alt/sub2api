@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  BEPUSDT_NETWORK_OPTIONS,
   PAYMENT_CURRENCY_OPTIONS,
   PROVIDER_CONFIG_FIELDS,
   isBuiltInAlipayMethod,
   isBuiltInWxpayMethod,
+  parseBEpusdtNetworks,
   parseEasyPayCustomMethods,
   serializeEasyPayCustomMethods,
 } from '@/components/payment/providerConfig'
@@ -91,5 +93,21 @@ describe('built-in payment method helpers', () => {
     expect(isBuiltInWxpayMethod('wxpay')).toBe(true)
     expect(isBuiltInWxpayMethod('wxpay_direct')).toBe(true)
     expect(isBuiltInWxpayMethod('card_wxpay')).toBe(false)
+  })
+})
+
+
+describe('PROVIDER_CONFIG_FIELDS.bepusdt', () => {
+  it('lets admins enable checkout networks as a multi-select', () => {
+    const networks = findField('bepusdt', 'networks')
+    expect(networks?.multi).toBe(true)
+    expect(networks?.defaultValue).toBe('tron,bsc,eth,sol')
+    expect(networks?.options).toBe(BEPUSDT_NETWORK_OPTIONS)
+  })
+})
+
+describe('parseBEpusdtNetworks', () => {
+  it('canonicalizes aliases and keeps the default display order', () => {
+    expect(parseBEpusdtNetworks('sol, ETH, bsc,sol')).toEqual(['bsc', 'eth', 'sol'])
   })
 })

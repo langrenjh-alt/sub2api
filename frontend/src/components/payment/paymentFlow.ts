@@ -89,6 +89,8 @@ export interface BuildCreateOrderPayloadInput {
   forceQRCode?: boolean
   /** When true, keep the real mobile signal so the backend can select precreate */
   mobilePrecreateDeepLink?: boolean
+  /** BEpusdt checkout chain, e.g. bsc / sol / tron / eth */
+  network?: string
 }
 
 type CreateOrderFlowResult = CreateOrderResult & {
@@ -142,6 +144,9 @@ export function buildCreateOrderPayload(input: BuildCreateOrderPayloadInput): Cr
   }
   if (normalizedOrigin) {
     payload.return_url = `${normalizedOrigin}/payment/result`
+  }
+  if (visibleMethod === 'bepusdt' && input.network?.trim()) {
+    payload.network = input.network.trim().toLowerCase()
   }
 
   return payload

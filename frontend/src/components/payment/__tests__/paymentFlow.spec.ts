@@ -373,6 +373,33 @@ describe('buildCreateOrderPayload', () => {
       is_mobile: true,
     })
   })
+
+  it('attaches the selected BEpusdt checkout network', () => {
+    expect(buildCreateOrderPayload({
+      amount: 88,
+      paymentType: 'bepusdt',
+      orderType: 'balance',
+      origin: 'https://app.example.com',
+      isMobile: false,
+      isWechatBrowser: false,
+      network: 'BSC',
+    })).toMatchObject({
+      payment_type: 'bepusdt',
+      network: 'bsc',
+    })
+  })
+
+  it('does not attach a network for non-crypto methods', () => {
+    expect(buildCreateOrderPayload({
+      amount: 88,
+      paymentType: 'alipay',
+      orderType: 'balance',
+      origin: 'https://app.example.com',
+      isMobile: false,
+      isWechatBrowser: false,
+      network: 'bsc',
+    })).not.toHaveProperty('network')
+  })
 })
 
 describe('readPaymentRecoverySnapshot', () => {
