@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,6 +94,70 @@ func TestChannelMonitorV2WhereRejectsGroupFilterOutsideConfiguredScope(t *testin
 	require.Len(t, args, 3)
 }
 
+func TestChannelMonitorV2WhereRestrictsOrdinaryViewerToAllowedConfiguredGroups(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{
+		Start: time.Unix(1, 0), End: time.Unix(2, 0),
+		GroupIDs: []int64{4, 9}, AllowedGroupIDs: []int64{3, 4}, RestrictGroups: true,
+	}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+		GroupIDs:  []int64{3, 4, 9},
+	}
+	where, args := channelMonitorV2Where(filter, cfg, "m")
+	require.Contains(t, where, "m.group_id = ANY($4)")
+	require.Equal(t, pq.Array([]int64{4}), args[3])
+}
+
+func TestChannelMonitorV2WhereRejectsOrdinaryViewerWithNoAllowedGroups(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{
+		Start: time.Unix(1, 0), End: time.Unix(2, 0),
+		GroupIDs: []int64{9}, RestrictGroups: true,
+	}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+		GroupIDs:  []int64{3, 9},
+	}
+	where, _ := channelMonitorV2Where(filter, cfg, "m")
+	require.Contains(t, where, "FALSE")
+	require.NotContains(t, where, "m.group_id = ANY")
+}
+
+func TestChannelMonitorV2CatalogKeepsViewerScopeWhileIgnoringPickerFilters(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{
+		Platforms: []string{"openai"}, GroupIDs: []int64{9}, Models: []string{"gpt-5"},
+		AllowedGroupIDs: []int64{3}, RestrictGroups: true,
+	}
+	catalog := channelMonitorV2CatalogFilter(filter)
+	require.Empty(t, catalog.Platforms)
+	require.Empty(t, catalog.GroupIDs)
+	require.Empty(t, catalog.Models)
+	require.True(t, catalog.RestrictGroups)
+	require.Equal(t, []int64{3}, catalog.AllowedGroupIDs)
+}
+
+func TestChannelMonitorV2AdminScopeRemainsGlobal(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{Start: time.Unix(1, 0), End: time.Unix(2, 0), GroupIDs: []int64{9}}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+		GroupIDs:  []int64{3, 9},
+	}
+	where, args := channelMonitorV2Where(filter, cfg, "m")
+	require.Contains(t, where, "m.group_id = ANY($4)")
+	require.Equal(t, pq.Array([]int64{9}), args[3])
+}
+
+func TestChannelMonitorV2MatrixDoesNotSeedGroupsForEmptyViewerScope(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{RestrictGroups: true}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+		GroupIDs:  []int64{3, 9},
+	}
+	accs := seedChannelMonitorV2MatrixAccumulators(filter, cfg, service.ChannelMonitorV2GroupByPlatformGroup, map[int64]channelMonitorV2GroupInfo{
+		3: {name: "private"}, 9: {name: "other-private"},
+	})
+	require.Empty(t, accs)
+}
+
 func TestChannelMonitorV2ErrorAggregationCountsFinalUserErrorsOnly(t *testing.T) {
 	query := strings.ToLower(channelMonitorV2ErrorAggregationSQL)
 	require.Contains(t, query, "not current_error.is_count_tokens")
@@ -116,16 +181,40 @@ func TestChannelMonitorV2ErrorAggregationResolvesCompositePlatform(t *testing.T)
 	require.Contains(t, query, "left join groups g on g.id = current_error.group_id")
 	require.Contains(t, query, "left join accounts a on a.id = current_error.account_id")
 	require.Contains(t, query, "a.platform")
+	require.Contains(t, query, "nullif(trim(a.platform), '')")
+	require.NotContains(t, query, "nullif(trim(a.platform))")
 }
 
-func TestChannelMonitorV2UsageSuccessExcludesCyberBillingRows(t *testing.T) {
+func TestChannelMonitorV2UsageSamplesUseSubstantialStreamingTextRequests(t *testing.T) {
 	for _, query := range []string{channelMonitorV2UsageMetricsSQL, channelMonitorV2UserMetricsSQL} {
-		require.Contains(t, query, "COALESCE(ul.request_type, 0) NOT IN (4, 6)")
-		require.Contains(t, query, "ul.actual_cost > 0")
+		for _, condition := range []string{
+			"ul.actual_cost > 0",
+			"ul.stream IS TRUE",
+			"COALESCE(ul.request_type, 0) NOT IN (4, 6)",
+			"COALESCE(ul.billing_mode, 'token') <> 'image'",
+			"COALESCE(ul.image_count, 0) = 0",
+			"COALESCE(ul.image_input_tokens, 0) = 0",
+			"COALESCE(ul.image_output_tokens, 0) = 0",
+			"COALESCE(ul.input_tokens, 0)",
+			"COALESCE(ul.cache_creation_tokens, 0)",
+			"COALESCE(ul.cache_read_tokens, 0) > 10000",
+		} {
+			require.Contains(t, query, condition)
+		}
 	}
 	require.Contains(t, channelMonitorV2PlatformSQL, "g.platform = 'composite'")
 	require.Contains(t, channelMonitorV2PlatformSQL, "a.platform")
-	require.Contains(t, channelMonitorV2HistogramSQL, "ul.actual_cost > 0")
+	require.Contains(t, channelMonitorV2HistogramSQL, channelMonitorV2UsageSampleFilterUL)
+}
+
+func TestChannelMonitorV2ErrorSamplesExcludeNonStreamingAndImageRequests(t *testing.T) {
+	for _, condition := range []string{
+		"current_error.stream IS TRUE",
+		"COALESCE(current_error.request_type, 0) NOT IN (4, 6)",
+		"NOT LIKE '/v1/images%'",
+	} {
+		require.Contains(t, channelMonitorV2ErrorAggregationSQL, condition)
+	}
 }
 
 func TestChannelMonitorV2RatesUseCoveredWindow(t *testing.T) {
