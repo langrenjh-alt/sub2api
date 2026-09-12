@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
@@ -127,7 +128,7 @@ func TestOpenAIGatewayServiceForwardImages_ImageRateLimitReturnsFailoverAndCools
 func TestOpenAIGatewayServiceForwardImages_TextFallbackDoesNotCoolImageCapability(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &modelNotFoundAccountRepoStub{}
-	body := []byte(`{"model":"gpt-image-2","prompt":"draw a cat"}`)
+	body := []byte(`{"model":"gpt-image-1","prompt":"draw a cat"}`)
 	upstreamSSE := "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"r\",\"status\":\"completed\",\"model\":\"gpt-5.4-mini\",\"output\":[{\"type\":\"message\",\"content\":[{\"type\":\"output_text\",\"text\":\"Here's a polished image prompt for your request.\"}]}]}}\n\n"
 
 	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
@@ -177,7 +178,7 @@ func TestOpenAIGatewayServiceForwardImages_TextFallbackDoesNotCoolImageCapabilit
 func TestOpenAIGatewayServiceForwardImages_StructuredUnavailableCoolsImageCapability(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	repo := &modelNotFoundAccountRepoStub{}
-	body := []byte(`{"model":"gpt-image-2","prompt":"draw a cat"}`)
+	body := []byte(`{"model":"gpt-image-1","prompt":"draw a cat"}`)
 	upstreamSSE := "data: {\"type\":\"response.failed\",\"response\":{\"id\":\"r\",\"error\":" +
 		"{\"type\":\"upstream_error\",\"code\":\"image_generation_unavailable\"," +
 		"\"message\":\"image generation tool is not available for this account\"}}}\n\n"
@@ -220,7 +221,23 @@ func TestOpenAIGatewayServiceForwardImages_StructuredUnavailableCoolsImageCapabi
 	require.Equal(t, account.ID, call.accountID)
 	require.Equal(t, openAIImageGenerationRateLimitKey, call.scope)
 	require.Equal(t, openAIImagesOAuthUnavailableReason, call.reason)
-	require.WithinDuration(t, before.Add(openAIImagesOAuthUnavailableCooldown), call.resetAt, time.Second)
+	require.WithinDuration(t, before.Add(openAIImagesOAuthUnavailableDefaultCooldown), call.resetAt, time.Second)
+}
+
+func TestOpenAIGatewayService_CoolOpenAIImagesOAuthToolUsesConfiguredCooldown(t *testing.T) {
+	accountRepo := &modelNotFoundAccountRepoStub{}
+	settingRepo := newMockSettingRepo()
+	settingRepo.data[SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings] = `{"cooldown_minutes":7}`
+	svc := &OpenAIGatewayService{
+		accountRepo:    accountRepo,
+		settingService: NewSettingService(settingRepo, &config.Config{}),
+	}
+
+	before := time.Now()
+	svc.coolOpenAIImagesOAuthTool(context.Background(), &Account{ID: 206, Platform: PlatformOpenAI, Type: AccountTypeOAuth})
+
+	require.Len(t, accountRepo.modelRateLimitCalls, 1)
+	require.WithinDuration(t, before.Add(7*time.Minute), accountRepo.modelRateLimitCalls[0].resetAt, time.Second)
 }
 
 func TestOpenAIGatewayServiceForwardImages_CapabilityLossCoolsImageScope(t *testing.T) {

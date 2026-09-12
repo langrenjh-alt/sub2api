@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -14,7 +15,11 @@ import (
 
 type ChannelMonitorV2Handler struct {
 	service       *service.ChannelMonitorV2Service
-	apiKeyService *service.APIKeyService
+	apiKeyService channelMonitorV2GroupAuthorizer
+}
+
+type channelMonitorV2GroupAuthorizer interface {
+	GetAvailableGroups(ctx context.Context, userID int64) ([]service.Group, error)
 }
 
 func NewChannelMonitorV2Handler(svc *service.ChannelMonitorV2Service, apiKeyService *service.APIKeyService) *ChannelMonitorV2Handler {
@@ -185,9 +190,6 @@ func (h *ChannelMonitorV2Handler) users(c *gin.Context, admin bool) {
 	response.Success(c, result)
 }
 
-// scopeFilter applies the authenticated user's server-derived group scope to
-// every read endpoint. Administrators retain the complete configured scope;
-// ordinary viewers fail closed when the authorization dependency is absent.
 func (h *ChannelMonitorV2Handler) scopeFilter(c *gin.Context, filter *service.ChannelMonitorV2Filter, admin bool) bool {
 	if admin {
 		return true
