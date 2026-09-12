@@ -547,7 +547,63 @@ func seedChannelMonitorV2MatrixAccumulators(filter service.ChannelMonitorV2Filte
 			}
 		}
 	}
+	seedChannelMonitorV2CompositeGroupPlaceholders(accs, filter, cfg, groupBy, groupIDs, groupInfo, needsGroup)
 	return accs
+}
+
+func seedChannelMonitorV2CompositeGroupPlaceholders(
+	accs map[channelMonitorV2MatrixKey]*channelMonitorV2MatrixAccumulator,
+	filter service.ChannelMonitorV2Filter,
+	cfg service.ChannelMonitorV2Config,
+	groupBy service.ChannelMonitorV2GroupBy,
+	groupIDs []int64,
+	groupInfo map[int64]channelMonitorV2GroupInfo,
+	needsGroup bool,
+) {
+	if !needsGroup {
+		return
+	}
+	// Composite groups never match an enabled concrete platform, but their
+	// traffic is stored under the resolved account platform. Without a
+	// placeholder row, user cards disappear whenever the selected window
+	// has no facts.
+	if len(filter.Platforms) > 0 && !containsString(filter.Platforms, service.PlatformComposite) {
+		return
+	}
+	seeded := map[int64]struct{}{}
+	for key := range accs {
+		if key.groupID > 0 {
+			seeded[key.groupID] = struct{}{}
+		}
+	}
+	models := []string{""}
+	if groupBy == service.ChannelMonitorV2GroupByPlatformModel || groupBy == service.ChannelMonitorV2GroupByPlatformGroupModel {
+		models = configuredChannelMonitorV2Models(cfg, service.PlatformComposite, filter)
+		if len(models) == 0 {
+			models = []string{""}
+		}
+	}
+	for _, groupID := range groupIDs {
+		if groupID <= 0 {
+			continue
+		}
+		if _, ok := seeded[groupID]; ok {
+			continue
+		}
+		info := groupInfo[groupID]
+		if info.platform != service.PlatformComposite {
+			continue
+		}
+		for _, model := range models {
+			key := channelMonitorV2MatrixKey{platform: service.PlatformComposite, groupID: groupID}
+			if groupBy == service.ChannelMonitorV2GroupByPlatformModel || groupBy == service.ChannelMonitorV2GroupByPlatformGroupModel {
+				key.model = model
+			}
+			if accs[key] == nil {
+				accs[key] = &channelMonitorV2MatrixAccumulator{groupName: info.name, total: newMetricAccumulator(), buckets: make(map[string]*metricAccumulator)}
+			}
+		}
+	}
 }
 
 func configuredChannelMonitorV2Models(cfg service.ChannelMonitorV2Config, platform string, filter service.ChannelMonitorV2Filter) []string {

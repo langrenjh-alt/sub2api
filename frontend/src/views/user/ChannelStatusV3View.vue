@@ -31,7 +31,7 @@
       <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         <ChannelMonitorV3Card
           v-for="row in rows"
-          :key="row.group_id ?? `${row.platform}:${row.group_name ?? ''}`"
+          :key="`${row.platform}:${row.group_id ?? row.group_name ?? ''}`"
           :row="row"
           :user-rate-multiplier="getUserRateMultiplier(row.group_id)"
           :countdown-seconds="countdownSeconds"
@@ -49,16 +49,20 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useAppStore } from '@/stores/app'
+import { useAuthStore } from '@/stores/auth'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import * as api from '@/api/channelMonitorV2'
 import userGroupsAPI from '@/api/groups'
-import type { MonitorFilter, MonitorMatrixResponse, MonitorRange, MonitorSnapshot } from '@/api/channelMonitorV2'
+import type { MonitorDimensions, MonitorFilter, MonitorMatrixResponse, MonitorRange, MonitorSnapshot } from '@/api/channelMonitorV2'
 import type { Group } from '@/types'
 import ChannelMonitorV3Card from '@/components/user/monitor/ChannelMonitorV3Card.vue'
 import { formatMonitorPercent } from '@/features/channel-monitor-v2/monitorFormat'
+import { buildChannelMonitorV3Cards } from '@/features/channel-monitor-v2/channelMonitorV3Rows'
 
 const { t, locale } = useI18n()
 const appStore = useAppStore()
+const authStore = useAuthStore()
+const isAdmin = computed(() => authStore.isAdmin)
 const ranges = computed(() => [
   { value: '90m' as MonitorRange, label: t('channelMonitorV3.ranges.90m') },
   { value: '24h' as MonitorRange, label: t('channelMonitorV3.ranges.24h') },
@@ -68,6 +72,7 @@ const ranges = computed(() => [
 const filter = ref<MonitorFilter>({ range: '90m', platforms: [], groupIds: [], models: [] })
 const snapshot = ref<MonitorSnapshot | null>(null)
 const matrix = ref<MonitorMatrixResponse | null>(null)
+const dimensions = ref<MonitorDimensions | null>(null)
 const loading = ref(false)
 const refreshing = ref(false)
 const userGroupRates = ref<Record<number, number>>({})
@@ -78,9 +83,7 @@ let countdownTimer: number | null = null
 
 // platform_group is intentionally used here: the backend scopes it to the
 // monitor group_ids selected by the operator, so unrelated groups never appear.
-const rows = computed(() => [...(matrix.value?.items ?? [])]
-  .filter(row => row.group_id != null && row.group_id > 0)
-  .sort((a, b) => (a.group_id ?? 0) - (b.group_id ?? 0)))
+const rows = computed(() => buildChannelMonitorV3Cards(matrix.value?.items, dimensions.value?.groups))
 const timelineLength = computed(() => ({ '90m': 18, '24h': 24, '7d': 14, '30d': 30 })[filter.value.range])
 const latestSnapshotMetrics = computed(() => {
   const trend = [...(snapshot.value?.trend ?? [])]
@@ -121,13 +124,15 @@ async function reload(silent = true) {
   refreshing.value = true
   if (!silent) loading.value = true
   try {
-    const [nextSnapshot, nextMatrix] = await Promise.all([
-      api.getSnapshot(filter.value, false, request.signal),
-      api.getMatrix(filter.value, 'platform_group', false, request.signal),
+    const [nextSnapshot, nextMatrix, nextDimensions] = await Promise.all([
+      api.getSnapshot(filter.value, isAdmin.value, request.signal),
+      api.getMatrix(filter.value, 'platform_group', isAdmin.value, request.signal),
+      api.getDimensions(filter.value, isAdmin.value, request.signal).catch(() => null),
     ])
     if (request.signal.aborted || controller !== request) return
     snapshot.value = nextSnapshot
     matrix.value = nextMatrix
+    if (nextDimensions) dimensions.value = nextDimensions
     scheduleRefresh(nextSnapshot.coverage.bootstrap?.active ? 10 : nextSnapshot.config.refresh_interval_seconds)
   } catch (error) {
     const e = error as { name?: string; code?: string }

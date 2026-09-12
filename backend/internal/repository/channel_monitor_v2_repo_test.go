@@ -158,6 +158,43 @@ func TestChannelMonitorV2MatrixDoesNotSeedGroupsForEmptyViewerScope(t *testing.T
 	require.Empty(t, accs)
 }
 
+func TestChannelMonitorV2MatrixSeedsMatchingGroupPlatform(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{RestrictGroups: true, AllowedGroupIDs: []int64{3}}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+	}
+	accs := seedChannelMonitorV2MatrixAccumulators(filter, cfg, service.ChannelMonitorV2GroupByPlatformGroup, map[int64]channelMonitorV2GroupInfo{
+		3: {name: "gpt", platform: "openai"},
+	})
+	require.Len(t, accs, 1)
+	_, ok := accs[channelMonitorV2MatrixKey{platform: "openai", groupID: 3}]
+	require.True(t, ok)
+}
+
+func TestChannelMonitorV2MatrixSeedsCompositeGroupsWithoutTraffic(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{RestrictGroups: true, AllowedGroupIDs: []int64{7}}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+	}
+	accs := seedChannelMonitorV2MatrixAccumulators(filter, cfg, service.ChannelMonitorV2GroupByPlatformGroup, map[int64]channelMonitorV2GroupInfo{
+		7: {name: "combo", platform: service.PlatformComposite},
+	})
+	require.Len(t, accs, 1)
+	_, ok := accs[channelMonitorV2MatrixKey{platform: service.PlatformComposite, groupID: 7}]
+	require.True(t, ok)
+}
+
+func TestChannelMonitorV2MatrixDoesNotSeedDisabledPlatformGroups(t *testing.T) {
+	filter := service.ChannelMonitorV2Filter{RestrictGroups: true, AllowedGroupIDs: []int64{8}}
+	cfg := service.ChannelMonitorV2Config{
+		Platforms: []service.ChannelMonitorV2PlatformConfig{{Platform: "openai", Enabled: true}},
+	}
+	accs := seedChannelMonitorV2MatrixAccumulators(filter, cfg, service.ChannelMonitorV2GroupByPlatformGroup, map[int64]channelMonitorV2GroupInfo{
+		8: {name: "kimi", platform: "kimi"},
+	})
+	require.Empty(t, accs)
+}
+
 func TestChannelMonitorV2ErrorAggregationCountsFinalUserErrorsOnly(t *testing.T) {
 	query := strings.ToLower(channelMonitorV2ErrorAggregationSQL)
 	require.Contains(t, query, "not current_error.is_count_tokens")
