@@ -20,6 +20,9 @@ func TestCodexBaseInstructionsForModel(t *testing.T) {
 		wantHead string
 	}{
 		{"gpt-6-astra", "You are Codex, an agent based on GPT-6"},
+		{"gpt-6-sol", "You are Codex, an agent based on GPT-6"},
+		{"gpt-6-luna", "You are Codex, an agent based on GPT-6"},
+		{"gpt-6-sol-2026-09-23", "You are Codex, an agent based on GPT-6"},
 		{"gpt-6", "You are Codex, an agent based on GPT-6"},
 		{"openai/gpt-6-astra", "You are Codex, an agent based on GPT-6"},
 		{"OPENAI/GPT-6_ASTRA", "You are Codex, an agent based on GPT-6"},

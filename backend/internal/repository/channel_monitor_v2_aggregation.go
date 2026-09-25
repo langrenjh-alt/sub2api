@@ -132,6 +132,9 @@ func (r *channelMonitorV2Repository) RecomputeRange(ctx context.Context, start, 
 	if !start.Before(end) {
 		return nil
 	}
+	if r.source.enabled {
+		return r.syncExternalRange(ctx, start, end)
+	}
 	tx, err := r.db.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted})
 	if err != nil {
 		return err

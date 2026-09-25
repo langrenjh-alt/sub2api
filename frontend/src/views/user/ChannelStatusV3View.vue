@@ -28,15 +28,26 @@
         <div v-for="i in 8" :key="i" class="h-72 animate-pulse rounded-[24px] bg-white/60 dark:bg-dark-800" />
       </div>
       <EmptyState v-else-if="rows.length === 0" :title="t('channelMonitorV3.emptyTitle')" :description="t('channelMonitorV3.emptyDescription')" />
-      <div v-else class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        <ChannelMonitorV3Card
-          v-for="row in rows"
-          :key="`${row.platform}:${row.group_id ?? row.group_name ?? ''}`"
-          :row="row"
-          :user-rate-multiplier="getUserRateMultiplier(row.group_id)"
-          :countdown-seconds="countdownSeconds"
-          :timeline-length="timelineLength"
-        />
+      <div v-else class="space-y-8">
+        <section v-for="section in sections" :key="section.platform">
+          <header class="mb-4 flex items-center gap-2.5">
+            <span class="grid h-7 w-7 place-items-center rounded-full ring-1 ring-black/5 dark:ring-white/10" :class="[providerGradient(section.platform), platformIconClass(section.platform)]">
+              <ProviderIcon :provider="section.platform" :size="15" />
+            </span>
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ providerLabel(section.platform) }}</h2>
+            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-500 dark:bg-dark-700 dark:text-gray-300">{{ section.rows.length }}</span>
+          </header>
+          <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <ChannelMonitorV3Card
+              v-for="row in section.rows"
+              :key="`${row.platform}:${row.group_id ?? row.group_name ?? ''}`"
+              :row="row"
+              :user-rate-multiplier="getUserRateMultiplier(row.group_id)"
+              :countdown-seconds="countdownSeconds"
+              :timeline-length="timelineLength"
+            />
+          </div>
+        </section>
       </div>
     </div>
   </AppLayout>
@@ -56,10 +67,14 @@ import userGroupsAPI from '@/api/groups'
 import type { MonitorDimensions, MonitorFilter, MonitorMatrixResponse, MonitorRange, MonitorSnapshot } from '@/api/channelMonitorV2'
 import type { Group } from '@/types'
 import ChannelMonitorV3Card from '@/components/user/monitor/ChannelMonitorV3Card.vue'
+import ProviderIcon from '@/components/user/monitor/ProviderIcon.vue'
+import { providerGradient, useChannelMonitorFormat } from '@/composables/useChannelMonitorFormat'
 import { formatMonitorPercent } from '@/features/channel-monitor-v2/monitorFormat'
-import { buildChannelMonitorV3Cards } from '@/features/channel-monitor-v2/channelMonitorV3Rows'
+import { buildChannelMonitorV3Cards, groupChannelStatusSections } from '@/features/channel-monitor-v2/channelMonitorV3Rows'
+import { platformIconClass } from '@/utils/platformColors'
 
 const { t, locale } = useI18n()
+const { providerLabel } = useChannelMonitorFormat()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const isAdmin = computed(() => authStore.isAdmin)
@@ -84,6 +99,7 @@ let countdownTimer: number | null = null
 // platform_group is intentionally used here: the backend scopes it to the
 // monitor group_ids selected by the operator, so unrelated groups never appear.
 const rows = computed(() => buildChannelMonitorV3Cards(matrix.value?.items, dimensions.value?.groups))
+const sections = computed(() => groupChannelStatusSections(rows.value))
 const timelineLength = computed(() => ({ '90m': 18, '24h': 24, '7d': 14, '30d': 30 })[filter.value.range])
 const latestSnapshotMetrics = computed(() => {
   const trend = [...(snapshot.value?.trend ?? [])]

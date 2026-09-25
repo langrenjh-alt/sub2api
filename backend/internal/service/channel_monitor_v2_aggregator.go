@@ -230,6 +230,21 @@ func (s *ChannelMonitorV2Aggregator) runOnce() {
 		defer release()
 	}
 
+	if _, reset, err := s.repo.PrepareExternalSource(ctx); err != nil {
+		logger.LegacyPrintf("service.channel_monitor_v2", "[ChannelMonitorV2] external source prepare failed: %v", err)
+		return
+	} else if reset {
+		s.mu.Lock()
+		s.cursorLoaded = false
+		s.hasAggregated = false
+		s.backfillAt = time.Time{}
+		s.backfillChunk = 0
+		s.backfillFailures = 0
+		s.nextWaitFloor = 0
+		s.mu.Unlock()
+		logger.LegacyPrintf("service.channel_monitor_v2", "[ChannelMonitorV2] external source cutover cleared local usage facts")
+	}
+
 	now := time.Now().UTC().Truncate(time.Minute)
 	if err := s.ensureCursor(ctx, now); err != nil {
 		logger.LegacyPrintf("service.channel_monitor_v2", "[ChannelMonitorV2] load watermark failed: %v", err)

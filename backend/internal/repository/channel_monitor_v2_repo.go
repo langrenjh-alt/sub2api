@@ -7,13 +7,21 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/lib/pq"
 )
 
-type channelMonitorV2Repository struct{ db *sql.DB }
+type channelMonitorV2Repository struct {
+	db             *sql.DB
+	source         cmv2ExternalSource
+	srcMu          sync.Mutex
+	srcDB          *sql.DB
+	lastCoarseSync time.Time
+}
 
 func NewChannelMonitorV2Repository(db *sql.DB) service.ChannelMonitorV2Repository {
 	return &channelMonitorV2Repository{db: db}
@@ -135,7 +143,7 @@ func (r *channelMonitorV2Repository) GetDimensions(ctx context.Context, filter s
 	query := `SELECT m.platform, COALESCE(g.name, ''), lower(COALESCE(NULLIF(TRIM(g.platform), ''), 'unknown')), m.group_id, m.model,
 	                 SUM(m.success_requests + m.error_requests)
 	          FROM ` + channelMonitorV2MetricsTable(catalogFilter) + ` m
-	          LEFT JOIN groups g ON g.id = NULLIF(m.group_id, 0) ` + where + `
+	          LEFT JOIN ` + r.dimensionTable("groups") + ` g ON g.id = NULLIF(m.group_id, 0) ` + where + `
 	          GROUP BY m.platform, g.name, g.platform, m.group_id, m.model`
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -703,7 +711,7 @@ type channelMonitorV2GroupInfo struct {
 }
 
 func (r *channelMonitorV2Repository) listActiveGroupIDs(ctx context.Context) ([]int64, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT id FROM groups WHERE deleted_at IS NULL AND status = 'active' ORDER BY id`)
+	rows, err := r.db.QueryContext(ctx, `SELECT id FROM `+r.dimensionTable("groups")+` WHERE deleted_at IS NULL AND status = 'active' ORDER BY id`)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +732,7 @@ func (r *channelMonitorV2Repository) loadChannelMonitorV2GroupInfo(ctx context.C
 	if len(groupIDs) == 0 {
 		return out, nil
 	}
-	rows, err := r.db.QueryContext(ctx, `SELECT id, COALESCE(name, ''), lower(COALESCE(NULLIF(TRIM(platform), ''), 'unknown')) FROM groups WHERE id = ANY($1) AND deleted_at IS NULL AND status = 'active'`, pq.Array(groupIDs))
+	rows, err := r.db.QueryContext(ctx, `SELECT id, COALESCE(name, ''), lower(COALESCE(NULLIF(TRIM(platform), ''), 'unknown')) FROM `+r.dimensionTable("groups")+` WHERE id = ANY($1) AND deleted_at IS NULL AND status = 'active'`, pq.Array(groupIDs))
 	if err != nil {
 		return nil, err
 	}
@@ -851,7 +859,22 @@ func (r *channelMonitorV2Repository) loadErrorDetails(ctx context.Context, filte
 		GROUP BY 1,2,3,4,5,6,7,8,9
 		ORDER BY count DESC
 		LIMIT 400`
-	rows, err := r.db.QueryContext(ctx, query, args...)
+	db, dbErr := r.errorLogDB(ctx)
+	if dbErr != nil {
+		logger.LegacyPrintf("repository.channel_monitor_v2", "[ChannelMonitorV2] external error samples unavailable: %v", dbErr)
+		return map[string][]service.ChannelMonitorV2ErrorDetail{}, nil
+	}
+	queryCtx := ctx
+	if r.source.enabled {
+		var cancel context.CancelFunc
+		queryCtx, cancel = context.WithTimeout(ctx, 8*time.Second)
+		defer cancel()
+	}
+	rows, err := db.QueryContext(queryCtx, query, args...)
+	if err != nil && r.source.enabled {
+		logger.LegacyPrintf("repository.channel_monitor_v2", "[ChannelMonitorV2] external error samples failed: %v", err)
+		return map[string][]service.ChannelMonitorV2ErrorDetail{}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -920,7 +943,7 @@ func (r *channelMonitorV2Repository) GetUsers(ctx context.Context, filter servic
 	where, args, _ := channelMonitorV2WhereWithRollup(filter, cfg, "m")
 	query := `SELECT m.user_id,COALESCE(u.email,''),COALESCE(u.username,''),m.platform,m.model,
 	SUM(m.success_requests),SUM(m.error_requests),SUM(m.input_tokens),SUM(m.output_tokens),SUM(m.cache_creation_tokens),SUM(m.cache_read_tokens),SUM(m.ttft_sum_ms),SUM(m.ttft_count),SUM(m.duration_sum_ms),SUM(m.duration_count)
-	FROM ` + channelMonitorV2UserMetricsTable(filter) + ` m LEFT JOIN users u ON u.id=m.user_id ` + where + ` GROUP BY m.user_id,u.email,u.username,m.platform,m.model`
+	FROM ` + channelMonitorV2UserMetricsTable(filter) + ` m LEFT JOIN ` + r.dimensionTable("users") + ` u ON u.id=m.user_id ` + where + ` GROUP BY m.user_id,u.email,u.username,m.platform,m.model`
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -1013,7 +1036,7 @@ func (r *channelMonitorV2Repository) loadFacts(ctx context.Context, filter servi
 			group = bucketExpr + "," + group
 		}
 	}
-	query := `SELECT ` + bucketExpr + `,m.platform,m.group_id,COALESCE(g.name,''),m.model,SUM(m.success_requests),SUM(m.error_requests),SUM(m.upstream_affected_requests),SUM(m.upstream_attempt_count),SUM(m.input_tokens),SUM(m.output_tokens),SUM(m.cache_creation_tokens),SUM(m.cache_read_tokens),SUM(m.ttft_sum_ms),SUM(m.ttft_count),SUM(m.duration_sum_ms),SUM(m.duration_count) FROM ` + channelMonitorV2MetricsTable(filter) + ` m LEFT JOIN groups g ON g.id=NULLIF(m.group_id,0) ` + where + ` GROUP BY ` + group
+	query := `SELECT ` + bucketExpr + `,m.platform,m.group_id,COALESCE(g.name,''),m.model,SUM(m.success_requests),SUM(m.error_requests),SUM(m.upstream_affected_requests),SUM(m.upstream_attempt_count),SUM(m.input_tokens),SUM(m.output_tokens),SUM(m.cache_creation_tokens),SUM(m.cache_read_tokens),SUM(m.ttft_sum_ms),SUM(m.ttft_count),SUM(m.duration_sum_ms),SUM(m.duration_count) FROM ` + channelMonitorV2MetricsTable(filter) + ` m LEFT JOIN ` + r.dimensionTable("groups") + ` g ON g.id=NULLIF(m.group_id,0) ` + where + ` GROUP BY ` + group
 	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err

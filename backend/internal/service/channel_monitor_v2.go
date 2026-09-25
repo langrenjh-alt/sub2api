@@ -309,6 +309,9 @@ type ChannelMonitorV2Repository interface {
 	// GetAggregationWatermark loads durable backfill / coverage cursors for the
 	// passive aggregator (and bootstrap progress). Missing row → zero value, nil error.
 	GetAggregationWatermark(ctx context.Context) (*ChannelMonitorV2AggregationWatermark, error)
+	// PrepareExternalSource reports whether V2 copies an external sub2api monitor.
+	// reset is true only on the one-time cutover that clears local usage facts.
+	PrepareExternalSource(ctx context.Context) (bool, bool, error)
 	RecomputeRange(ctx context.Context, start, end time.Time) error
 }
 
@@ -376,13 +379,28 @@ func ChannelMonitorV2BootstrapProgress(now, coveredFrom time.Time, hasData bool)
 }
 
 type ChannelMonitorV2Service struct {
-	repo     ChannelMonitorV2Repository
-	settings channelMonitorRuntimeReader
-	now      func() time.Time
+	repo           ChannelMonitorV2Repository
+	settings       channelMonitorRuntimeReader
+	now            func() time.Time
+	externalSource bool
 }
 
 func NewChannelMonitorV2Service(repo ChannelMonitorV2Repository) *ChannelMonitorV2Service {
 	return &ChannelMonitorV2Service{repo: repo, now: func() time.Time { return time.Now().UTC() }}
+}
+
+// SetExternalSource marks reads as coming from another sub2api monitor.
+// Ordinary viewers are not filtered by this instance's group ids.
+func (s *ChannelMonitorV2Service) SetExternalSource(enabled bool) {
+	if s == nil {
+		return
+	}
+	s.externalSource = enabled
+}
+
+// UsesExternalSource reports whether the monitor copies an external sub2api.
+func (s *ChannelMonitorV2Service) UsesExternalSource() bool {
+	return s != nil && s.externalSource
 }
 
 // SetRuntimeReader wires optional settings for privacy flags (hide throughput).

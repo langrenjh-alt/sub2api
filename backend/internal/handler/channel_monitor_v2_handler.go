@@ -194,6 +194,12 @@ func (h *ChannelMonitorV2Handler) scopeFilter(c *gin.Context, filter *service.Ch
 	if admin {
 		return true
 	}
+	// External facts use the upstream instance's group ids. This site's group
+	// membership does not identify those rows, so the status page shows the
+	// upstream channel health instead of an empty local-group filter.
+	if h.service != nil && h.service.UsesExternalSource() {
+		return true
+	}
 	if h.apiKeyService == nil {
 		response.Error(c, http.StatusInternalServerError, "channel monitor group authorization unavailable")
 		return false

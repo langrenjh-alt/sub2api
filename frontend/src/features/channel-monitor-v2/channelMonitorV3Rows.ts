@@ -57,6 +57,24 @@ export function emptyChannelMonitorV3Row(group: {
   }
 }
 
+// Channel status keeps each upstream's groups in one block, in this order.
+const channelStatusPlatformOrder = ['openai', 'anthropic', 'grok']
+
+function channelStatusPlatformRank(platform: string | undefined): number {
+  const key = (platform || '').trim().toLowerCase()
+  const index = channelStatusPlatformOrder.indexOf(key)
+  return index >= 0 ? index : channelStatusPlatformOrder.length
+}
+
+function compareChannelStatusCards(a: MonitorMatrixRow, b: MonitorMatrixRow): number {
+  const rank = channelStatusPlatformRank(a.platform) - channelStatusPlatformRank(b.platform)
+  if (rank !== 0) return rank
+  const platformA = (a.platform || '').trim().toLowerCase()
+  const platformB = (b.platform || '').trim().toLowerCase()
+  if (platformA !== platformB) return platformA < platformB ? -1 : 1
+  return (a.group_id ?? 0) - (b.group_id ?? 0)
+}
+
 /**
  * V3 cards are one-per-group. Matrix rows are keyed by platform+group, so a
  * composite group can emit both a placeholder and concrete-platform traffic.
@@ -80,5 +98,25 @@ export function buildChannelMonitorV3Cards(
     byGroup.set(group.id, emptyChannelMonitorV3Row(group))
   }
 
-  return [...byGroup.values()].sort((a, b) => (a.group_id ?? 0) - (b.group_id ?? 0))
+  return [...byGroup.values()].sort(compareChannelStatusCards)
+}
+
+export interface ChannelStatusSection {
+  platform: string
+  rows: MonitorMatrixRow[]
+}
+
+/** One block per platform, preserving the fixed OpenAI → Anthropic → Grok order. */
+export function groupChannelStatusSections(rows: MonitorMatrixRow[]): ChannelStatusSection[] {
+  const sections: ChannelStatusSection[] = []
+  for (const row of rows) {
+    const platform = (row.platform || 'unknown').trim().toLowerCase() || 'unknown'
+    const current = sections[sections.length - 1]
+    if (current && current.platform === platform) {
+      current.rows.push(row)
+      continue
+    }
+    sections.push({ platform, rows: [row] })
+  }
+  return sections
 }

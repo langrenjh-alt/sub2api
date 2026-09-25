@@ -75,6 +75,22 @@ func TestChannelMonitorV2ScopeFilterPreservesEmptyOrdinaryUserScope(t *testing.T
 	require.Empty(t, filter.AllowedGroupIDs)
 }
 
+func TestChannelMonitorV2ScopeFilterSkipsLocalGroupsForExternalSource(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodGet, "/channel-monitor-v2/snapshot", nil)
+	c.Set(string(middleware.ContextKeyUser), middleware.AuthSubject{UserID: 42})
+	authorizer := &channelMonitorV2GroupAuthorizerStub{groups: []service.Group{{ID: 3}}}
+	svc := service.NewChannelMonitorV2Service(nil)
+	svc.SetExternalSource(true)
+	h := &ChannelMonitorV2Handler{service: svc, apiKeyService: authorizer}
+	filter := service.ChannelMonitorV2Filter{}
+
+	require.True(t, h.scopeFilter(c, &filter, false))
+	require.False(t, filter.RestrictGroups)
+	require.Empty(t, authorizer.calls)
+}
+
 func TestChannelMonitorV2ScopeFilterLeavesAdminUnrestricted(t *testing.T) {
 	authorizer := &channelMonitorV2GroupAuthorizerStub{}
 	h := &ChannelMonitorV2Handler{apiKeyService: authorizer}

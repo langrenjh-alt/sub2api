@@ -23,6 +23,8 @@ var DefaultModels = []Model{
 	{ID: "gpt-5.6", Object: "model", Created: 1780876800, OwnedBy: "openai", Type: "model", DisplayName: "GPT-5.6 (Sol)"},
 	{ID: "gpt-5.6-terra", Object: "model", Created: 1780876800, OwnedBy: "openai", Type: "model", DisplayName: "GPT-5.6 Terra"},
 	{ID: "gpt-5.6-luna", Object: "model", Created: 1780876800, OwnedBy: "openai", Type: "model", DisplayName: "GPT-5.6 Luna"},
+	{ID: "gpt-6-sol", Object: "model", Created: 1790035200, OwnedBy: "openai", Type: "model", DisplayName: "GPT-6 Sol"},
+	{ID: "gpt-6-luna", Object: "model", Created: 1790035200, OwnedBy: "openai", Type: "model", DisplayName: "GPT-6 Luna"},
 	{ID: "gpt-6-astra", Object: "model", Created: 1788480000, OwnedBy: "openai", Type: "model", DisplayName: "GPT-6 Astra"},
 	{ID: "gpt-5.5", Object: "model", Created: 1776873600, OwnedBy: "openai", Type: "model", DisplayName: "GPT-5.5"},
 	{ID: "gpt-5.4", Object: "model", Created: 1738368000, OwnedBy: "openai", Type: "model", DisplayName: "GPT-5.4"},
@@ -76,6 +78,15 @@ var instructionsGPT55 string
 //go:embed instructions_gpt6_astra.txt
 var instructionsGPT6Astra string
 
+// Source: openai/codex codex-rs/models-manager/models.json (gpt-6-sol / gpt-6-luna
+// model_messages.instructions_template). GPT-6 models keep their own prompts.
+//
+//go:embed instructions_gpt6_sol.txt
+var instructionsGPT6Sol string
+
+//go:embed instructions_gpt6_luna.txt
+var instructionsGPT6Luna string
+
 // latestCodexInstructions 返回当前已知最新版本的 Codex base instructions，
 // 当前为 GPT-5.5；若 5.5 prompt 意外为空则回退到 DefaultInstructions 保证非空。
 func latestCodexInstructions() string {
@@ -127,6 +138,7 @@ func CanonicalizeOpenAIModelAliasSpelling(model string) string {
 }
 
 // CodexBaseInstructionsForModel 按模型返回最匹配的真实 Codex base instructions：
+//   - gpt-6-sol / gpt-6-luna（含日期变体）→ 各自的 GPT-6 prompt
 //   - gpt-6 / gpt-6-astra（含供应商前缀与日期变体）→ GPT-6 Astra prompt
 //   - 含 "codex" 的模型（gpt-5-codex / gpt-5.x-codex / codex-max / spark 等）→ GPT-5-Codex prompt
 //   - gpt-5.5 系非 codex 模型 → GPT-5.5 prompt
@@ -138,6 +150,14 @@ func CanonicalizeOpenAIModelAliasSpelling(model string) string {
 func CodexBaseInstructionsForModel(model string) string {
 	canonical := CanonicalizeOpenAIModelAliasSpelling(model)
 	switch {
+	case isGPT6NamedVariant(canonical, "gpt-6-sol"):
+		if v := strings.TrimSpace(instructionsGPT6Sol); v != "" {
+			return v
+		}
+	case isGPT6NamedVariant(canonical, "gpt-6-luna"):
+		if v := strings.TrimSpace(instructionsGPT6Luna); v != "" {
+			return v
+		}
 	case canonical == "gpt-6" || canonical == "gpt-6-astra" || strings.HasPrefix(canonical, "gpt-6-astra-"):
 		if v := strings.TrimSpace(instructionsGPT6Astra); v != "" {
 			return instructionsGPT6Astra
@@ -156,4 +176,28 @@ func CodexBaseInstructionsForModel(model string) string {
 		}
 	}
 	return latestCodexInstructions()
+}
+
+// isGPT6NamedVariant reports the base model and dated or suffixed forms
+// (gpt-6-sol-2026-09-23) without treating a longer name such as gpt-6-solitude as a match.
+func isGPT6NamedVariant(canonical, base string) bool {
+	return canonical == base || strings.HasPrefix(canonical, base+"-")
+}
+
+// IsGPT6SolOrLunaModelSpelling recognizes official IDs and existing local effort/compact suffixes.
+func IsGPT6SolOrLunaModelSpelling(model string) bool {
+	canonical := CanonicalizeOpenAIModelAliasSpelling(model)
+	for _, base := range []string{"gpt-6-sol", "gpt-6-luna"} {
+		if canonical == base {
+			return true
+		}
+		suffix, ok := strings.CutPrefix(canonical, base+"-")
+		if ok {
+			switch suffix {
+			case "none", "low", "medium", "high", "xhigh", "max", "openai-compact":
+				return true
+			}
+		}
+	}
+	return false
 }

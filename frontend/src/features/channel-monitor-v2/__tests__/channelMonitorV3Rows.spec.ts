@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { MonitorMatrixRow } from '@/api/channelMonitorV2'
-import { buildChannelMonitorV3Cards, preferChannelMonitorV3Row } from '../channelMonitorV3Rows'
+import { buildChannelMonitorV3Cards, groupChannelStatusSections, preferChannelMonitorV3Row } from '../channelMonitorV3Rows'
 
 function row(partial: Partial<MonitorMatrixRow> & Pick<MonitorMatrixRow, 'platform' | 'group_id'>): MonitorMatrixRow {
   const { metrics, health, buckets, ...rest } = partial
@@ -59,6 +59,41 @@ describe('buildChannelMonitorV3Cards', () => {
     ])
     expect(cards.map(item => item.group_id)).toEqual([3, 7])
     expect(cards.every(item => item.metrics.request_count === 0)).toBe(true)
+  })
+
+  it('keeps OpenAI, Anthropic, then Grok groups together', () => {
+    const cards = buildChannelMonitorV3Cards([
+      row({ platform: 'grok', group_id: 66, group_name: 'grok-a' }),
+      row({ platform: 'openai', group_id: 95, group_name: 'codex-b' }),
+      row({ platform: 'anthropic', group_id: 64, group_name: 'claude' }),
+      row({ platform: 'grok', group_id: 10, group_name: 'grok-b' }),
+      row({ platform: 'openai', group_id: 52, group_name: 'codex-a' }),
+      row({ platform: 'gemini', group_id: 1, group_name: 'gemini' }),
+    ])
+    expect(cards.map(item => `${item.platform}:${item.group_id}`)).toEqual([
+      'openai:52',
+      'openai:95',
+      'anthropic:64',
+      'grok:10',
+      'grok:66',
+      'gemini:1',
+    ])
+  })
+})
+
+describe('groupChannelStatusSections', () => {
+  it('starts a new block whenever the platform changes', () => {
+    const sections = groupChannelStatusSections(buildChannelMonitorV3Cards([
+      row({ platform: 'grok', group_id: 66 }),
+      row({ platform: 'openai', group_id: 95 }),
+      row({ platform: 'anthropic', group_id: 64 }),
+      row({ platform: 'openai', group_id: 52 }),
+    ]))
+    expect(sections.map(section => `${section.platform}:${section.rows.length}`)).toEqual([
+      'openai:2',
+      'anthropic:1',
+      'grok:1',
+    ])
   })
 })
 
