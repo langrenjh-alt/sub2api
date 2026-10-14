@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"sort"
@@ -305,7 +306,15 @@ func (e *EasyPay) QueryOrder(ctx context.Context, tradeNo string) (*payment.Quer
 		"act": "order", "pid": e.config["pid"],
 		"key": e.config["pkey"], "out_trade_no": tradeNo,
 	}
-	body, err := e.post(ctx, e.apiBase()+"/api.php", params)
+	// Some EasyPay clones only read `act` from the query string and reply
+	// "No Act!" when it is present solely in the form body. Refunds already
+	// pass act in the URL; order lookup must do the same. The form still
+	// carries act for clones that read the body.
+	// ndow-style clones read pid/key from the query string and ignore the form
+	// body. Keep the form body for clones that do the opposite.
+	body, err := e.post(ctx, e.apiBase()+"/api.php?"+url.Values{
+		"act": {"order"}, "pid": {params["pid"]}, "key": {params["key"]}, "out_trade_no": {params["out_trade_no"]},
+	}.Encode(), params)
 	if err != nil {
 		return nil, fmt.Errorf("easypay query: %w", err)
 	}
@@ -373,10 +382,30 @@ func (e *EasyPay) VerifyNotification(_ context.Context, rawBody string, _ map[st
 	if err != nil {
 		return nil, fmt.Errorf("parse notify: %w", err)
 	}
-	// url.ParseQuery already decodes values — no additional decode needed.
-	params := make(map[string]string)
-	for k := range values {
-		params[k] = values.Get(k)
+	// EasyPay's signing format does not escape '&' within values. A checkout
+	// signature exposed by submit.php can therefore be replayed with fields
+	// split out of return_url. Only the notification schema may reach signature
+	// verification; checkout-only and unknown fields must fail even when empty.
+	params := make(map[string]string, len(values))
+	for k, entries := range values {
+		switch k {
+		case "pid", "trade_no", "out_trade_no", "type", "name", "money", "trade_status", "param", "sign", "sign_type":
+		default:
+			return nil, fmt.Errorf("unexpected notify parameter: %s", k)
+		}
+		if len(entries) != 1 {
+			return nil, fmt.Errorf("duplicate notify parameter: %s", k)
+		}
+		// ParseQuery already decodes values; do not decode them again.
+		params[k] = entries[0]
+	}
+	for _, k := range []string{"pid", "trade_no", "out_trade_no", "money", "trade_status"} {
+		if strings.TrimSpace(params[k]) == "" {
+			return nil, fmt.Errorf("missing notify parameter: %s", k)
+		}
+	}
+	if signType := params["sign_type"]; signType != "" && signType != signTypeMD5 {
+		return nil, fmt.Errorf("unsupported notify signature type")
 	}
 	sign := params["sign"]
 	if sign == "" {
@@ -385,12 +414,17 @@ func (e *EasyPay) VerifyNotification(_ context.Context, rawBody string, _ map[st
 	if !easyPayVerifySign(params, e.config["pkey"], sign) {
 		return nil, fmt.Errorf("invalid signature")
 	}
+	if strings.TrimSpace(params["pid"]) != strings.TrimSpace(e.config["pid"]) {
+		return nil, fmt.Errorf("notify merchant mismatch")
+	}
+	amount, err := strconv.ParseFloat(params["money"], 64)
+	if err != nil || amount <= 0 || math.IsNaN(amount) || math.IsInf(amount, 0) {
+		return nil, fmt.Errorf("invalid notify amount")
+	}
 	status := payment.ProviderStatusFailed
 	if params["trade_status"] == tradeStatusSuccess {
 		status = payment.ProviderStatusSuccess
 	}
-	amount, _ := strconv.ParseFloat(params["money"], 64)
-
 	metadata := e.MerchantIdentityMetadata()
 	if pid := strings.TrimSpace(params["pid"]); pid != "" {
 		if metadata == nil {

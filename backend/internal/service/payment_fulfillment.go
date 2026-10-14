@@ -113,6 +113,14 @@ func (s *PaymentService) confirmPayment(ctx context.Context, oid int64, tradeNo 
 		s.writeAuditLog(ctx, o.ID, "PAYMENT_AMOUNT_MISMATCH", pk, map[string]any{"expected": o.PayAmount, "paid": paid, "tradeNo": tradeNo})
 		return fmt.Errorf("amount mismatch: expected %s, got %s", strconv.FormatFloat(o.PayAmount, 'f', -1, 64), strconv.FormatFloat(paid, 'f', -1, 64))
 	}
+	if err := s.verifyEasyPayUpstreamPayment(ctx, o, tradeNo, paid, pk); err != nil {
+		s.writeAuditLog(ctx, o.ID, "PAYMENT_UPSTREAM_VERIFY_FAILED", pk, map[string]any{
+			"detail":  err.Error(),
+			"tradeNo": tradeNo,
+			"paid":    paid,
+		})
+		return err
+	}
 	return s.toPaid(ctx, o, tradeNo, paid, pk)
 }
 

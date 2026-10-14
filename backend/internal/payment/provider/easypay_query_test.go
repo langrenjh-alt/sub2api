@@ -90,6 +90,9 @@ func TestEasyPayQueryOrderStatusMapping(t *testing.T) {
 				if r.URL.Path != "/api.php" {
 					t.Errorf("path = %q, want /api.php", r.URL.Path)
 				}
+				if r.URL.Query().Get("act") != "order" || r.URL.Query().Get("pid") == "" || r.URL.Query().Get("out_trade_no") != orderID {
+					t.Errorf("query = %q, want act, pid, and out_trade_no", r.URL.RawQuery)
+				}
 				if err := r.ParseForm(); err != nil {
 					t.Errorf("ParseForm: %v", err)
 				}

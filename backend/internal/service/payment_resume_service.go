@@ -245,6 +245,11 @@ func CanonicalizeReturnURL(raw string, srcHost string, srcURL string) (string, e
 		return "", infraerrors.BadRequest("INVALID_RETURN_URL", "return_url must use http or https")
 	}
 	parsed.Fragment = ""
+	// Result-page parameters belong to the server. In EasyPay popup mode,
+	// user query fields can be split out of the signed return_url and replayed
+	// as notification fields without knowing the merchant key.
+	parsed.RawQuery = ""
+	parsed.ForceQuery = false
 	if parsed.Path == "" {
 		parsed.Path = "/"
 	}
@@ -288,7 +293,10 @@ func buildPaymentReturnURL(base string, orderID int64, outTradeNo string, resume
 	}
 	parsed.Fragment = ""
 
-	query := parsed.Query()
+	// Rebuild from server-owned fields, including when resuming an order whose
+	// saved canonical URL predates query sanitization.
+	query := url.Values{}
+	parsed.ForceQuery = false
 	if orderID > 0 {
 		query.Set("order_id", strconv.FormatInt(orderID, 10))
 	}
