@@ -480,7 +480,8 @@ func (e *EasyPay) VerifyNotification(_ context.Context, rawBody string, _ map[st
 		}
 		// ParseQuery already decodes values; do not decode them again.
 		v := entries[0]
-		if k != "name" && strings.ContainsAny(v, "&=") {
+		// name and param are opaque signed merchant fields; routing and amount fields remain delimiter-free.
+		if k != "name" && k != "param" && strings.ContainsAny(v, "&=") {
 			return nil, fmt.Errorf("invalid notify param value: %s", k)
 		}
 		params[k] = v
