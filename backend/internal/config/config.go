@@ -982,6 +982,9 @@ const (
 
 // GatewayConfig API网关相关配置
 type GatewayConfig struct {
+	// MinOutputTokens is the minimum max_output_tokens used when
+	// converting Chat Completions or Anthropic requests to Responses.
+	MinOutputTokens int `mapstructure:"min_output_tokens"`
 	// 等待上游响应头的超时时间（秒），0表示无超时
 	// 注意：这不影响流式数据传输，只控制等待响应头的时间
 	ResponseHeaderTimeout int `mapstructure:"response_header_timeout"`
@@ -1109,6 +1112,8 @@ type GatewayConfig struct {
 	MaxAccountSwitches int `mapstructure:"max_account_switches"`
 	// Gemini 账户切换最大次数（Gemini 平台单独配置，因 API 限制更严格）
 	MaxAccountSwitchesGemini int `mapstructure:"max_account_switches_gemini"`
+	// Gemini 同账号重试次数（429/5xx 等可重试错误在换号前对同一账号的重发次数，不含首次请求）
+	MaxSameAccountRetriesGemini int `mapstructure:"max_same_account_retries_gemini"`
 
 	// Antigravity 429 fallback 限流时间（分钟），解析重置时间失败时使用
 	AntigravityFallbackCooldownMinutes int `mapstructure:"antigravity_fallback_cooldown_minutes"`
@@ -2081,6 +2086,7 @@ func configureConfigSource(setConfigFile, addConfigPath func(string)) {
 
 func setDefaults() {
 	viper.SetDefault("run_mode", RunModeStandard)
+	viper.SetDefault("gateway.min_output_tokens", 128)
 	viper.SetDefault("simple_mode.auto_create_default_groups", true)
 	viper.SetDefault("simple_mode_key_rate_limit_enabled", false)
 
@@ -2476,6 +2482,7 @@ func setDefaults() {
 	viper.SetDefault("gateway.failover_on_400", false)
 	viper.SetDefault("gateway.max_account_switches", 10)
 	viper.SetDefault("gateway.max_account_switches_gemini", 3)
+	viper.SetDefault("gateway.max_same_account_retries_gemini", 4)
 	viper.SetDefault("gateway.force_codex_cli", false)
 	viper.SetDefault("gateway.disable_codex_identity_enforcement", false)
 	viper.SetDefault("gateway.disable_codex_originator_normalization", false)
@@ -2761,6 +2768,9 @@ func setEnvReachableDefaults() {
 }
 
 func (c *Config) Validate() error {
+	if c.Gateway.MinOutputTokens < 16 {
+		return fmt.Errorf("gateway.min_output_tokens must be at least 16")
+	}
 	forwardedClientIPHeaders, err := NormalizeForwardedClientIPHeaders(c.Security.ForwardedClientIPHeaders)
 	if err != nil {
 		return fmt.Errorf("security.forwarded_client_ip_headers: %w", err)
@@ -3417,6 +3427,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.GrokResponseHeaderTimeout < 0 || c.Gateway.GrokResponseHeaderTimeout > 1800 {
 		return fmt.Errorf("gateway.grok_response_header_timeout must be between 0-1800 seconds")
+	}
+	if c.Gateway.MaxSameAccountRetriesGemini < 0 || c.Gateway.MaxSameAccountRetriesGemini > 10 {
+		return fmt.Errorf("gateway.max_same_account_retries_gemini must be between 0-10")
 	}
 	if c.Gateway.OpenAIFirstOutputTimeoutSeconds < 0 || c.Gateway.OpenAIFirstOutputTimeoutSeconds > 600 ||
 		(c.Gateway.OpenAIFirstOutputTimeoutSeconds > 0 && c.Gateway.OpenAIFirstOutputTimeoutSeconds < 30) {
