@@ -62,10 +62,8 @@ func TestEasyPayNotificationAcceptsStandardFields(t *testing.T) {
 		t.Run(status, func(t *testing.T) {
 			params := easyPayStandardNotificationParams()
 			params["trade_status"] = status
-			// Delimiters are legitimate within opaque protocol fields and must
-			// remain signed exactly as the upstream specifies.
+			// The official schema accepts delimiters in the free-text product name only.
 			params["name"] = "套餐 & credits = 650"
-			params["param"] = "opaque&context=value"
 			n, err := e.VerifyNotification(context.Background(), signedEasyPayNotification(params, e.config["pkey"]), nil)
 			if err != nil {
 				t.Fatalf("standard notification rejected: %v", err)
