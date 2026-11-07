@@ -194,8 +194,7 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
         ? editionFocus[editionIndex(raw)] : p
       const transfer=i===3?blend(.525,.585,p):0
       const leaving=i===3?blend(.63,.69,p):0
-      const echo=i===3?blend(.72,.78,p)*(1-blend(.811,.858,p)):0
-      const visible=panelWindow(stateP,i)*(1-leaving)+echo*.78
+      const visible=panelWindow(stateP,i)*(1-leaving)
       mesh.visible=visible>.002
       if(!mesh.visible)continue
       requestArt(i)
@@ -231,13 +230,12 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
         rotation.slerp(viewRotation,pickup)
       }
       if(i===3 && transfer>0){
-        const depart=blend(.555,.662,p), returnToCrown=blend(.723,.79,p)
+        const depart=blend(.555,.662,p)
         const d=6.9+depart*1.45, yfov=d*Math.tan(T.MathUtils.degToRad(camera.fov*.5))
         const xfov=yfov*camera.aspect
         // In the gallery → connection interval the old work rises and slides
         // left. The conduit/console are visible beneath it BEFORE it clears.
-        let sx=.35-.98*depart, sy=.18+1.63*depart
-        if(returnToCrown>0){sx=T.MathUtils.lerp(sx,.30,returnToCrown);sy=T.MathUtils.lerp(sy,.80,returnToCrown)}
+        const sx=.35-.98*depart, sy=.18+1.63*depart
         screenAnchor.copy(camera.position).addScaledVector(dir,d).addScaledVector(right,sx*xfov).addScaledVector(up,sy*yfov)
         anchor.lerp(screenAnchor,transfer)
         localTurn.setFromEuler(euler.set(.11+depart*.24,-.28-depart*.43,.06-depart*.15,'YXZ'))

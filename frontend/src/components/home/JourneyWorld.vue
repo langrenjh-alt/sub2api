@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { irisChapterStart } from './journey/path'
 import type { JourneyRenderer, WorldInput } from './journey/worldScene'
 
 const props=defineProps<WorldInput>()
@@ -7,14 +8,15 @@ const emit=defineEmits<{mode:[value:'pending'|'webgl'|'still']}>()
 const canvas=ref<HTMLCanvasElement>()
 const rendererMode=ref<'pending' | 'webgl' | 'still'>('pending')
 const mode=(value:'pending'|'webgl'|'still')=>{rendererMode.value=value;emit('mode',value)}
-const room=computed(()=>props.progress<.33?'estuary':props.progress<.565?'archive':props.progress<.79?'conduit':'observatory')
+const room=computed(()=>props.progress<.33?'estuary':props.progress<.565?'archive':props.progress<irisChapterStart?'conduit':'observatory')
 const alpha=computed(()=>rendererMode.value==='webgl'?1:Math.min(1,Math.max(0,(props.progress-.014)/.104)))
 // Additional handoff photographs preserve the winding relay and reflective
 // waterline in browsers without a GPU; static CSS gallery panels stay separate.
 const plates=[
   {id:'estuary',start:0,pose:.23}, {id:'archive',start:.32,pose:.445},
-  {id:'transfer',start:.545,pose:.595},{id:'conduit',start:.625,pose:.685},
-  {id:'basin',start:.765,pose:.805},{id:'observatory',start:.862,pose:.94},
+  {id:'transfer',start:.545,pose:.595},{id:'conduit',start:.625,pose:.66},
+  {id:'bond',start:.716,pose:.738},{id:'basin',start:.774,pose:.835},
+  {id:'pupil',start:.876,pose:.901},{id:'observatory',start:.932,pose:.974},
 ]
 const posterLayers=computed(()=>{
   const p=props.progress

@@ -10,7 +10,7 @@ import GlassWordmark from './GlassWordmark.vue'
 import AtelierPlate from './AtelierPlate.vue'
 import JourneyWorld from './JourneyWorld.vue'
 import JourneyChapters from './JourneyChapters.vue'
-import { clamp01, currentFlightStop, flightProgress, flightStops, followFocus, phase } from './journey/path'
+import { clamp01, currentFlightStop, irisReadingPose, flightProgress, flightStops, followFocus, phase } from './journey/path'
 
 defineProps<{
   brandName: string; siteLogo: string; tagline: string; workspacePath: string
@@ -38,7 +38,7 @@ const anchors = [
   ...flightStops,
   { id: 'actions', point: 0.445 }, { id: 'compatibility', point: 0.445 },
   { id: 'capabilities', point: 0.23 }, { id: 'access', point: 0.66 },
-  { id: 'status', point: 0.94 },
+  { id: 'status', point: irisReadingPose },
 ]
 let queued = 0, last = 0, target = 0, velocity = 0, aimX = 0, aimY = 0
 let dirtyLayout = true, snapNext = true

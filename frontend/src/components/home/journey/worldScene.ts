@@ -1,8 +1,11 @@
 import * as T from 'three'
 import { clock, dustMaterial, skyMaterial, opticalStudio, lightStudio, linkStudio, QUARTZ_LAYER, WATER_LAYER } from './worldMaterials'
 import { createChamberAir } from './chamberAir'
+import { irisChapterStart, irisReadingPose } from './path'
 import { createJourneyRail } from './cameraRail'
 import { createLiveOpening } from './liveOpening'
+import { makeLightGuide } from './lightGuide'
+import { flightBlend, nearFlight } from './opticalFlight'
 import { PixelBudget } from './worldBudget'
 import { createGalleryOptics } from './galleryOptics'
 import { worldForms } from './worldForms'
@@ -20,6 +23,7 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onFirstFrame?:()=
   const sky=new T.Mesh(new T.PlaneGeometry(2,2),skyMaterial(phase))
   sky.frustumCulled=false;sky.renderOrder=-100;scene.add(sky)
   const step=worldForms(scene,dustMaterial(time,pixel,height))
+  const guide=makeLightGuide(scene)
   linkStudio(scene,studio)
   // One reusable opaque-scene texture for every dielectric AND the works panels.
   // The inexpensive virtual-camera reflection runs only near the observatory.
@@ -31,7 +35,7 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onFirstFrame?:()=
   const chamberAir=createChamberAir(scene)
   const opening=createLiveOpening(scene)
   opening.setField(transmission.texture,studio.uFrame.value)
-  const eye=new T.Vector3(),gaze=new T.Vector3()
+  const eye=new T.Vector3(),gaze=new T.Vector3(),side=new T.Vector3()
   const budget=new PixelBudget()
   let input:WorldInput={progress:0,active:false,reduced:false,pointerX:0,pointerY:0}
   let frame=0,last=0,ended=false,w=0,h=0,inView=true,need=true,lastMirror=-1,mirrorP=-1
@@ -68,14 +72,15 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onFirstFrame?:()=
   function draw(dt:number) {
     // Reduced motion keeps chapter landmarks, without continuous travel or drift.
     const raw=clamp(input.progress||0,0,1)
-    const p=input.reduced ? raw<.09?0:raw<.33?.235:raw<.565?.445:raw<.79?.68:.94 : raw
+    const p=input.reduced ? raw<.09?0:raw<.33?.235:raw<.565?.445:raw<irisChapterStart?.66:irisReadingPose : raw
     phase.value=p
     if(input.active&&!input.reduced)time.value+=dt
     const narrow=1-ease(.72,1.14,camera.aspect)
-    travel(p,eye,gaze)
+    travel(p,eye,gaze,true,camera.aspect)
+    const tracking=flightBlend(p), macro=nearFlight(p)
     // Preserve the upper-middle composition on portrait screens while keeping
     // the gallery, instrument and observatory right of the desktop annotation.
-    const rooms=ease(.31,.39,p),mode=narrow*rooms
+    const rooms=ease(.31,.39,p),mode=narrow*rooms*(1-ease(.669,.716,p))
     gaze.x+=2.50*mode
     gaze.y-=1.38*mode
     eye.z+=2.45*mode
@@ -83,19 +88,28 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onFirstFrame?:()=
     // Leave the left receiver and attached beam outside the copy at the
     // nearly square desktop sizes. The phone uses a stacked composition.
     const bench=ease(.55,.63,p)*(1-ease(.72,.80,p))
-    gaze.x-=.39*bench*ease(.68,.91,camera.aspect)*(1-.52*ease(1.18,1.75,camera.aspect))
+    gaze.x-=.39*(1-tracking)*bench*ease(.68,.91,camera.aspect)*(1-.52*ease(1.18,1.75,camera.aspect))
+    const reveal=tracking*ease(.927,.973,p)
+    if(reveal){
+      // At the far side of the iris, put the readout in the negative space,
+      // not over the receiving plate. The phone frames its text below.
+      side.subVectors(gaze,eye).cross(camera.up).normalize()
+      gaze.addScaledVector(side,-2.95*reveal*(1-narrow))
+      gaze.y-=.96*reveal*narrow
+    }
     if(!input.reduced){
       // Orbit the origin with a physical eye offset; taper sideways motion
       // before the camera reaches the narrow path beside the extruded word.
       const origin=1-ease(.025,.105,p)
-      eye.x+=clamp(input.pointerX,-1,1)*(.34+.79*origin)
-      eye.y-=clamp(input.pointerY,-1,1)*(.22+.39*origin)
+      eye.x+=clamp(input.pointerX,-1,1)*(.34+.79*origin)*(1-.98*macro)
+      eye.y-=clamp(input.pointerY,-1,1)*(.22+.39*origin)*(1-.98*macro)
     }
     camera.position.copy(eye);camera.up.set(.035*Math.sin(p*17)*(1-narrow),1,0)
     camera.lookAt(gaze);camera.fov=52+8*ease(.06,.24,p)*(1-ease(.28,.39,p))+narrow*8
-    camera.updateProjectionMatrix()
+    camera.near=.15-.133*macro;camera.fov+=7*macro;camera.updateProjectionMatrix()
     lightStudio(studio,time.value,p);step(time.value,p)
     camera.updateMatrixWorld()
+    guide(p,studio.uFrame.value.y)
     chamberAir(time.value,p,studio.uFrame.value.y)
     opening.update(camera,p,time.value,input.reduced)
     gallery.update(camera,p,time.value,input.reduced,raw)

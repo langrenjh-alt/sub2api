@@ -142,7 +142,7 @@ export function worldForms(scene:T.Scene,dust:T.Material){
   return (time:number,p:number)=>{
     groups[0].visible=p<.58;groups[1].visible=p>.21&&p<.68
     groups[2].visible=p>.43&&p<.875;groups[3].visible=p>.695
-    relay.visible=p>.245
+    relay.visible=p>.245 && p<.58
     floor.visible=p<.85
     const lift=T.MathUtils.smoothstep(p,.12,.215)
     stops.visible=lift>.002;stops.position.y=-8.*(1-lift)

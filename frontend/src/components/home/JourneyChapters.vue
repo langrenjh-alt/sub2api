@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import { irisChapterStart } from './journey/path'
 import { Button } from '@/components/ui/button'
 import { blend, galleryAngle, galleryWorks, panelWindow, editionIndex } from './journey/galleryPath'
 import { useClipboard } from '@/composables/useClipboard'
@@ -29,10 +30,10 @@ const { t } = useI18n()
 const { copyToClipboard, copied } = useClipboard()
 const clamp = (n: number, a = 0, b = 1) => Math.max(a, Math.min(b, n))
 const ease = (n: number) => { const c = clamp(n); return c * c * (3 - 2 * c) }
-const chapters = [[.15,.32], [.32,.55], [.55,.78], [.78,1]] as const
-const chapter = computed(() => props.progress < .15 ? -1 : props.progress < .32 ? 0 : props.progress < .55 ? 1 : props.progress < .78 ? 2 : 3)
+const chapters = [[.15,.32], [.32,.55], [.55,irisChapterStart], [irisChapterStart,1]] as const
+const chapter = computed(() => props.progress < .15 ? -1 : props.progress < .32 ? 0 : props.progress < .55 ? 1 : props.progress < irisChapterStart ? 2 : 3)
 const phase = (i: number) => (props.progress - chapters[i][0]) / (chapters[i][1] - chapters[i][0])
-const editorialWindows = [[.147,.182,.235,.281], [.315,.352,.50,.544], [.590,.616,.729,.773], [.779,.826,1.03,1.08]] as const
+const editorialWindows = [[.147,.182,.235,.281], [.315,.352,.50,.544], [.590,.616,.683,.720], [.925,.954,1.03,1.08]] as const
 function layer(i: number) {
   if (props.reduced) return { visibility: chapter.value === i ? 'visible' as const : 'hidden' as const, opacity: chapter.value === i ? 1 : 0 }
   const [start,,end,stop]=editorialWindows[i]

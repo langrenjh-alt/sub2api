@@ -1,11 +1,12 @@
 import * as T from 'three'
+import { beamDistance,bondDistance } from './opticalFlight'
 
 export const clock=()=>({value:0})
 export type TimeUniform=ReturnType<typeof clock>
 export const QUARTZ_LAYER=1, WATER_LAYER=2
 export function opticalStudio(){
   return {
-    uTime:clock(),uWarmth:clock(),uProgress:clock(),uPlateReady:clock(),
+    uTime:clock(),uWarmth:clock(),uProgress:clock(),uPacketMetres:clock(),uPlateReady:clock(),
     uAtelierPlate:{value:null as T.Texture|null},
     uKey:{value:new T.Vector3(-.51,.7,.47)},
     uFrame:{value:new T.Vector2(1,1)},uTransmission:{value:null as T.Texture|null},
@@ -14,7 +15,7 @@ export function opticalStudio(){
 }
 export type OpticalStudio=ReturnType<typeof opticalStudio>
 export function lightStudio(s:OpticalStudio,t:number,p:number){
-  s.uTime.value=t;s.uProgress.value=p
+  s.uTime.value=t;s.uProgress.value=p;s.uPacketMetres.value=beamDistance(p)+1.23
   // Light follows its own clock; hue is deliberately NOT mapped to the pointer.
   s.uWarmth.value=T.MathUtils.smoothstep(.5-.5*Math.cos(t*.398),.14,.90)
   s.uKey.value.set(-.73+.21*Math.sin(t*.14+p*2.4),.34+.13*Math.cos(t*.17),
@@ -326,13 +327,15 @@ export function comparatorTarget(){
       // so the blades themselves occult the beam on closure.
       float seek=uTime*.42+smoothstep(.78,.985,uProgress)*1.90;
       float v=uv.x+.22*uv.y-.34*sin(seek);
-      float incoming=exp(-pow((uProgress-.91)/.065,2.));
+      float incoming=smoothstep(.908,.961,uProgress);
       float left=exp(-pow(54.*(v+.19),2.)),right=exp(-pow(24.*(v-.15),2.));
       float ruling=sin(142.*(uv.x-.16*uv.y))*(1.-smoothstep(.4,2.2,fwidth(142.*uv.x)));
+      float spot=exp(-dot(uv,uv)*23.)*incoming;
       float cut=exp(-4.8*abs(v-.15))*(1.-smoothstep(.42,.85,abs(uv.y+.08)));
       vec3 field=mix(vec3(.34,.65,.76),vec3(.89,.60,.44),uWarmth*.80);
       vec3 col=vec3(.021,.029,.035)+field*(.18+.012*ruling)*limit+cut*limit*field*(.49+.17*incoming);
       col+=limit*(vec3(.93,.93,.79)*left+field*right)*1.54;
+      col+=vec3(.45,.77,.87)*spot;
       gl_FragColor=vec4(fog(col,d),1.);
     }`)
 }
@@ -351,13 +354,14 @@ export function ceramicFinish(){
 }
 /** Real diagonal coated face between the two prisms, visible in transmission. */
 export function bondCoat(){
-  return shader(surface,varyingSurface+studio+`
+  return shader(surface,varyingSurface+studio+`uniform float uPacketMetres;
     void main(){vec3 V=normalize(cameraPosition-vW);float c=abs(dot(V,normalize(nW)));
       float edge=1.-smoothstep(.012,.084,min(coords.y,1.-coords.y));
       float lamina=.5+.5*cos(vLocal.x*4.1+c*5.4+.10*uTime);
       vec3 glint=mix(vec3(.24,.50,.63),vec3(.75,.60,.39),lamina);
       float phase=mod(3.34-uTime*1.55-(uProgress-.57)*15.+4.2,8.4)-4.2;
-      float impact=exp(-dot(vLocal.xy,vLocal.xy)*8.)*exp(-phase*phase/.22);
+      float arrival=mix(phase,uPacketMetres-${bondDistance.toFixed(5)},smoothstep(.55,.61,uProgress));
+      float impact=exp(-dot(vLocal.xy,vLocal.xy)*8.)*exp(-arrival*arrival/.42);
       gl_FragColor=vec4(glint*(.39+.51*(1.-c)+.39*edge)+impact*vec3(.84,.88,.79),.24+.33*(1.-c)+.25*edge+.12*impact);}
   `,{},{transparent:true,depthWrite:false,side:T.DoubleSide})
 }
@@ -365,11 +369,12 @@ export function bondCoat(){
  * At distance zero in either output, phase equals phase at the incoming bond. */
 export function instrumentBeam(start:number,length:number,branch:number){
   return shader(surface,varyingSurface+studio+`
-    uniform float pathStart,pathLength,branch;
+    uniform float pathStart,pathLength,branch,uPacketMetres;
     void main(){
       float x=pathStart+pathLength*coords.x;
       float travelled=uTime*1.55+(uProgress-.57)*15.;
       float delta=mod(x-travelled+4.2,8.4)-4.2;
+      if(uProgress>.61)delta=x-3.34+${bondDistance.toFixed(5)}-uPacketMetres;
       float packet=exp(-delta*delta/.17), tail=exp(-abs(delta+.45)*3.6);
       vec3 c=branch<.5?vec3(.76,.82,.83):branch<1.5?vec3(.42,.75,.88):vec3(.90,.69,.42);
       float skin=.72+.28*pow(1.-abs(dot(normalize(nW),normalize(cameraPosition-vW))),2.);
@@ -433,4 +438,24 @@ export function turnedMetal(base:number,mirror:number=.8){
       colour+=groove*.011*(.23+.77*side)+vec3(.095,.10,.103)*side*mirror;
       gl_FragColor=vec4(fog(tone(colour),d),1.);
     }`,{pigment:{value:ink(base)},mirror:{value:mirror}},{side:T.DoubleSide})
+}
+
+/** Radiance of one selected optical path, expressed in metres along its real
+ * geometry. Background pilot light persists when the scroll-driven crest stops. */
+export function flightRadiance(length:number,halo:boolean){
+  return shader(surface,varyingSurface+studio+`
+    uniform float uPacketMetres,metres,halo;
+    void main(){
+      float dist=coords.x*metres, delta=dist-uPacketMetres;
+      float peak=exp(-delta*delta/.22);
+      float tail=exp(-abs(delta+.33)*2.1);
+      float idle=.5+.5*cos(dist*1.7-uTime*1.18);
+      vec3 pigment=mix(vec3(.68,.79,.85),vec3(.31,.82,.98),smoothstep(${bondDistance.toFixed(5)}-.1,${bondDistance.toFixed(5)}+.3,dist));
+      float grazing=abs(dot(normalize(nW),normalize(cameraPosition-vW)));
+      float nearFade=smoothstep(mix(.12,.37,halo),mix(.82,1.75,halo),d);
+      float a=nearFade*mix(.50+.13*idle,.033+.095*tail,halo);
+      vec3 color=pigment*(.36+.095*idle+.76*tail)+vec3(.53,.54,.52)*peak;
+      gl_FragColor=vec4(fog(color,d),a*mix(1.,pow(grazing,.65),halo));
+    }`,{metres:{value:length},halo:{value:halo?1:0}},
+    {side:T.DoubleSide,forceSinglePass:true,transparent:true,depthWrite:false,blending:T.AdditiveBlending})
 }

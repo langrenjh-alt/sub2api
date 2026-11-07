@@ -1,4 +1,5 @@
 import * as T from 'three'
+import { benchAngle, irisAngle, flightBlend } from './opticalFlight'
 import { obj, block, cast, pin, rail, placeBatch } from './worldAtelier'
 import { turnedMetal, quartz, liquidFloor, WATER_LAYER, ceramicFinish, coatedBlade, instrumentBeam,
   bondCoat, comparatorTarget } from './worldMaterials'
@@ -62,12 +63,13 @@ export function splitterBench(scene:T.Group){
   // Arc length is shared across all three segments: a light packet reaches
   // the bond only once, then both arms carry energy away from that same point.
   const incoming=3.34
-  rail(crystal,[[incoming,0,0],[1.46,0,0],[0,0,0]],.027,instrumentBeam(0, incoming,0),24)
-  rail(crystal,[[0,0,0],[-1.47,0,0],[-2.87,0,0]],.024,instrumentBeam(incoming,2.87,1),24)
+  const pilot=new T.Group();crystal.add(pilot)
+  rail(pilot,[[incoming,0,0],[1.46,0,0],[0,0,0]],.027,instrumentBeam(0, incoming,0),24)
+  rail(pilot,[[0,0,0],[-1.47,0,0],[-2.87,0,0]],.024,instrumentBeam(incoming,2.87,1),24)
   rail(crystal,[[0,0,0],[0,1.46,0],[0,2.62,0]],.021,instrumentBeam(incoming,2.62,2),24)
   // Cable jacket ends at the inlet. The free path inside the glass is never
   // confused with the much thicker sheathing outside the coupling.
-  rail(crystal,[[4.20,-1.63,2.41],[3.61,-1.07,1.40],[3.09,-.28,.33],[2.61,0,0],[2.0,0,0]],.10,graphite,55)
+  rail(pilot,[[4.20,-1.63,2.41],[3.61,-1.07,1.40],[3.09,-.28,.33],[2.61,0,0],[2.0,0,0]],.10,graphite,55)
   opticTrain(crystal,[-2.92,0,0],[-1,0,0],'port',graphite,ivory,titanium,graphite)
   opticTrain(crystal,[0,2.67,0],[0,1,0],'port',graphite,ivory,titanium,graphite)
   // Cast receiver arms terminate at the collars, outside the working axes.
@@ -112,7 +114,9 @@ export function splitterBench(scene:T.Group){
     const t=i*TAU/32;o.position.set(.401*Math.cos(t),.401*Math.sin(t),.61);o.scale.set(.020,.012,.26);o.rotation.set(0,0,t)
   })
   return (time:number,p:number)=>{
-    bench.rotation.y=-.31+.09*Math.sin(time*.085)+.085*Math.sin((p-.60)*8)
+    const align=T.MathUtils.smoothstep(p,.552,.632)
+    bench.rotation.y=T.MathUtils.lerp(-.31+.09*Math.sin(time*.085)+.085*Math.sin((p-.60)*8),benchAngle.y,align)
+    pilot.visible=p<.58
     dial.rotation.z=.16*Math.sin(time*.11)
   }
 }
@@ -202,6 +206,8 @@ export function scanningComparator(scene:T.Group){
   // The alignment beam scans a physical detector through the opening. Dispersion
   // happens a second time in the actual transmission pass, not on a screen overlay.
   detector.rotation.z=-.12
+  const rim=turning(head,[[.991,-.015],[1.026,-.015],[1.032,.012],[1.022,.040],[1.,.043],[.991,-.015]],champagne)
+  rim.visible=false
   const dial=oriented(head,[1.35,-.58,-.29],[.94,-.32,.08])
   turning(dial,[[.10,0],[.22,0],[.25,.16],[.21,.24],[.29,.28],[.31,.33],[.31,.60],[.27,.65],[.12,.65],[.10,0]],titanium,60)
   placeBatch(dial,new T.BoxGeometry(1,1,1),pvd,30,(o,i)=>{
@@ -211,7 +217,8 @@ export function scanningComparator(scene:T.Group){
   water.rotation.x=-PI/2;water.layers.set(WATER_LAYER)
   return (time:number,p:number)=>{
     const arrival=T.MathUtils.smoothstep(p,.79,.975),osc=Math.sin(time*.42+arrival*1.90)
-    const act=-.06-.12*Math.cos(arrival*TAU)+.26*osc
+    const pass=T.MathUtils.smoothstep(p,.85,.902)*(1-T.MathUtils.smoothstep(p,.925,.966))
+    const act=T.MathUtils.lerp(-.06-.12*Math.cos(arrival*TAU)+.26*osc,-.36,pass)
     // Nine independently pinned blades move together through the physical cam.
     for(let i=0;i<count;i++){
       const a=i*TAU/count
@@ -221,6 +228,14 @@ export function scanningComparator(scene:T.Group){
     }
     blades.instanceMatrix.needsUpdate=true;cam.rotation.z=act*.41
     head.rotation.set(.145+.045*Math.sin(time*.17),-.28+.17*Math.sin(time*.15+p*1.9),-.19)
+    const aligned=flightBlend(p)
+    head.rotation.x=T.MathUtils.lerp(head.rotation.x,irisAngle.x,aligned)
+    head.rotation.y=T.MathUtils.lerp(head.rotation.y,irisAngle.y,aligned)
+    // The receiver is a separate downstream focal surface; keep the physical
+    // pupil open instead of flying into an opaque disk at the back of the bezel.
+    detector.position.z=-.86-5.14*aligned
+    detector.scale.setScalar(1+1.05*aligned);detector.rotation.y=.77*aligned
+    rim.visible=aligned>.15;rim.position.copy(detector.position);rim.quaternion.copy(detector.quaternion);rim.scale.copy(detector.scale)
     lensRig.rotation.y=.11*Math.sin(time*.25+arrival);lensRig.position.x=.045+.041*osc
   }
 }

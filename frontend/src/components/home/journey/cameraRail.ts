@@ -1,4 +1,5 @@
 import * as T from 'three'
+import { createBeamCamera } from './opticalFlight'
 type Key=[number,number,number,number,number,number,number]
 /** Absolute camera and look-at keys. Between keys the lens follows a C1 spline,
  * not a stack of dissolve-only scenes. Each room occupies different world space. */
@@ -19,6 +20,7 @@ const keys: Key[] = [
 /** One world-space rail. Never tween the letters to follow the lens. XYZ are
  * in scene units and the sign change relative to z=7.1 is the physical pass. */
 export function createJourneyRail(){
+  const track=createBeamCamera()
   const path=new T.CatmullRomCurve3(keys.map(k=>new T.Vector3(k[1],k[2],k[3])))
   const focus=new T.CatmullRomCurve3(keys.map(k=>new T.Vector3(k[4],k[5],k[6])))
   const segment=(p:number)=>{
@@ -39,8 +41,9 @@ export function createJourneyRail(){
     const u=raw-i,dt=keys[i+1][0]-keys[i][0],u2=u*u,u3=u2*u
     return (i+3*u2-2*u3+dt*(slopes[i]*(u3-2*u2+u)+slopes[i+1]*(u3-u2)))/(keys.length-1)
   }
-  return (progress:number,eye:T.Vector3,gaze:T.Vector3)=>{
+  return (progress:number,eye:T.Vector3,gaze:T.Vector3,follow=true,aspect=1.6)=>{
     const u=drive(T.MathUtils.clamp(progress,0,1))
     path.getPoint(u,eye);focus.getPoint(u,gaze)
+    if(follow)track(progress,eye,gaze,aspect)
   }
 }
