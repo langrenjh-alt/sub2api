@@ -15,6 +15,7 @@ export default {
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
     signal: {
+      scroll: 'Scroll down',
       navigation: 'Main navigation',
       index: 'Gateway index',
       explore: 'Explore the gateway',

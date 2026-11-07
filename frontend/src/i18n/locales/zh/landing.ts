@@ -15,6 +15,7 @@ export default {
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
     signal: {
+      scroll: '向下滚动',
       navigation: '主导航',
       index: '网关索引',
       explore: '探索网关',

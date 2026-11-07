@@ -110,6 +110,9 @@ export default defineConfig(({ mode }) => {
          */
         manualChunks(id: string) {
           if (id.includes('node_modules')) {
+            // Keep the optional hero renderer off the login, admin and SVG-only paths.
+            if (id.includes('/three/')) return 'vendor-three'
+
             // Vue 核心库
             if (
               id.includes('/vue/') ||

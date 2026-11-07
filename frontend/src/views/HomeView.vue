@@ -92,14 +92,16 @@
   </div>
 
   <div v-else class="z30-home terminal-container min-h-screen">
-    <SignalHero
-      :brand-name="brandName"
-      :site-logo="siteLogo"
-      :tagline="siteTagline"
-      :workspace-path="workspacePath"
-      :authenticated="isAuthenticated"
-      :model-plaza="showModelPlazaEntry"
-    />
+    <div class="home-intro-sequence">
+      <SignalHero
+        :brand-name="brandName"
+        :site-logo="siteLogo"
+        :tagline="siteTagline"
+        :workspace-path="workspacePath"
+        :authenticated="isAuthenticated"
+        :model-plaza="showModelPlazaEntry"
+      />
+    </div>
 
     <section class="home-signal-strip" :aria-label="t('home.signal.index')">
       <div class="home-shell home-signal-grid">
@@ -627,6 +629,13 @@ onBeforeUnmount(() => {
   color-scheme: dark;
   font-family: 'Geist Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-x: clip;
+}
+
+/* A short native scroll runway lets the camera show the cut sidewalls before
+   the directory enters. Links, touch scrolling and keyboard paging stay native. */
+@media (prefers-reduced-motion: no-preference) and (min-height: 580px) {
+  .home-intro-sequence:has([data-renderer="webgl"]) { min-height: 168svh; }
+  .home-intro-sequence:has([data-renderer="webgl"]) :deep(.signal) { position: sticky; top: 0; }
 }
 
 .home-shell {
