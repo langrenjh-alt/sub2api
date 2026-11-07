@@ -131,10 +131,9 @@ describe('HomeView', () => {
     expect(stage.get('.signal-plate').attributes('src')).toBe('/assets/home/atelier-landscape.webp')
     expect(stage.get('.fallback-plate source').attributes('srcset')).toBe('/assets/home/atelier-portrait.webp')
     expect(stage.get('.origin-caption').exists()).toBe(true)
-    expect(stage.get('.signal-explore').attributes('href')).toBe('#plaza')
+    expect(stage.find('footer,.flight-hud,.flight-progress,.signal-explore').exists()).toBe(false)
     expect(stage.get('.signal-login').attributes('href')).toBe('/login')
-    expect(stage.get('.flight-stops').findAll('a').map(a => a.attributes('href')))
-      .toEqual(['#origin', '#plaza', '#connect', '#observatory'])
+    expect(wrapper.findAll('.flight-anchor').map(a => a.attributes('id'))).toEqual(expect.arrayContaining(['origin','plaza','connect','observatory']))
     for (const phase of ['manifesto', 'gallery', 'access', 'observatory']) {
       expect(stage.find(`[data-journey="${phase}"]`).exists()).toBe(true)
     }
@@ -247,9 +246,9 @@ describe('HomeView', () => {
     const wrapper = mount(HomeView)
     await flushPromises()
     expect(wrapper.get('.signal').attributes('data-motion')).toBe('off')
-    expect(wrapper.find('.signal-motion button').exists()).toBe(false)
+    expect(wrapper.find('.motion-on-focus').exists()).toBe(false)
     expect(wrapper.get('h1 img').attributes('alt')).toBe('Z30')
-    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#plaza')
+    expect(wrapper.find('.flight-hud,.flight-progress').exists()).toBe(false)
   })
 
   it('uses public settings for branding and API base URL', async () => {

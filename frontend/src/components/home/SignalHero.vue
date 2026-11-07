@@ -148,6 +148,10 @@ onBeforeUnmount(() => {
           <span>{{ brandName }}</span>
         </a>
         <div class="signal-tools">
+          <button v-if="!reduced" class="motion-on-focus" type="button"
+            :aria-label="t('home.signal.motion')" :aria-pressed="!paused" @click="toggleMotion">
+            {{ t(paused ? 'home.flight.resume' : 'home.flight.pause') }}
+          </button>
           <LocaleSwitcher />
           <nav class="signal-nav" :aria-label="t('home.signal.navigation')">
             <RouterLink v-if="modelPlaza" to="/model-plaza" class="home-model-plaza-nav">{{ t('nav.modelPlaza') }}</RouterLink>
@@ -166,26 +170,6 @@ onBeforeUnmount(() => {
         <p class="edition-deck">{{ !tagline || tagline === t('home.heroSubtitle') || tagline === 'Subscription to API Conversion Platform' ? t('home.signal.deck') : tagline }}</p>
       </div>
 
-      <footer class="flight-hud">
-        <div class="flight-location">
-          <a href="#plaza" class="signal-explore" v-show="index===0"><span aria-hidden="true">↓</span>{{ t('home.signal.scroll') }}</a>
-          <a href="#origin" class="edition-return" v-show="index!==0"><span aria-hidden="true">↑</span>{{ t('home.flight.restart') }}</a>
-        </div>
-        <nav class="flight-stops" :aria-label="t('home.flight.nav')">
-          <a v-for="(stop, n) in flightStops" :key="stop.id" :href="'#' + stop.id"
-            :aria-label="t(stop.label)" :aria-current="n === index ? 'step' : undefined" :title="t(stop.label)">
-            <span class="stop-tick" aria-hidden="true"></span><span class="stop-no" aria-hidden="true">0{{n+1}}</span><span class="stop-text">{{ t(stop.label) }}</span>
-          </a>
-        </nav>
-        <div class="signal-motion">
-          <button v-if="!reduced" type="button" :aria-label="t('home.signal.motion')" :aria-pressed="!paused"
-            :title="t(paused ? 'home.flight.resume' : 'home.flight.pause')" @click="toggleMotion">
-            <span class="signal-meter" aria-hidden="true"><i></i><i></i></span>
-          </button>
-          <span v-else>{{ t('home.signal.still') }}</span>
-        </div>
-      </footer>
-      <div class="flight-progress" aria-hidden="true"><i :style="{ transform: `scaleX(${progress})` }"></i></div>
     </div>
   </main>
 </template>
@@ -203,13 +187,13 @@ onBeforeUnmount(() => {
   --gutter: clamp(24px,4.2vw,76px);
   background: #050a0f; color: var(--silver);
 }
-.signal-header, .flight-hud {
+.signal-header {
   position:absolute; z-index:10; left:var(--gutter); right:var(--gutter); display:flex; align-items:center;
   justify-content:space-between; pointer-events:none;
 }
 .signal-header { top:max(18px,env(safe-area-inset-top)); height:48px; gap:12px; }
-.signal-header a,.signal-header button,.signal-tools,.flight-hud a,.flight-hud button { pointer-events:auto; }
-.signal-brand,.signal-tools,.signal-nav,.signal-login,.signal-motion button { display:flex; align-items:center; }
+.signal-header a,.signal-header button,.signal-tools { pointer-events:auto; }
+.signal-brand,.signal-tools,.signal-nav,.signal-login { display:flex; align-items:center; }
 .signal-brand {gap:14px;min-width:0;max-width:42%;text-shadow:0 1px 8px #000a;}
 .signal-brand img {width:54px;height:28px;object-fit:contain;flex:none;}
 .signal-brand img.edition-mark {filter:brightness(0) invert(.94);}
@@ -230,25 +214,10 @@ onBeforeUnmount(() => {
 .edition-label i {font-style:normal;color:#ddbf9e;}
 .origin-caption h2 {margin:15px 0 9px;font-size:clamp(37px,3.7vw,68px);line-height:1.05;font-weight:480;letter-spacing:-.045em;text-wrap:balance;}
 .edition-deck {font-size:clamp(13px,1.02vw,17px);line-height:1.55;max-width:38ch;letter-spacing:.015em;color:#d9d9d2;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
-.flight-hud {bottom:max(14px,env(safe-area-inset-bottom));min-height:48px;gap:20px;border-top:1px solid #e7e1d02f;}
-.flight-location,.signal-motion {display:flex;align-items:center;color:var(--subtle);}
-.flight-location a {display:inline-flex;align-items:center;gap:11px;min-height:44px;font-size:12px;}
-.flight-location a>span {font-size:16px;color:var(--silver);}
-.flight-stops {display:flex;margin-left:auto;align-items:center;gap:clamp(10px,1.7vw,32px);}
-.flight-stops a {display:flex;align-items:center;gap:7px;min-height:44px;color:#d1cec6;}
-.stop-no {font:500 10px/1 var(--mono);letter-spacing:.02em;opacity:.7;}
-.stop-text {font-size:11px;}
-.stop-tick {height:1px;width:0;background:#f0cca0;transition:width .24s;}
-.flight-stops a[aria-current]{color:white;}
-.flight-stops a[aria-current] .stop-tick{width:17px;}
-.signal-motion {border-left:1px solid #e7e1d042;padding-left:10px;font-size:11px;}
-.signal-motion button{color:var(--silver);min-height:44px;min-width:38px;justify-content:center;}
-.signal-meter {width:15px;height:15px;display:inline-flex;gap:3px;align-items:center;justify-content:center;}
-.signal-meter i{height:9px;width:2px;background:currentColor;}
-.signal-motion button[aria-pressed=false] .signal-meter::after {content:'';border-left:8px solid currentColor;border-block:5px solid transparent;}
-.signal-motion button[aria-pressed=false] .signal-meter i{display:none;}
-.flight-progress {position:absolute;z-index:10;bottom:0;left:0;width:100%;height:1px;pointer-events:none;}
-.flight-progress i {display:block;height:100%;transform-origin:left center;background:#dfc9a2a3;}
+/* No persistent navigation/transport bar. A keyboard visitor can still pause
+   the ambient scene without adding chrome to the composition. */
+.motion-on-focus:not(:focus-visible) {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;pointer-events:none;}
+.motion-on-focus:focus-visible {background:#101011;color:var(--silver);padding:0 12px;min-height:44px;border-radius:4px;}
 .signal :is(a,button):focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
 @media(max-width:780px) {
   .signal {--gutter:clamp(20px,5.3vw,33px);}
@@ -258,14 +227,11 @@ onBeforeUnmount(() => {
   .signal-nav .home-model-plaza-nav,.signal-nav i {display:none;}
   .origin-caption {max-width:85vw;bottom:max(100px,15svh);}
   .origin-caption h2 {font-size:clamp(34px,8vw,50px);margin:12px 0 8px;}
-  .flight-hud {gap:7px;bottom:max(9px,env(safe-area-inset-bottom));}
-  .flight-stops{gap:0;}.flight-stops a{min-width:34px;justify-content:center;gap:4px;}
-  .flight-stops a[aria-current] .stop-tick{width:8px;}.stop-text{display:none;}
-  .signal-motion{padding-left:4px;}.signal-motion button{min-width:34px;}
+
 }
-@media(max-width:355px){.flight-location a{gap:5px;font-size:11px;}.flight-stops a{min-width:29px;}.signal-brand span{max-width:62px;}}
+@media(max-width:355px){.signal-brand span{max-width:62px;}}
 @media(max-height:500px) {
-  .signal-header{top:3px;}.flight-hud{bottom:0;}.origin-caption{bottom:59px;max-width:37vw;}
+  .signal-header{top:3px;}.origin-caption{bottom:59px;max-width:37vw;}
   .origin-caption h2{font-size:26px;margin:6px 0;}.edition-deck{font-size:12px;}
 }
 @media(prefers-reduced-motion:reduce) {
