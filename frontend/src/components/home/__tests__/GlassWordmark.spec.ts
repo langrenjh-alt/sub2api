@@ -4,7 +4,7 @@ import GlassWordmark from '../GlassWordmark.vue'
 
 const { make, engine } = vi.hoisted(() => ({
   make: vi.fn(),
-  engine: { active: vi.fn(), input: vi.fn(), dispose: vi.fn() },
+  engine: { active: vi.fn(), input: vi.fn(), orbit: vi.fn(), dispose: vi.fn() },
 }))
 vi.mock('../glass/scene', () => ({ createGlassScene: make }))
 

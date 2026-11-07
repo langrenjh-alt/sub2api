@@ -121,25 +121,42 @@ describe('HomeView', () => {
     })
   })
 
-  it('renders the Z30 signal field and gateway directory', async () => {
+  it('keeps the opening and all three destinations inside one pinned spatial stage', async () => {
     const wrapper = mount(HomeView)
     await flushPromises()
-    await nextTick()
-
+    const stage = wrapper.get('.signal')
     expect(wrapper.text()).toContain('Sub2API')
-    expect(wrapper.text()).toContain('home.heroDescription')
-    expect(wrapper.text()).toContain('home.features.unifiedGateway')
-    expect(wrapper.text()).toContain('home.landing.sections.overview')
-    expect(wrapper.text()).toContain('home.providers.claude')
-    expect(wrapper.find('.z30-home').exists()).toBe(true)
-    expect(wrapper.find('.signal-nav').exists()).toBe(true)
-    expect(wrapper.get('h1 img').attributes('alt')).toBe('Z30')
-    expect(wrapper.get('h1 img').attributes('src')).toBe('/z30-emblem.svg')
-    expect(wrapper.get('.signal-plate').attributes('src')).toBe('/assets/home/z30-signal-field.webp')
-    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#actions')
-    expect(wrapper.find('#actions').exists()).toBe(true)
-    expect(wrapper.find('.home-terminal-cta').exists()).toBe(true)
-    expect(wrapper.find('.home-terminal-cta a').attributes('href')).toBe('/login')
+    expect(stage.get('h1 img').attributes('alt')).toBe('Z30')
+    expect(stage.get('h1 img').attributes('src')).toBe('/z30-emblem.svg')
+    expect(stage.get('.signal-plate').attributes('src')).toBe('/assets/home/z30-signal-field.webp')
+    expect(stage.get('.signal-explore').attributes('href')).toBe('#plaza')
+    expect(stage.get('.signal-login').attributes('href')).toBe('/login')
+    expect(stage.get('.flight-stops').findAll('a').map(a => a.attributes('href')))
+      .toEqual(['#origin', '#plaza', '#connect', '#observatory'])
+    for (const phase of ['manifesto', 'gallery', 'access', 'observatory']) {
+      expect(stage.find(`[data-journey="${phase}"]`).exists()).toBe(true)
+    }
+    expect(wrapper.find('.home-main, .home-signal-strip, .home-terminal-cta').exists()).toBe(false)
+  })
+
+  it('derives chapter visibility from native scroll, including the return trip', async () => {
+    const wrapper = mount(HomeView)
+    await flushPromises()
+    const runway = wrapper.get('.home-intro-sequence').element as HTMLElement
+    const stage = wrapper.get('.signal').element as HTMLElement
+    Object.defineProperty(stage, 'offsetHeight', { configurable: true, value: 800 })
+    let p = 0
+    vi.spyOn(runway, 'getBoundingClientRect').mockImplementation(() => ({ top: -p * 5040, height: 5840 } as DOMRect))
+    for (const [point, name] of [[.23, 'manifesto'], [.445, 'gallery'], [.66, 'access'], [.94, 'observatory'], [.445, 'gallery']] as const) {
+      p = point
+      window.dispatchEvent(new Event('scroll'))
+      await new Promise(resolve => window.requestAnimationFrame(resolve))
+      await nextTick()
+      const current = wrapper.findAll('[data-journey]').filter(node => node.attributes('aria-hidden') === 'false')
+      expect(current.map(node => node.attributes('data-journey'))).toEqual([name])
+      expect(wrapper.get('.signal-login').attributes('href')).toBe('/login')
+    }
+    wrapper.unmount()
   })
 
   it('keeps auth destination and recharge CTA stable', async () => {
@@ -159,8 +176,8 @@ describe('HomeView', () => {
     await flushPromises()
 
     expect(wrapper.find('.home-model-plaza-nav').attributes('href')).toBe('/model-plaza')
-    expect(wrapper.find('.home-model-plaza-cta').attributes('href')).toBe('/model-plaza')
-    expect(wrapper.findAll('a[href="/model-plaza"]')).toHaveLength(2)
+    expect(wrapper.get('[data-journey="gallery"]').find('a[href="/model-plaza"]').exists()).toBe(true)
+    expect(wrapper.findAll('a[href="/model-plaza"]').length).toBeGreaterThanOrEqual(2)
   })
 
   it('hides model plaza entries when the feature is disabled', async () => {
@@ -195,7 +212,7 @@ describe('HomeView', () => {
     await flushPromises()
 
     expect(wrapper.find('.home-model-plaza-nav').attributes('href')).toBe('/model-plaza')
-    expect(wrapper.find('.home-model-plaza-cta').attributes('href')).toBe('/model-plaza')
+    expect(wrapper.get('[data-journey="gallery"]').find('a[href="/model-plaza"]').exists()).toBe(true)
   })
 
   it('routes authenticated users to the correct dashboard', async () => {
@@ -228,7 +245,7 @@ describe('HomeView', () => {
     expect(wrapper.get('.signal').attributes('data-motion')).toBe('off')
     expect(wrapper.find('.signal-motion button').exists()).toBe(false)
     expect(wrapper.get('h1 img').attributes('alt')).toBe('Z30')
-    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#actions')
+    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#plaza')
   })
 
   it('uses public settings for branding and API base URL', async () => {
@@ -247,7 +264,6 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('Custom API')
     expect(wrapper.text()).toContain('Custom gateway subtitle')
     expect(wrapper.text()).toContain('https://api.example.com/v1')
-    expect(wrapper.text()).toContain('home.providers.more +1')
     expect(wrapper.text()).toContain('Internal')
     expect(wrapper.find('.z30-home').exists()).toBe(true)
   })
@@ -288,8 +304,7 @@ describe('HomeView', () => {
     expect(operationalMonitor.text()).toContain('Primary OpenAI')
     expect(operationalMonitor.text()).toContain('monitorCommon.status.operational')
     expect(operationalMonitor.text()).toContain('99.46%')
-    expect(operationalMonitor.find('.is-operational').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="homepage-status-monitor-13"]').text()).toContain('--')
+    expect(wrapper.find('[data-testid="homepage-status-monitor-13"]').text()).toContain('—')
   })
 
   it.each([

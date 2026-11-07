@@ -5,6 +5,7 @@ import { vertex, front, back } from './shaders'
 
 export interface GlassScene {
   input(x: number, y: number): void
+  orbit(progress: number): void
   active(on: boolean): void
   dispose(): void
 }
@@ -61,14 +62,10 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
   scene.add(mesh)
 
   let on=false, stopped=false, timer=0, frame=0, previous=0, seconds=0
-  let x=0,y=0, smoothX=0,smoothY=0
+  let x=0,y=0, smoothX=0,smoothY=0, travel=0
   function draw() {
     const u=uniforms
     smoothX += (x-smoothX)*.18; smoothY += (y-smoothY)*.18
-    const sequence=host.closest<HTMLElement>('.home-intro-sequence')
-    const bounds=(sequence ?? host).getBoundingClientRect()
-    const distance=sequence ? Math.max(1,sequence.offsetHeight-host.offsetHeight) : Math.max(1,bounds.height*.84)
-    const travel=Math.min(1,Math.max(0,-bounds.top / distance))
     mesh.rotation.set(-.15+smoothY*.10+Math.sin(seconds*.22)*.018,-.23-travel*1.18+smoothX*.18+Math.sin(seconds*.18)*.045,.008)
     u.orbit.value=Math.min(1, travel+.1*Math.abs(smoothX)); u.elapsed.value=seconds; u.aim.value.set(smoothX,smoothY)
     mesh.material=backMaterial; renderer.setRenderTarget(target); renderer.render(scene,camera)
@@ -111,5 +108,5 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     renderer.dispose(); renderer.forceContextLoss()
   }
   try { observer.observe(host); observer.observe(canvas); resize() } catch (e) { dispose(); throw e }
-  return { input:(a,b)=>{x=a;y=b}, active, dispose }
+  return { input:(a,b)=>{x=a;y=b}, orbit:value=>{travel=T.MathUtils.clamp(value,0,1)}, active, dispose }
 }
