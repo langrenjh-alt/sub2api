@@ -167,10 +167,26 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onVeil?:(bitmap:H
   if(!ro)window.addEventListener('resize',resize)
   document.addEventListener('visibilitychange',visibility)
   resize()
+
+  // Prime both material variants while the user is at the opening plate.
+  // compile() schedules GPU program creation and visits nonvisible geometry;
+  // it doesn't render or change the visible scene.
+  const primePrograms=()=>{
+    if(ended || document.hidden || input.reduced || input.progress>.09) return
+    const prev=renderer.getRenderTarget()
+    try {
+      renderer.compile(scene,camera)
+      renderer.setRenderTarget(transmission)
+      renderer.compile(scene,camera)
+    } finally {
+      renderer.setRenderTarget(prev)
+    }
+  }
+  const warmId=window.setTimeout(primePrograms,80)
   return {
     update(v){input=v;need=true;schedule()},
     dispose(){
-      ended=true;cancelAnimationFrame(frame);ro?.disconnect();io?.disconnect()
+      ended=true;window.clearTimeout(warmId);cancelAnimationFrame(frame);ro?.disconnect();io?.disconnect()
       document.removeEventListener('visibilitychange',visibility);window.removeEventListener('resize',resize)
       gallery.dispose()
       const materials=new Set<T.Material>(),geometry=new Set<T.BufferGeometry>()
