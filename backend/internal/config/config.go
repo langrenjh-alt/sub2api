@@ -1233,6 +1233,38 @@ type GatewayGrokConfig struct {
 	// FreeQuotaStatsCacheSeconds is the soft-gate stats cache TTL. Hot path never
 	// waits on usage_logs; misses fail open and refresh asynchronously.
 	FreeQuotaStatsCacheSeconds int `mapstructure:"free_quota_stats_cache_seconds"`
+
+	// SafetyRejectionBilling bills confirmed Grok safety rejections
+	// (403 safety_review_rejected / violation_fee.grok.* / SAFETY_CHECK_TYPE).
+	// A plain 403, a content-policy refusal (new_sensitive) or an entitlement
+	// failure never matches, so account-level denials stay free.
+	SafetyRejectionBilling GatewayGrokSafetyRejectionBillingConfig `mapstructure:"safety_rejection_billing"`
+}
+
+// GatewayGrokSafetyRejectionBillingConfig controls the optional usage row that is
+// written for a confirmed Grok safety rejection.
+//
+// The charge is materialized as a normal token usage row priced with the model's
+// official card: input/output token counts are drawn randomly, at least
+// cache_read_ratio_min (>= 0.90) of the prompt side is booked as cache reads, and
+// the solver picks the token counts whose billed amount lands on amount_usd.
+//
+//   - enabled: master switch; false keeps the historical "rejection is free" path.
+//   - amount_usd: target billed amount (USD) per confirmed rejection, after the
+//     group/user rate multiplier. Non-positive disables billing even when enabled.
+//   - cache_read_ratio_min / cache_read_ratio_max: cached share of the synthesized
+//     prompt. Values are clamped into [0.90, 1.0]; min defaults to 0.90.
+//   - output_tokens_min / output_tokens_max: random output token range.
+//   - max_input_tokens: safety cap so a misconfigured amount cannot synthesize an
+//     absurd prompt (default 500000).
+type GatewayGrokSafetyRejectionBillingConfig struct {
+	Enabled           bool    `mapstructure:"enabled"`
+	AmountUSD         float64 `mapstructure:"amount_usd"`
+	CacheReadRatioMin float64 `mapstructure:"cache_read_ratio_min"`
+	CacheReadRatioMax float64 `mapstructure:"cache_read_ratio_max"`
+	OutputTokensMin   int     `mapstructure:"output_tokens_min"`
+	OutputTokensMax   int     `mapstructure:"output_tokens_max"`
+	MaxInputTokens    int     `mapstructure:"max_input_tokens"`
 }
 
 // GatewayCNProvidersConfig 国产 OpenAI 兼容供应商（kimi/zhipu/deepseek）的余额检测配置。
@@ -2629,6 +2661,15 @@ func setDefaults() {
 	viper.SetDefault("gateway.grok.free_quota_soft_gate_percent", 95)
 	viper.SetDefault("gateway.grok.free_quota_window_hours", 24)
 	viper.SetDefault("gateway.grok.free_quota_stats_cache_seconds", 60)
+	// Grok 安全拒绝（403 safety_review_rejected / violation_fee.grok.*）计费。
+	// 默认关闭：开启后每条确认的安全拒绝会按官方价卡生成一条 token 用量行。
+	viper.SetDefault("gateway.grok.safety_rejection_billing.enabled", false)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.amount_usd", 0.05)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.cache_read_ratio_min", 0.90)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.cache_read_ratio_max", 0.96)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.output_tokens_min", 32)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.output_tokens_max", 256)
+	viper.SetDefault("gateway.grok.safety_rejection_billing.max_input_tokens", 500_000)
 	// 国产供应商余额检测（kimi/deepseek payg；zhipu 无余额端点，仅靠响应式 429/402）。
 	viper.SetDefault("gateway.cn_providers.balance_check_enabled", true)
 	viper.SetDefault("gateway.cn_providers.balance_threshold", 0.5)
@@ -3926,6 +3967,23 @@ func (c *Config) Validate() error {
 	}
 	if c.Gateway.Grok.FreeQuotaStatsCacheSeconds < 0 {
 		return fmt.Errorf("gateway.grok.free_quota_stats_cache_seconds must be non-negative")
+	}
+	if billing := c.Gateway.Grok.SafetyRejectionBilling; billing.Enabled {
+		if billing.AmountUSD < 0 {
+			return fmt.Errorf("gateway.grok.safety_rejection_billing.amount_usd must be non-negative")
+		}
+		if billing.CacheReadRatioMin < 0.9 || billing.CacheReadRatioMin > 1 {
+			return fmt.Errorf("gateway.grok.safety_rejection_billing.cache_read_ratio_min must be between 0.90 and 1")
+		}
+		if billing.CacheReadRatioMax < billing.CacheReadRatioMin || billing.CacheReadRatioMax > 1 {
+			return fmt.Errorf("gateway.grok.safety_rejection_billing.cache_read_ratio_max must be between cache_read_ratio_min and 1")
+		}
+		if billing.OutputTokensMin < 0 || billing.OutputTokensMax < billing.OutputTokensMin {
+			return fmt.Errorf("gateway.grok.safety_rejection_billing output token range is invalid")
+		}
+		if billing.MaxInputTokens < 0 {
+			return fmt.Errorf("gateway.grok.safety_rejection_billing.max_input_tokens must be non-negative")
+		}
 	}
 	if err := ValidateDingTalkConfig(c.DingTalk); err != nil {
 		return fmt.Errorf("dingtalk_connect: %w", err)

@@ -668,6 +668,9 @@ readLoop:
 
 		if eventType == "error" || eventType == "response.failed" {
 			markOpenAICyberPolicyEvent(c, message, http.StatusOK, usage)
+			if account != nil && account.Platform == PlatformGrok {
+				markGrokSafetyReviewFromUpstream(c, "", mappedModel, http.StatusOK, message)
+			}
 		}
 
 		if eventType == "error" {

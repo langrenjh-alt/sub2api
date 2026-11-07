@@ -819,6 +819,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 			cyberBlockBodyHTTP = sessionHashBody
 		}
 		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyHTTP, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
+		h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, reqModel, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
 		responseLatencyMs := forwardDurationMs
@@ -833,6 +834,11 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		// 入账；failover 错误恒定 result=nil，不会重复计费。
 		submitResponsesUsage := func(res *service.OpenAIForwardResult) {
 			if res == nil {
+				return
+			}
+			// 已确认的 Grok 安全拒绝由 recordGrokSafetyBillingIfMarked 统一记一条
+			// 合成用量行；这里跳过流中断时的部分用量，避免同一请求双扣。
+			if service.GetGrokSafetyReviewMark(c) != nil && h.gatewayService.GrokSafetyRejectionBillingEnabled(c.Request.Context()) {
 				return
 			}
 			stampOpenAIRequestedReasoningEffort(res, c)
@@ -1413,6 +1419,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 			cyberBlockBodyMsg = body
 		}
 		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyMsg, clientRequestedUsageFields(c, channelMappingMsg, reqModel, ""), service.HashUsageRequestPayload(body))
+		h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, reqModel, clientRequestedUsageFields(c, channelMappingMsg, reqModel, ""), service.HashUsageRequestPayload(body))
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
 		responseLatencyMs := forwardDurationMs
@@ -1428,6 +1435,9 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 		// 网关同名修复）。failover 错误恒定 result=nil，不会重复计费。
 		submitMessagesUsage := func(res *service.OpenAIForwardResult) {
 			if res == nil {
+				return
+			}
+			if service.GetGrokSafetyReviewMark(c) != nil && h.gatewayService.GrokSafetyRejectionBillingEnabled(c.Request.Context()) {
 				return
 			}
 			stampOpenAIRequestedReasoningEffort(res, c)
@@ -3163,6 +3173,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 				turnUsageFields := turnMapping.ToUsageFields(turnRequestedModel, turnUpstreamModel)
 				cyberMarked := service.GetOpsCyberPolicy(c) != nil
 				h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, turnRequestedModel, turnErr != nil, cyberBlockBody, turnUsageFields, requestPayloadHash)
+				h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, turnRequestedModel, turnUsageFields, requestPayloadHash)
 				cyberBlockedThisConn, cyberBlockPendingAfterFailover = advanceOpenAIWSCyberBlockState(
 					cyberBlockedThisConn,
 					cyberBlockPendingAfterFailover,
@@ -3176,6 +3187,10 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 					// cyber 命中时该 turn 的用量已由 recordCyberPolicyIfMarked(forwardErrored=true)
 					// 按真实 token 记录，这里不再走下方 RecordUsage，避免对同一 turn 双写/双扣费。
 					if service.GetOpsCyberPolicy(c) != nil {
+						return
+					}
+					// Grok 安全拒绝同理：由 recordGrokSafetyBillingIfMarked 统一记一条合成用量行。
+					if service.GetGrokSafetyReviewMark(c) != nil && h.gatewayService.GrokSafetyRejectionBillingEnabled(c.Request.Context()) {
 						return
 					}
 					reqLog.Warn("openai.websocket_partial_error_with_image_result",
@@ -4579,6 +4594,10 @@ func clearCyberPolicyAttemptState(c *gin.Context, resetRecorded bool) {
 	service.ClearOpsCyberPolicy(c)
 	if resetRecorded {
 		c.Set(cyberPolicyRecordedKey, false)
+		// Grok 安全拒绝标记与扣费守卫同样按 turn 重置：WS 多轮里上一 turn 的
+		// 拒绝不能把下一 turn 误判为安全拒绝，也不能吃掉下一 turn 的扣费。
+		service.ClearGrokSafetyReviewMark(c)
+		c.Set(grokSafetyBillingRecordedKey, false)
 	}
 }
 

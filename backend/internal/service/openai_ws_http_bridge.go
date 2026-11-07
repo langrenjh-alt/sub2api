@@ -599,6 +599,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, openAIWSHTTPBridgeErrorBodyLimitBytes))
 		_ = resp.Body.Close()
 		markOpenAICyberPolicyEvent(c, respBody, resp.StatusCode, nil)
+		if account != nil && account.Platform == PlatformGrok {
+			markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), "", resp.StatusCode, respBody)
+		}
 		if resp.StatusCode == http.StatusBadRequest &&
 			extractUpstreamErrorCode(respBody) == openAIWSFallbackReasonInvalidEncryptedContent {
 			s.markOpenAIWSInvalidEncryptedContentLineageFromPayload(
@@ -816,6 +819,9 @@ func (s *OpenAIGatewayService) proxyOpenAIWSHTTPBridgeTurn(
 		}
 		if eventType == "error" || eventType == "response.failed" {
 			markOpenAICyberPolicyEvent(c, upstreamMessage, http.StatusOK, &usage)
+			if account != nil && account.Platform == PlatformGrok {
+				markGrokSafetyReviewFromUpstream(c, "", mappedModel, http.StatusOK, upstreamMessage)
+			}
 		}
 		imageCounter.AddSSEData(upstreamMessage)
 

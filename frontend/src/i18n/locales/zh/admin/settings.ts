@@ -1131,6 +1131,35 @@ export default {
         saved: '过载冷却设置保存成功',
         saveFailed: '保存过载冷却设置失败'
       },
+      grokSafetyBilling: {
+        title: 'Grok 安全审查拒绝计费',
+        description:
+          '上游返回安全审查拒绝时，向下游写入一条按官方模型价格计费的 token 用量记录',
+        enabled: '启用拒绝计费',
+        enabledHint:
+          '仅对确认的安全审查拒绝（safety_review_rejected）生效，普通 403 与额度不足不会计费',
+        amount: '单次计费金额（USD）',
+        amountHint:
+          '每命中一次写一条用量记录，输入/输出 token 随机、缓存读取占比 ≥90%，金额由官方价格反解；设为 0 表示不计费',
+        cacheRatioMin: '缓存读取占比下限',
+        cacheRatioMax: '缓存读取占比上限',
+        cacheRatioHint: '写入记录的缓存读取 token 占比区间，下限不得小于 0.90',
+        outputTokensMin: '输出 token 下限',
+        outputTokensMax: '输出 token 上限',
+        outputTokensHint: '随机输出 token 区间，让记录形态贴近真实调用',
+        maxInputTokens: '输入 token 上限',
+        maxInputTokensHint: '反解金额时允许的最大输入 token 数（超出按长上下文档位计价）',
+        source: '当前生效来源：',
+        sourceOverride: '后台设置（覆盖 config.yaml）',
+        sourceConfig: 'config.yaml 默认值',
+        defaultsHint: '配置文件默认：{summary}',
+        saved: 'Grok 拒绝计费设置已保存',
+        saveFailed: '保存 Grok 拒绝计费设置失败',
+        reset: '恢复配置文件默认',
+        resetConfirm: '将删除后台覆盖值并回到 config.yaml 默认，是否继续？',
+        resetDone: '已恢复 config.yaml 默认值',
+        resetFailed: '恢复默认值失败'
+      },
       rateLimit429Cooldown: {
         title: '429 默认回避',
         description: '配置上游返回 429 且没有明确重置时间时的默认账号回避策略',

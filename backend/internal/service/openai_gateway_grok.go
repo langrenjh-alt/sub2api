@@ -2014,7 +2014,7 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 	if s == nil || account == nil {
 		return
 	}
-	if isGrokContentPolicyRejection(statusCode, responseBody) {
+	if isGrokContentPolicyRejection(statusCode, responseBody) || IsGrokSafetyReviewRejection(statusCode, responseBody) {
 		return
 	}
 	now := time.Now()

@@ -560,6 +560,11 @@ func (s *OpenAIGatewayService) handleStreamingResponseWithReasoning(ctx context.
 						UpstreamOutTok: usage.OutputTokens,
 					})
 				}
+				// Grok 安全审查拒绝也可能以 response.failed/error 帧到达（HTTP 仍为 200）：
+				// 只认结构化安全码或 SAFETY_CHECK_TYPE 标记，普通错误帧不打标记。
+				if account != nil && account.Platform == PlatformGrok {
+					markGrokSafetyReviewFromUpstream(c, upstreamRequestID, mappedModel, http.StatusOK, dataBytes)
+				}
 				outputStarted := openAIStreamClientOutputStarted(c, clientOutputStarted)
 				if !outputStarted && !cyberHit {
 					if compactErr := newOpenAICompactFallbackSignal(c, dataBytes, failedMessage); compactErr != nil {

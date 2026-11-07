@@ -266,6 +266,7 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 			cyberBlockBodyChat = body
 		}
 		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyChat, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
+		h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, reqModel, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)
@@ -281,6 +282,11 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 		// 入账；failover 错误恒定 result=nil，不会重复计费。
 		submitChatUsage := func(res *service.OpenAIForwardResult) {
 			if res == nil {
+				return
+			}
+			// Grok 安全拒绝的扣费由 recordGrokSafetyBillingIfMarked 单独记一条合成用量行，
+			// 这里跳过部分用量，避免同一请求双扣。
+			if service.GetGrokSafetyReviewMark(c) != nil && h.gatewayService.GrokSafetyRejectionBillingEnabled(c.Request.Context()) {
 				return
 			}
 			stampOpenAIRequestedReasoningEffort(res, c)

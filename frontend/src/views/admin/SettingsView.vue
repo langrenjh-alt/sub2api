@@ -264,6 +264,230 @@
             </div>
           </ShCard>
 
+          <!-- Grok Safety Rejection Billing -->
+          <ShCard class="card">
+            <div
+              class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
+            >
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                {{ t("admin.settings.grokSafetyBilling.title") }}
+              </h2>
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ t("admin.settings.grokSafetyBilling.description") }}
+              </p>
+            </div>
+            <div class="space-y-5 p-6">
+              <div
+                v-if="grokSafetyBillingLoading"
+                class="flex items-center gap-2 text-gray-500"
+              >
+                <div
+                  class="h-4 w-4 animate-spin rounded-full border-b-2 border-primary-600"
+                ></div>
+                {{ t("common.loading") }}
+              </div>
+
+              <template v-else>
+                <div class="flex items-center justify-between">
+                  <div>
+                    <label class="font-medium text-gray-900 dark:text-white">{{
+                      t("admin.settings.grokSafetyBilling.enabled")
+                    }}</label>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.grokSafetyBilling.enabledHint") }}
+                    </p>
+                  </div>
+                  <Toggle v-model="grokSafetyBillingForm.enabled" />
+                </div>
+
+                <div
+                  v-if="grokSafetyBillingForm.enabled"
+                  class="space-y-4 border-t border-gray-100 pt-4 dark:border-dark-700"
+                >
+                  <div>
+                    <label
+                      class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {{ t("admin.settings.grokSafetyBilling.amount") }}
+                    </label>
+                    <input
+                      v-model.number="grokSafetyBillingForm.amount_usd"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="input w-32"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.grokSafetyBilling.amountHint") }}
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        {{
+                          t("admin.settings.grokSafetyBilling.cacheRatioMin")
+                        }}
+                      </label>
+                      <input
+                        v-model.number="grokSafetyBillingForm.cache_read_ratio_min"
+                        type="number"
+                        min="0.9"
+                        max="1"
+                        step="0.01"
+                        class="input w-32"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        {{
+                          t("admin.settings.grokSafetyBilling.cacheRatioMax")
+                        }}
+                      </label>
+                      <input
+                        v-model.number="grokSafetyBillingForm.cache_read_ratio_max"
+                        type="number"
+                        min="0.9"
+                        max="1"
+                        step="0.01"
+                        class="input w-32"
+                      />
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.grokSafetyBilling.cacheRatioHint") }}
+                  </p>
+
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        {{
+                          t("admin.settings.grokSafetyBilling.outputTokensMin")
+                        }}
+                      </label>
+                      <input
+                        v-model.number="grokSafetyBillingForm.output_tokens_min"
+                        type="number"
+                        min="0"
+                        class="input w-32"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        {{
+                          t("admin.settings.grokSafetyBilling.outputTokensMax")
+                        }}
+                      </label>
+                      <input
+                        v-model.number="grokSafetyBillingForm.output_tokens_max"
+                        type="number"
+                        min="0"
+                        class="input w-32"
+                      />
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ t("admin.settings.grokSafetyBilling.outputTokensHint") }}
+                  </p>
+
+                  <div>
+                    <label
+                      class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      {{ t("admin.settings.grokSafetyBilling.maxInputTokens") }}
+                    </label>
+                    <input
+                      v-model.number="grokSafetyBillingForm.max_input_tokens"
+                      type="number"
+                      min="0"
+                      step="1000"
+                      class="input w-40"
+                    />
+                    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      {{ t("admin.settings.grokSafetyBilling.maxInputTokensHint") }}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  class="rounded-lg bg-gray-50 px-4 py-3 text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
+                >
+                  <div>
+                    <span class="font-medium">{{
+                      t("admin.settings.grokSafetyBilling.source")
+                    }}</span>
+                    {{
+                      grokSafetyBillingOverride
+                        ? t("admin.settings.grokSafetyBilling.sourceOverride")
+                        : t("admin.settings.grokSafetyBilling.sourceConfig")
+                    }}
+                  </div>
+                  <div v-if="grokSafetyBillingDefaults" class="mt-1">
+                    {{
+                      t("admin.settings.grokSafetyBilling.defaultsHint", {
+                        summary: grokSafetyBillingDefaultsSummary,
+                      })
+                    }}
+                  </div>
+                </div>
+
+                <div
+                  class="flex items-center justify-end gap-2 border-t border-gray-100 pt-4 dark:border-dark-700"
+                >
+                  <ShButton variant="outline" size="sm"
+                    v-if="grokSafetyBillingOverride"
+                    type="button"
+                    @click="resetGrokSafetyBillingSettings"
+                    :disabled="grokSafetyBillingSaving"
+                    class="btn btn-secondary btn-sm"
+                  >
+                    {{ t("admin.settings.grokSafetyBilling.reset") }}
+                  </ShButton>
+                  <ShButton variant="default" size="sm"
+                    type="button"
+                    @click="saveGrokSafetyBillingSettings"
+                    :disabled="grokSafetyBillingSaving"
+                    class="btn btn-primary btn-sm"
+                  >
+                    <svg
+                      v-if="grokSafetyBillingSaving"
+                      class="mr-1 h-4 w-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {{
+                      grokSafetyBillingSaving
+                        ? t("common.saving")
+                        : t("common.save")
+                    }}
+                  </ShButton>
+                </div>
+              </template>
+            </div>
+          </ShCard>
+
           <!-- Rate Limit Cooldown (429) Settings -->
           <ShCard class="card">
             <div
@@ -9159,6 +9383,7 @@ import {
 import type {
   AuthSourceDefaultsState,
   AuthSourceType,
+  GrokSafetyBillingUpdate,
   SystemSettings,
   UpdateSettingsRequest,
   DefaultSubscriptionSetting,
@@ -9385,6 +9610,32 @@ const overloadCooldownSaving = ref(false);
 const overloadCooldownForm = reactive({
   enabled: true,
   cooldown_minutes: 10,
+});
+
+// Grok 安全审查拒绝计费（开关 + 额度）
+const grokSafetyBillingLoading = ref(true);
+const grokSafetyBillingSaving = ref(false);
+const grokSafetyBillingOverride = ref(false);
+const grokSafetyBillingDefaults = ref<GrokSafetyBillingUpdate | null>(null);
+const grokSafetyBillingForm = reactive<GrokSafetyBillingUpdate>({
+  enabled: false,
+  amount_usd: 0.05,
+  cache_read_ratio_min: 0.9,
+  cache_read_ratio_max: 0.96,
+  output_tokens_min: 32,
+  output_tokens_max: 256,
+  max_input_tokens: 500000,
+});
+const grokSafetyBillingDefaultsSummary = computed(() => {
+  const defaults = grokSafetyBillingDefaults.value;
+  if (!defaults) return "-";
+  return [
+    defaults.enabled ? t("common.enabled") : t("common.disabled"),
+    `$${defaults.amount_usd}`,
+    `cache ${defaults.cache_read_ratio_min}~${defaults.cache_read_ratio_max}`,
+    `out ${defaults.output_tokens_min}~${defaults.output_tokens_max}`,
+    `in ≤ ${defaults.max_input_tokens}`,
+  ].join(" / ");
 });
 
 // Rate Limit Cooldown (429) 状态
@@ -12439,6 +12690,86 @@ async function saveOverloadCooldownSettings() {
   }
 }
 
+// Grok 安全审查拒绝计费方法
+function applyGrokSafetyBillingPayload(payload: {
+  enabled: boolean;
+  amount_usd: number;
+  cache_read_ratio_min: number;
+  cache_read_ratio_max: number;
+  output_tokens_min: number;
+  output_tokens_max: number;
+  max_input_tokens: number;
+  override: boolean;
+  defaults?: GrokSafetyBillingUpdate;
+}) {
+  grokSafetyBillingForm.enabled = payload.enabled;
+  grokSafetyBillingForm.amount_usd = payload.amount_usd;
+  grokSafetyBillingForm.cache_read_ratio_min = payload.cache_read_ratio_min;
+  grokSafetyBillingForm.cache_read_ratio_max = payload.cache_read_ratio_max;
+  grokSafetyBillingForm.output_tokens_min = payload.output_tokens_min;
+  grokSafetyBillingForm.output_tokens_max = payload.output_tokens_max;
+  grokSafetyBillingForm.max_input_tokens = payload.max_input_tokens;
+  grokSafetyBillingOverride.value = payload.override;
+  grokSafetyBillingDefaults.value = payload.defaults ?? null;
+}
+
+async function loadGrokSafetyBillingSettings() {
+  grokSafetyBillingLoading.value = true;
+  try {
+    const settings = await adminAPI.settings.getGrokSafetyBillingSettings();
+    applyGrokSafetyBillingPayload(settings);
+  } catch (_error: unknown) {
+    // 静默失败：表单保留默认值，不阻塞其他设置
+  } finally {
+    grokSafetyBillingLoading.value = false;
+  }
+}
+
+async function saveGrokSafetyBillingSettings() {
+  grokSafetyBillingSaving.value = true;
+  try {
+    const saved = await adminAPI.settings.updateGrokSafetyBillingSettings({
+      enabled: grokSafetyBillingForm.enabled,
+      amount_usd: grokSafetyBillingForm.amount_usd,
+      cache_read_ratio_min: grokSafetyBillingForm.cache_read_ratio_min,
+      cache_read_ratio_max: grokSafetyBillingForm.cache_read_ratio_max,
+      output_tokens_min: grokSafetyBillingForm.output_tokens_min,
+      output_tokens_max: grokSafetyBillingForm.output_tokens_max,
+      max_input_tokens: grokSafetyBillingForm.max_input_tokens,
+    });
+    applyGrokSafetyBillingPayload(saved);
+    appStore.showSuccess(t("admin.settings.grokSafetyBilling.saved"));
+  } catch (error: unknown) {
+    appStore.showError(
+      extractApiErrorMessage(
+        error,
+        t("admin.settings.grokSafetyBilling.saveFailed"),
+      ),
+    );
+  } finally {
+    grokSafetyBillingSaving.value = false;
+  }
+}
+
+async function resetGrokSafetyBillingSettings() {
+  if (!confirm(t("admin.settings.grokSafetyBilling.resetConfirm"))) return;
+  grokSafetyBillingSaving.value = true;
+  try {
+    const reset = await adminAPI.settings.resetGrokSafetyBillingSettings();
+    applyGrokSafetyBillingPayload(reset);
+    appStore.showSuccess(t("admin.settings.grokSafetyBilling.resetDone"));
+  } catch (error: unknown) {
+    appStore.showError(
+      extractApiErrorMessage(
+        error,
+        t("admin.settings.grokSafetyBilling.resetFailed"),
+      ),
+    );
+  } finally {
+    grokSafetyBillingSaving.value = false;
+  }
+}
+
 // Panel API Rate Limit 方法
 async function loadPanelRateLimitSettings() {
   panelRateLimitLoading.value = true;
@@ -13159,6 +13490,7 @@ onMounted(() => {
   loadOllamaCloudUsageSettings();
   loadOpenCodeGoUsageSettings();
   loadOverloadCooldownSettings();
+  loadGrokSafetyBillingSettings();
   loadRateLimit429CooldownSettings();
   loadPanelRateLimitSettings();
   loadStreamTimeoutSettings();

@@ -712,6 +712,11 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 			writeChatCompletionsError(c, http.StatusBadRequest, "invalid_request_error", clientMsg)
 			return nil, fmt.Errorf("openai cyber_policy: %s", msg)
 		}
+		if account != nil && account.Platform == PlatformGrok {
+			// Grok 安全审查拒绝（safety_review_rejected / violation_fee.*）打标，
+			// 供 handler 事后按配置计费；普通失败响应不命中。
+			markGrokSafetyReviewFromUpstream(c, requestID, upstreamModel, http.StatusOK, payload)
+		}
 		message := openAICompatFailedResponseMessage(finalResponse)
 		if openAIStreamFailedEventShouldFailover(payload, message) {
 			return nil, s.newOpenAIStreamFailoverErrorWithModel(c, account, false, requestID, payload, message, upstreamModel, resp.Header)
@@ -965,6 +970,9 @@ func (s *OpenAIGatewayService) handleChatStreamingResponse(
 					clientDisconnected = true
 				}
 				return true
+			}
+			if account != nil && account.Platform == PlatformGrok {
+				markGrokSafetyReviewFromUpstream(c, requestID, upstreamModel, http.StatusOK, payloadBytes)
 			}
 			shouldFailover := openAIStreamFailedEventShouldFailover(payloadBytes, message)
 			if strings.TrimSpace(event.Type) == "error" {

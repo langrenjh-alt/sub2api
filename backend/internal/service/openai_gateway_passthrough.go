@@ -917,6 +917,11 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 			UpstreamStatus: resp.StatusCode,
 		})
 	}
+	// Grok 安全审查拒绝是请求级失败：打标记（供 handler 计费），并且不冷却账号。
+	// 只有结构化安全拒绝会命中，普通 403 仍走原有账号状态更新。
+	passthroughReqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
+	safetyRejected := account != nil && account.Platform == PlatformGrok &&
+		markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), passthroughReqModel, resp.StatusCode, body)
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
 	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
@@ -932,7 +937,7 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 	logOpenAIInstructionsRequiredDebug(ctx, c, account, resp.StatusCode, upstreamMsg, requestBody, body)
 	// 错误体虽不会原样透传，运行态账号状态仍需更新，避免粘性路由继续复用
 	// 刚被限流的账号。cyber 例外：不冷却账号。
-	if !cyberHit {
+	if !cyberHit && !safetyRejected {
 		reqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
 		canonicalModel := canonicalOpenAIAccountSchedulingModel(account, reqModel)
 		_ = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, canonicalModel)
@@ -2072,6 +2077,10 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 						UpstreamInTok:  usage.InputTokens,
 						UpstreamOutTok: usage.OutputTokens,
 					})
+				}
+				// 透传链路上的 Grok 安全审查拒绝（SSE 错误帧）打标，供 handler 事后计费。
+				if account != nil && account.Platform == PlatformGrok {
+					markGrokSafetyReviewFromUpstream(c, upstreamRequestID, mappedModel, http.StatusOK, dataBytes)
 				}
 				outputStarted := openAIStreamClientOutputStarted(c, clientOutputStarted)
 				if !outputStarted && !cyberHit {

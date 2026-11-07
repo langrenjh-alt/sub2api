@@ -1137,6 +1137,35 @@ export default {
         saved: 'Overload cooldown settings saved',
         saveFailed: 'Failed to save overload cooldown settings'
       },
+      grokSafetyBilling: {
+        title: 'Grok Safety-Rejection Billing',
+        description:
+          'Write a token usage record priced with the official model card when upstream reports a safety-review rejection',
+        enabled: 'Enable rejection billing',
+        enabledHint:
+          'Only confirmed safety-review rejections (safety_review_rejected) are billed; bare 403 and quota errors are not',
+        amount: 'Charge per rejection (USD)',
+        amountHint:
+          'One usage row per hit: random input/output tokens, cache-read share >= 90%, amount solved from official prices. 0 disables billing',
+        cacheRatioMin: 'Cache-read share min',
+        cacheRatioMax: 'Cache-read share max',
+        cacheRatioHint: 'Random cache-read ratio range for the row; the lower bound cannot be below 0.90',
+        outputTokensMin: 'Output tokens min',
+        outputTokensMax: 'Output tokens max',
+        outputTokensHint: 'Random output-token range so the row looks like a real call',
+        maxInputTokens: 'Max input tokens',
+        maxInputTokensHint: 'Upper bound used while solving the amount (above it the long-context tier applies)',
+        source: 'Effective source: ',
+        sourceOverride: 'admin setting (overrides config.yaml)',
+        sourceConfig: 'config.yaml default',
+        defaultsHint: 'config.yaml default: {summary}',
+        saved: 'Grok rejection billing settings saved',
+        saveFailed: 'Failed to save Grok rejection billing settings',
+        reset: 'Restore config default',
+        resetConfirm: 'This deletes the stored override and falls back to config.yaml. Continue?',
+        resetDone: 'Restored the config.yaml default',
+        resetFailed: 'Failed to restore the default'
+      },
       rateLimit429Cooldown: {
         title: '429 Default Cooldown',
         description: 'Configure the default account cooldown when upstream returns 429 without an explicit reset time',

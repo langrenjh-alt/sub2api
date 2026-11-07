@@ -1334,6 +1334,58 @@ export async function updateOverloadCooldownSettings(
   return data;
 }
 
+// ==================== Grok Safety Rejection Billing ====================
+
+/**
+ * Grok 安全审查拒绝计费配置（后台可改）。
+ * override=true 表示数据库有覆盖值；false 表示沿用 config.yaml 的 defaults。
+ */
+export interface GrokSafetyBillingSettings {
+  enabled: boolean;
+  amount_usd: number;
+  cache_read_ratio_min: number;
+  cache_read_ratio_max: number;
+  output_tokens_min: number;
+  output_tokens_max: number;
+  max_input_tokens: number;
+  override: boolean;
+  defaults?: GrokSafetyBillingDefaults;
+}
+
+export type GrokSafetyBillingDefaults = Omit<
+  GrokSafetyBillingSettings,
+  "override" | "defaults"
+>;
+
+export type GrokSafetyBillingUpdate = Omit<
+  GrokSafetyBillingSettings,
+  "override" | "defaults"
+>;
+
+export async function getGrokSafetyBillingSettings(): Promise<GrokSafetyBillingSettings> {
+  const { data } = await apiClient.get<GrokSafetyBillingSettings>(
+    "/admin/settings/grok-safety-billing",
+  );
+  return data;
+}
+
+export async function updateGrokSafetyBillingSettings(
+  settings: GrokSafetyBillingUpdate,
+): Promise<GrokSafetyBillingSettings> {
+  const { data } = await apiClient.put<GrokSafetyBillingSettings>(
+    "/admin/settings/grok-safety-billing",
+    settings,
+  );
+  return data;
+}
+
+export async function resetGrokSafetyBillingSettings(): Promise<GrokSafetyBillingSettings> {
+  const { data } = await apiClient.delete<GrokSafetyBillingSettings>(
+    "/admin/settings/grok-safety-billing",
+  );
+  return data;
+}
+
 // ==================== 429 Rate Limit Cooldown Settings ====================
 
 export interface RateLimit429CooldownSettings {
@@ -1648,6 +1700,9 @@ export const settingsAPI = {
   updateRateLimit429CooldownSettings,
   getRegistrationEmailBlacklist,
   updateRegistrationEmailBlacklist,
+  getGrokSafetyBillingSettings,
+  updateGrokSafetyBillingSettings,
+  resetGrokSafetyBillingSettings,
   getPanelRateLimitSettings,
   updatePanelRateLimitSettings,
   getStreamTimeoutSettings,

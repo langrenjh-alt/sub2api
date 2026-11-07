@@ -643,6 +643,9 @@ func (s *OpenAIGatewayService) handleAnthropicBufferedStreamingResponse(
 			writeAnthropicError(c, http.StatusBadRequest, "invalid_request_error", clientMsg)
 			return nil, fmt.Errorf("openai cyber_policy: %s", msg)
 		}
+		if account != nil && account.Platform == PlatformGrok {
+			markGrokSafetyReviewFromUpstream(c, requestID, upstreamModel, http.StatusOK, payload)
+		}
 		message := openAICompatFailedResponseMessage(finalResponse)
 		if openAIStreamFailedEventShouldFailover(payload, message) {
 			return nil, s.newOpenAIStreamFailoverErrorWithModel(c, account, false, requestID, payload, message, upstreamModel, resp.Header)
@@ -1133,6 +1136,9 @@ func (s *OpenAIGatewayService) handleAnthropicStreamingResponse(
 						clientDisconnected = true
 					}
 					return true
+				}
+				if account != nil && account.Platform == PlatformGrok {
+					markGrokSafetyReviewFromUpstream(c, requestID, upstreamModel, http.StatusOK, payloadBytes)
 				}
 				message := extractOpenAISSEErrorMessage(payloadBytes)
 				// Once Anthropic output has started, switching accounts would splice

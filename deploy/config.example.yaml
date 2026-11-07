@@ -497,6 +497,24 @@ gateway:
     # Stats cache for free-tier soft gate. Hot path never waits on DB: misses
     # fail open and refresh in the background. Prefer >= 60s in production.
     free_quota_stats_cache_seconds: 60
+    # Grok 安全审查拒绝计费（默认关闭）。
+    # 只有 xAI 的结构化安全拒绝会命中：error.code=safety_review_rejected、
+    # violation_fee.grok.*，或响应体里的 "Failed check: SAFETY_CHECK_TYPE"。
+    # 普通 403、new_sensitive 内容策略、账号额度/订阅拒绝都不会扣费。
+    # 开启后按模型官方价卡反解一条普通 token 用量行（输入/输出随机、缓存读取 >=90%），
+    # 实际扣费金额落在 amount_usd 附近，并正常写入 usage_logs / 扣减余额或订阅额度。
+    safety_rejection_billing:
+      enabled: false
+      # 每条确认拒绝的目标扣费额度（USD，含分组/用户倍率后的实际扣费）
+      amount_usd: 0.05
+      # 缓存读取占输入总数的比例区间；下限被强制夹到 >= 0.90
+      cache_read_ratio_min: 0.90
+      cache_read_ratio_max: 0.96
+      # 随机输出 token 区间
+      output_tokens_min: 32
+      output_tokens_max: 256
+      # 合成输入 token 上限，防止异常额度生成离谱的 prompt
+      max_input_tokens: 500000
   # HTTP upstream connection pool settings (HTTP/2 + multi-proxy scenario defaults)
   # HTTP 上游连接池配置（HTTP/2 + 多代理场景默认值）
   # Max idle connections across all hosts

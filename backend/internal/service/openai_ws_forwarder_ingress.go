@@ -1041,6 +1041,9 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 			}
 			if eventType == "error" || eventType == "response.failed" {
 				markOpenAICyberPolicyEvent(c, upstreamMessage, http.StatusOK, &usage)
+				if account != nil && account.Platform == PlatformGrok {
+					markGrokSafetyReviewFromUpstream(c, "", mappedModel, http.StatusOK, upstreamMessage)
+				}
 			}
 			if eventType == "error" {
 				s.handleOpenAIWSErrorEventTransientFailure(ctx, account, mappedModel, lease.HandshakeHeaders(), upstreamMessage)

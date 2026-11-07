@@ -591,6 +591,10 @@ const (
 
 	// SettingKeyRateLimit429CooldownSettings stores JSON config for 429 fallback cooldown handling.
 	SettingKeyRateLimit429CooldownSettings = "rate_limit_429_cooldown_settings"
+	// SettingKeyGrokSafetyRejectionBilling stores the runtime switch/amount for
+	// billing confirmed Grok safety rejections (gateway.grok.safety_rejection_billing
+	// stays the config-file default).
+	SettingKeyGrokSafetyRejectionBilling = "grok_safety_rejection_billing"
 	// SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings stores the cooldown applied when the OAuth image tool is unavailable.
 	SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings = "openai_images_oauth_unavailable_cooldown_settings"
 	// SettingKeyOpenAIAPIKeyHealthBreakerSettings stores the opt-in OpenAI pool API-key breaker config.
