@@ -1,4 +1,4 @@
-"""Bake the three original model archive plates. Requires numpy and Pillow (not at runtime)."""
+"""Bake the four original model archive plates. Requires numpy and Pillow (not at runtime)."""
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -14,7 +14,7 @@ def render(kind):
     # Each specimen is a distinct signed-distance sculpture with its own palette.
     def surface(p):
         xx,yy,zz=p[...,0],p[...,1],p[...,2]
-        rot=[.57,-.27,-.44][kind]
+        rot=[.57,-.27,-.44,.32][kind]
         X=np.cos(rot)*xx-np.sin(rot)*yy
         Y=np.sin(rot)*xx+np.cos(rot)*yy
         if kind==0:
@@ -33,6 +33,17 @@ def render(kind):
                 radius=np.maximum(np.abs(X1)*.89+np.abs(Z1)*.48,np.abs(Z1))
                 d=np.minimum(d,np.maximum(radius-(.96-.09*abs(i)),np.abs(h)-.09)-.05)
             return d
+        if kind==3:
+            # Anti-gravity study: separated cut beryl slabs, suspended inside
+            # two gimbal arcs. The final plane carries this image into the relay.
+            u=.90*X+.44*zz; v=-.44*X+.90*zz
+            h=.94*Y+.34*v; z=.94*v-.34*Y
+            stone=(abs(u)*1.01+abs(z)*1.13+abs(h)*.58-.85)*.56-.023
+            cuts=abs((h+.145)%.29-.145)-.107
+            stone=np.maximum(stone,cuts)
+            hoops=np.minimum(np.hypot(np.hypot(u,h*1.06)-.92,z)-.041,
+                             np.hypot(np.hypot(z,h*1.02)-1.07,u+.095)-.026)
+            return np.minimum(stone,hoops)
         # Chromatic split rings traversing a common axis.
         d=10.
         for i in range(-2,3):
@@ -51,7 +62,8 @@ def render(kind):
     ref=unit(ray-2*np.sum(n*ray,axis=-1,keepdims=True)*n)
     palettes=np.array([[[.027,.006,.018],[.98,.19,.07],[1.,.77,.31]],
                        [[.002,.032,.034],[.06,.61,.54],[.64,.99,.69]],
-                       [[.025,.008,.048],[.65,.18,.94],[.23,.85,.99]]],dtype='float32')
+                       [[.025,.008,.048],[.65,.18,.94],[.23,.85,.99]],
+                       [[.019,.017,.023],[.66,.39,.16],[.62,.94,.86]]],dtype='float32')
     dark,mid,key=palettes[kind]
     diffuse=np.maximum(0,np.sum(n*np.array([-.46,.75,.46]),axis=-1))
     rim=(1-np.clip(np.sum(n*(-ray),axis=-1),0,1))**2
@@ -68,8 +80,8 @@ def render(kind):
     rgb+=rng.normal(0,.002,rgb.shape)
     rgb=np.clip(np.maximum(0,rgb)**(1/1.85),0,1)
     dest=Path(__file__).resolve().parents[1]/'public/assets/home'
-    name=['corona','strata','interference'][kind]
+    name=['corona','strata','interference','suspension'][kind]
     target=dest/f'z30-archive-{name}.webp';Image.fromarray((rgb*255).astype(np.uint8)).save(target,quality=87,method=6)
     print(name,target.stat().st_size)
 if __name__=='__main__':
-    for k in range(3): render(k)
+    for k in range(4): render(k)

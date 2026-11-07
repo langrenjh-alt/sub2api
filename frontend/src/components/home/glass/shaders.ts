@@ -1,23 +1,25 @@
 /** The winding, bevels and thickness are real geometry; no glyph texture or
  * screen-space contour is used in either pass. Positions/normals are eye-space. */
 export const vertex = /* glsl */ `
-varying vec3 pos, normalEye;
+varying vec3 pos, normalEye, localPoint;
 void main() {
+  localPoint=position;
   pos = (modelViewMatrix * vec4(position, 1.)).xyz;
   normalEye = normalize(normalMatrix * normal);
   gl_Position = projectionMatrix * vec4(pos, 1.);
 }`
 
 export const back = /* glsl */ `
-varying vec3 pos, normalEye;
+varying vec3 pos, normalEye, localPoint;
 void main() {
   // The fixed camera's useful depth range is 150..450 world units.
   gl_FragColor = vec4(normalize(normalEye) * .5 + .5, (-pos.z - 150.) / 300.);
 }`
 
 export const front = /* glsl */ `
-varying vec3 pos, normalEye;
-uniform sampler2D backSurface, worldPlate;
+varying vec3 pos, normalEye, localPoint;
+uniform sampler2D backSurface, worldPlate, transmissionFrame;
+uniform float captureMix;
 uniform vec2 bufferSize, plateScale, plateOrigin, stageScale, stageOffset;
 uniform mat4 projection;
 uniform float elapsed, orbit;
@@ -37,16 +39,23 @@ vec3 studio(vec3 r) {
   r = normalize(r);
   float az = atan(r.x, r.z), el = asin(clamp(r.y, -.9999, .9999));
   vec3 sky = mix(vec3(.007,.012,.024), vec3(.13,.22,.32), smoothstep(-.7,1.,r.y));
-  float overhead = exp(-sq((az+.85)/.50)-sq((el-.74)/.088));
-  float key = exp(-sq((az+.37)/.48)-sq((el-.31+(az+.37)*.19)/.027));
-  float pearl=exp(-sq((az+.37)/.28)-sq((el-.31+(az+.37)*.19)/.012));
-  float strip = exp(-sq((az-1.10)/.065)-sq((el+.04)/.74));
-  float violet = exp(-sq((az-1.68)/.48)-sq((el+.31)/.15));
-  float amber = exp(-sq((az+1.65)/.19)-sq((el+.28)/.33));
-  vec3 prismaticKey = mix(vec3(.33,3.4,6.2),vec3(3.9,6.4,1.1),smoothstep(-.53,-.24,az));
-  prismaticKey=mix(prismaticKey,vec3(6.1,1.6,.50),orbit);
-  return sky + pearl*vec3(4.0,4.4,4.1) + overhead*vec3(.8,1.9,2.2) + key*prismaticKey
-    + strip*vec3(2.8,4.1,5.0) + violet*vec3(.88,.64,1.3) + amber*vec3(2.,1.15,.46);
+  float t=elapsed*.59;
+  // Narrow moving light sources rather than a flat palette on the front face.
+  float lampAz=-.48+.47*sin(t*.81), lampEl=.30+.12*cos(t*1.13);
+  float overhead=exp(-sq((az+.85)/.53)-sq((el-.74)/.075));
+  float band=el-lampEl+(az-lampAz)*.20;
+  float key=exp(-sq((az-lampAz)/.44)-sq(band/.032));
+  float pearl=exp(-sq((az-lampAz)/.24)-sq((band-.017)/.010));
+  float strip=exp(-sq((az-1.14-.11*sin(t))/.066)-sq((el+.04)/.70));
+  float amber=exp(-sq((az+1.61)/.19)-sq((el+.28)/.31));
+  float mixLight=.5+.5*sin(t*.84-.72);
+  vec3 ice=mix(vec3(.26,3.4,5.8),vec3(2.0,5.2,2.75),smoothstep(-.4,.35,az-lampAz));
+  vec3 hot=mix(vec3(5.7,1.55,.27),vec3(3.35,.95,2.9),smoothstep(-.50,.5,az));
+  vec3 lamp=mix(ice,hot,smoothstep(.32,.89,mixLight+orbit*.23));
+  return sky+pearl*vec3(5.0,5.25,5.4)+overhead*vec3(.6,1.25,1.40)
+    +key*lamp+strip*mix(vec3(2.3,3.8,4.7),vec3(3.8,2.7,3.4),mixLight)
+    +amber*vec3(1.9,1.0,.46);
+
 }
 float fresnel(float c, float n) {
   float f = (1.-n)/(1.+n);
@@ -73,6 +82,10 @@ vec3 opticalRay(float ior, vec3 incident, vec3 n, vec4 backHere) {
   // A distant environment bends more than objects touching the glass.
   vec2 sampleAt = fieldUV(exitUv) + bend * vec2(.22,.30);
   vec3 world = texture2D(worldPlate, clamp(sampleAt,.002,.998)).rgb;
+  if(captureMix>.001){
+    vec2 liveUV = stageOffset + exitUv*stageScale + bend*vec2(.18,.26);
+    world=mix(world,texture2D(transmissionFrame,clamp(liveUV,.002,.998)).rgb,captureMix);
+  }
   // A narrow emissive ribbon behind the field serves as a remote light source
   // for rays deflected far beyond the visible world plate.
   vec3 transmission = world * vec3(.94,1.07,1.13);
@@ -103,11 +116,22 @@ void main() {
   float falloff=.24+.76*smoothstep(-.7,.8,dot(n,normalize(vec3(-.52,.73,.16))));
   vec3 edgeLight=mix(vec3(.05,.28,.52),vec3(.39,.85,.78),smoothstep(-.75,.8,n.y));
   edgeLight=mix(edgeLight,mix(vec3(.62,.14,.075),vec3(.80,.54,.24),smoothstep(-.5,.7,n.y)),orbit*.81);
+  float lampPhase = .5+.5*sin(elapsed*.48-.63);
+  edgeLight=mix(edgeLight,vec3(.82,.32,.13),smoothstep(.66,.99,lampPhase)*.69);
   colour+=grazing*falloff*edgeLight;
+  // A light sheet concentrated behind a single part of the word. Its optical
+  // path changes against the far bevel; most of each letter remains clear.
+  float path = localPoint.x*.75-localPoint.y*.60 + 1.5*sin(localPoint.y*.14);
+  float caustic=exp(-sq((path-59.*sin(elapsed*.44+orbit*2.1))/12.0));
+  float ribbon=exp(-sq((path-59.*sin(elapsed*.44+orbit*2.1)-3.)/3.3));
+  float depthSignal=smoothstep(.18,.91,abs(dot(n,-incident)));
+  vec3 refractedLamp=mix(vec3(.10,.83,.91),vec3(1.13,.46,.16),lampPhase);
+  colour+=(caustic*.32+ribbon*.24)*refractedLamp*depthSignal;
+
   // Preserve direct visibility of live particles beneath the broad front faces;
   // traced transmission supplies the displaced view. Rim regions dominate optically.
   float face=smoothstep(.63,.98,dot(n,-incident));
-  float alpha=mix(.96,.43,face);
+  float alpha=mix(.94,.38+.12*caustic,face);
   gl_FragColor=vec4(colour,alpha);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>

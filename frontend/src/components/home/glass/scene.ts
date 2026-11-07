@@ -6,6 +6,9 @@ import { vertex, front, back } from './shaders'
 export interface GlassScene {
   input(x: number, y: number): void
   orbit(progress: number): void
+  field(source: HTMLCanvasElement): void
+  position(p: number): void
+  capture(): HTMLCanvasElement
   active(on: boolean): void
   dispose(): void
 }
@@ -29,10 +32,11 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
   const shapes = new SVGLoader().parse(svg.replace(/currentColor/g,'#fff')).paths.flatMap(path => path.toShapes())
   if (shapes.length !== 3 || !shapes.some(s => s.holes.length)) throw new Error('Invalid wordmark geometry')
 
-  const renderer = new T.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'low-power',
+  const renderer = new T.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance',
     premultipliedAlpha: true })
   renderer.setClearColor(0x000000, 0)
-  renderer.setPixelRatio(Math.min(1.70, Math.max(1.35, window.devicePixelRatio || 1)))
+  const baseDpr = Math.min(1.48, Math.max(1.10, window.devicePixelRatio || 1))
+  renderer.setPixelRatio(baseDpr)
   renderer.toneMapping = T.ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.18
   const camera = new T.PerspectiveCamera(T.MathUtils.radToDeg(2*Math.atan(Math.tan(T.MathUtils.degToRad(19)/2)*1.5)), 224/138, .1, 750)
@@ -42,6 +46,7 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
   tex.colorSpace = T.SRGBColorSpace; tex.needsUpdate = true
   const target = new T.WebGLRenderTarget(1,1, { minFilter:T.NearestFilter, magFilter:T.NearestFilter, depthBuffer:true })
   const uniforms = {
+    transmissionFrame: { value:tex as T.Texture }, captureMix:{value:0},
     backSurface:{ value:target.texture }, worldPlate:{ value:tex }, bufferSize:{ value:new T.Vector2() },
     orbit:{value:0}, projection:{ value:camera.projectionMatrix }, aim:{ value:new T.Vector2() }, elapsed:{ value:0 },
     stageScale:{ value:new T.Vector2() }, stageOffset:{ value:new T.Vector2() },
@@ -61,12 +66,22 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
   mesh.scale.y = -1 // SVG y-down to three.js y-up; three.js fixes negative-determinant face winding.
   scene.add(mesh)
 
-  let on=false, stopped=false, timer=0, frame=0, previous=0, seconds=0
-  let x=0,y=0, smoothX=0,smoothY=0, travel=0
+  let on=false, stopped=false, frame=0, previous=0, seconds=0
+  let x=0,y=0, smoothX=0,smoothY=0, travel=0, scroll=0, enlarged=false
+  let captured:T.Texture | null=null, mappingDirty=true
   function draw() {
     const u=uniforms
-    smoothX += (x-smoothX)*.18; smoothY += (y-smoothY)*.18
-    mesh.rotation.set(-.15+smoothY*.10+Math.sin(seconds*.22)*.018,-.23-travel*1.18+smoothX*.18+Math.sin(seconds*.18)*.045,.008)
+    if(mappingDirty && captured) {
+      mappingDirty=false
+      const q=canvas.getBoundingClientRect(),v=host.getBoundingClientRect()
+      if(v.width && v.height){
+        u.stageScale.value.set(q.width/v.width,q.height/v.height)
+        u.stageOffset.value.set((q.left-v.left)/v.width,(v.bottom-q.bottom)/v.height)
+      }
+    }
+    u.captureMix.value=captured ? T.MathUtils.smoothstep(scroll,.105,.18) : 0
+    smoothX = x; smoothY = y // The shell supplies a single time-filtered pointer to every layer.
+    mesh.rotation.set(-.105+smoothY*.052+Math.sin(seconds*.28)*.022,-.16-travel*1.28+smoothX*.085+Math.sin(seconds*.24)*.047,.008)
     u.orbit.value=Math.min(1, travel+.1*Math.abs(smoothX)); u.elapsed.value=seconds; u.aim.value.set(smoothX,smoothY)
     mesh.material=backMaterial; renderer.setRenderTarget(target); renderer.render(scene,camera)
     mesh.material=frontMaterial; renderer.setRenderTarget(null); renderer.render(scene,camera)
@@ -75,7 +90,7 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     if(stopped) return
     const rect=canvas.getBoundingClientRect(), outer=host.getBoundingClientRect()
     if (!rect.width || !rect.height || !outer.width || !outer.height) return
-    const width=Math.max(1,Math.round(rect.width)), height=Math.max(1,Math.round(rect.height))
+    const width=Math.max(1,Math.round(canvas.clientWidth)), height=Math.max(1,Math.round(canvas.clientHeight))
     renderer.setSize(width,height,false)
     renderer.getDrawingBufferSize(uniforms.bufferSize.value)
     target.setSize(uniforms.bufferSize.value.x,uniforms.bufferSize.value.y)
@@ -92,21 +107,33 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     if(!on || stopped) return
     if(previous) seconds+=Math.min((now-previous)/1000,.075)
     previous=now; draw()
-    timer=window.setTimeout(()=>{frame=requestAnimationFrame(tick)},1000/30)
+    frame=requestAnimationFrame(tick)
   }
   function active(value:boolean) {
     if(stopped || on===value) return
     on=value
     if(on) { previous=0; frame=requestAnimationFrame(tick) }
-    else { cancelAnimationFrame(frame); clearTimeout(timer) }
+    else { cancelAnimationFrame(frame); previous=0 }
   }
   const observer=new ResizeObserver(resize)
   function dispose() {
     if(stopped) return
     active(false); stopped=true; observer.disconnect()
-    target.dispose(); tex.dispose(); geometry.dispose(); frontMaterial.dispose(); backMaterial.dispose()
+    target.dispose(); captured?.dispose(); tex.dispose(); geometry.dispose(); frontMaterial.dispose(); backMaterial.dispose()
     renderer.dispose(); renderer.forceContextLoss()
   }
   try { observer.observe(host); observer.observe(canvas); resize() } catch (e) { dispose(); throw e }
-  return { input:(a,b)=>{x=a;y=b}, orbit:value=>{travel=T.MathUtils.clamp(value,0,1)}, active, dispose }
+  function field(source:HTMLCanvasElement){
+    captured?.dispose();captured=new T.CanvasTexture(source)
+    captured.colorSpace=T.SRGBColorSpace;uniforms.transmissionFrame.value=captured;mappingDirty=true
+  }
+  function position(p:number) {
+    scroll=p;mappingDirty=true
+    // Resize the optical buffers only as the mark crosses sizes, never on every
+    // scroll frame. The enlarged glass stays sharp without paying for it at rest.
+    if((!enlarged && p>.169 && p<.36) || (enlarged && (p<.122 || p>.38))){
+      enlarged=!enlarged;renderer.setPixelRatio(enlarged?Math.min(2.15,baseDpr*1.62):baseDpr);resize()
+    }
+  }
+  return { field, position, capture:()=>{ draw(); return canvas }, input:(a,b)=>{x=a;y=b}, orbit:value=>{travel=T.MathUtils.clamp(value,0,1)}, active, dispose }
 }

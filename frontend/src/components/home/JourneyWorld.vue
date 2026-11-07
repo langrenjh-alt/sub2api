@@ -3,23 +3,29 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { JourneyRenderer, WorldInput } from './journey/worldScene'
 
 const props=defineProps<WorldInput>()
+const emit=defineEmits<{veil:[frame:HTMLCanvasElement]}>()
 const canvas=ref<HTMLCanvasElement>()
 const rendererMode=ref<'pending' | 'webgl' | 'still'>('pending')
 const room=computed(()=>props.progress<.33?'estuary':props.progress<.565?'archive':props.progress<.79?'conduit':'observatory')
 const alpha=computed(()=>Math.min(1,Math.max(0,(props.progress-.014)/.104)))
-const rooms=['estuary','archive','conduit','observatory'] as const
-const stops=[.23,.445,.68,.94]
+// Additional handoff photographs preserve the winding relay and reflective
+// waterline in browsers without a GPU; static CSS gallery panels stay separate.
+const plates=[
+  {id:'estuary',start:0,pose:.23}, {id:'archive',start:.32,pose:.445},
+  {id:'transfer',start:.545,pose:.595},{id:'conduit',start:.625,pose:.685},
+  {id:'basin',start:.765,pose:.805},{id:'observatory',start:.862,pose:.94},
+]
 const posterLayers=computed(()=>{
   const p=props.progress
   if(props.reduced)return [{room:room.value,opacity:1,scale:1}]
-  return rooms.flatMap((id,i)=>{
-    const enter=[0,.33,.565,.79][i],exit=[.33,.565,.79,1.10][i]
+  return plates.flatMap(({id,start:enter,pose},i)=>{
+    const exit=plates[i+1]?.start??1.10
     const fade=(x:number)=>{const a=Math.min(1,Math.max(0,x));return a*a*(3-2*a)}
     const opacity=i===0?1:fade((p-enter+.034)/.068)
     // Only the incoming photograph fades; its predecessor stays fully
     // opaque underneath, so the GPU-free dissolve never dips to black.
     if(p < enter-.034 || p >= exit+.034 || opacity===0)return []
-    return [{room:id,opacity,scale:Math.max(1,1.055+(p-stops[i])*.28)}]
+    return [{room:id,opacity,scale:Math.max(1,1.055+(p-pose)*.28)}]
   })
 })
 let engine:JourneyRenderer|null=null
@@ -34,7 +40,7 @@ async function create(){
   try {
     const { createJourneyRenderer }=await import('./journey/worldScene')
     if(stopped||!canvas.value)return
-    engine=createJourneyRenderer(canvas.value);feed();rendererMode.value='webgl'
+    engine=createJourneyRenderer(canvas.value,frame=>emit('veil',frame));feed();rendererMode.value='webgl'
   } catch {rendererMode.value='still'}
 }
 onMounted(()=>{
@@ -64,7 +70,7 @@ onBeforeUnmount(()=>{
 </template>
 
 <style scoped>
-.journey-world { position:absolute; inset:0; pointer-events:none; overflow:hidden;
+.journey-world { position:absolute; inset:0; z-index:0;pointer-events:none; overflow:hidden;
   background-color:#0a0f14; background-image:radial-gradient(ellipse at 74% 38%,#1c3e35,transparent 54%),url('/assets/home/z30-signal-field.webp');
   background-size:cover; background-position:center; }
 .journey-world[data-world=archive] {background-image:radial-gradient(at 68% 48%,#412c4d,transparent 58%),url('/assets/home/z30-signal-field.webp')}

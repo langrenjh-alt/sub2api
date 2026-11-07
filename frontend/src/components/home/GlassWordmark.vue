@@ -2,11 +2,17 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { GlassScene } from './glass/scene'
 
-const props=defineProps<{ active:boolean; pointerX:number; pointerY:number; travel?:number }>()
+const props=defineProps<{ active:boolean; pointerX:number; pointerY:number; travel?:number; progress?:number }>()
 const canvas=ref<HTMLCanvasElement>()
 const enhanced=ref(false)
 let engine:GlassScene|undefined
 const controller=new AbortController()
+
+defineExpose({
+  /** Re-render before reading a non-preserved drawing buffer, once per seam crossing. */
+  capture: () => engine?.capture(),
+  field: (source:HTMLCanvasElement) => engine?.field(source),
+})
 
 function lost(e:Event) {
   e.preventDefault()
@@ -24,7 +30,7 @@ onMounted(async()=>{
     engine=await createGlassScene(canvas.value,host,controller.signal)
     if (controller.signal.aborted) {engine.dispose();return}
     canvas.value.addEventListener('webglcontextlost',lost)
-    engine.input(props.pointerX,props.pointerY); engine.orbit(props.travel ?? 0); engine.active(props.active)
+    engine.input(props.pointerX,props.pointerY); engine.orbit(props.travel ?? 0); engine.position(props.progress ?? 0); engine.active(props.active)
     enhanced.value=true
   } catch {
     // Blocked WebGL, low resource budgets or an offline asset must not hide the logo.
@@ -33,6 +39,7 @@ onMounted(async()=>{
 })
 watch(()=>[props.pointerX,props.pointerY],([x,y])=>engine?.input(x,y))
 watch(()=>props.travel,t=>engine?.orbit(t ?? 0))
+watch(()=>props.progress,t=>engine?.position(t ?? 0),{flush:'post'})
 watch(()=>props.active,on=>engine?.active(on))
 onBeforeUnmount(()=>{
   controller.abort()

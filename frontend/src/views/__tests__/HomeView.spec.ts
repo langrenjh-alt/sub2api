@@ -150,10 +150,12 @@ describe('HomeView', () => {
     for (const [point, name] of [[.23, 'manifesto'], [.445, 'gallery'], [.66, 'access'], [.94, 'observatory'], [.445, 'gallery']] as const) {
       p = point
       window.dispatchEvent(new Event('scroll'))
-      await new Promise(resolve => window.requestAnimationFrame(resolve))
-      await nextTick()
-      const current = wrapper.findAll('[data-journey]').filter(node => node.attributes('aria-hidden') === 'false')
-      expect(current.map(node => node.attributes('data-journey'))).toEqual([name])
+      // The scene deliberately settles after native scrolling stops; do not
+      // assert that the full jump was rendered in the first animation frame.
+      await vi.waitFor(() => {
+        const current = wrapper.findAll('[data-journey]').filter(node => node.attributes('aria-hidden') === 'false')
+        expect(current.map(node => node.attributes('data-journey'))).toEqual([name])
+      }, { timeout: 1600, interval: 16 })
       expect(wrapper.get('.signal-login').attributes('href')).toBe('/login')
     }
     wrapper.unmount()

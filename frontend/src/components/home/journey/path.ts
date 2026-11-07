@@ -17,3 +17,15 @@ export function phase(a: number, b: number, value: number): number {
 export function currentFlightStop(p: number): number {
   return p < 0.32 ? 0 : p < 0.55 ? 1 : p < 0.78 ? 2 : 3
 }
+/** Analytic solution of a critically damped camera. dt is seconds, not frames.
+ * Sampling an unchanged target at 30, 60 or 144 Hz gives the same trajectory. */
+export function followFocus(value: number, velocity: number, target: number, dt: number, rate = 13) {
+  const error = value - target
+  const c = velocity + rate * error
+  const f = Math.exp(-rate * dt)
+  const next = target + (error + c * dt) * f
+  const speed = (velocity - rate * c * dt) * f
+  if (Math.abs(next - target) < .00012 && Math.abs(speed) < .002) return [target, 0] as const
+  if (next < 0 || next > 1) return [clamp01(next), 0] as const
+  return [next, speed] as const
+}

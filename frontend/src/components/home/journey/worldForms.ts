@@ -1,5 +1,5 @@
 import * as T from 'three'
-import { alloy, beamMaterial, vaporMaterial } from './worldMaterials'
+import { alloy, beamMaterial, vaporMaterial, fibre, quartz, jewelSkin, liquidFloor, QUARTZ_LAYER, WATER_LAYER } from './worldMaterials'
 
 const pi=Math.PI,TAU=pi*2
 type Vec=[number,number,number]
@@ -109,7 +109,13 @@ function lamella(turn:number,offset:number) {
 function archive(scene:T.Group,dust:T.Material,rand:()=>number) {
   const group=new T.Group();group.position.set(2.7,.05,-43);scene.add(group)
   const column=new T.Group();group.add(column)
-  const lilac=alloy(0x3f2349,0xa27bbf,1.22), ice=alloy(0x2f2540,0x88d0d4,1.2)
+  const lilac=quartz(0xa579bc,1.08,.86),ice=quartz(0x98d2d7,.82,.68)
+  // A dark mineral core is visible both inside the glass and through the
+  // gallery panes. Never hide the entire spine during scene-color capture.
+  const core=at(column,lamella(6.7,.08),alloy(0x301b37,0x9889ae,1.05))
+  core.scale.set(.74,.985,.74)
+  const vein=at(column,lamella(6.7,1.82),alloy(0x1c2830,0xbed0c9,1.02))
+  vein.scale.set(.62,.965,.62)
   at(column,lamella(6.7,.08),lilac)
   at(column,lamella(6.7,1.82),ice)
   for(let k=0;k<2;k++){
@@ -143,7 +149,8 @@ function archive(scene:T.Group,dust:T.Material,rand:()=>number) {
 /** Parallel strands split at a transparent junction and continue downrange. */
 function conduit(scene:T.Group,dust:T.Material,rand:()=>number) {
   const group=new T.Group(); group.position.set(2.6,-.2,-64);scene.add(group)
-  const mint=alloy(0x12352f,0x62e4c0,1.26),silver=alloy(0x193444,0x76aabe,1)
+  const mint=quartz(0x71dbc4,.75,.94),silver=alloy(0x10202d,0x94b8c1,1.08)
+  const signal=fibre(0x55bfa7),cool=fibre(0x72a4bf)
   const node=(t:number,lane:number,offset:number):Vec=>{
     const a=-1.16+4.75*t+(lane?pi:0),r=1.0+1.55*Math.sin(t*pi)**1.4
     return [Math.cos(a)*(r+offset),Math.sin(a)*(.61*r+offset)+.15*Math.sin(5*t),7.-t*16.]
@@ -152,7 +159,9 @@ function conduit(scene:T.Group,dust:T.Material,rand:()=>number) {
     for(let f=0;f<5;f++){
       const offsets=(f-2)*.16, coords:Vec[]=[]
       for(let i=0;i<=28;i++)coords.push(node(i/28,lane,offsets))
-      tube(group,line(coords),f===2?.064:.011,lane?silver:mint,110)
+      const curve=line(coords)
+      tube(group,curve,f===2?.065:.014,f===2?mint:(lane?silver:signal),110)
+      if(f===2)tube(group,curve,.032,lane?cool:signal,110)
     }
   const bank=new Bank(rand)
   for(let i=0;i<6600;i++){
@@ -161,10 +170,26 @@ function conduit(scene:T.Group,dust:T.Material,rand:()=>number) {
       l?[.44,.70,.89]:[.41,.98,.75],.017+.094*rand()**2,.46+.80*rand())
   }
   bank.mesh(group,dust)
+  // Off-axis beam splitter appears below the receding archival pane before
+  // the camera reaches the main junction. Its rim is deliberately incomplete.
+  const splitter=new T.Group();splitter.position.set(2.37,-.47,5.65)
+  splitter.rotation.set(-.22,.69,.44);group.add(splitter)
+  const lens=at(splitter,new T.SphereGeometry(1,48,26),quartz(0x9fcfcd,.94,1.0))
+  lens.scale.set(1.52,.83,.17)
+  for(let j=0;j<2;j++){
+    const rr:Vec[]=[]
+    for(let i=0;i<=23;i++){
+      const a=.5+j*pi+i/23*1.89
+      rr.push([1.54*Math.cos(a),.84*Math.sin(a),.02])
+    }
+    tube(splitter,line(rr),.018,j?cool:signal,48)
+  }
   // A triangular prism divides the streams; use chamfered rings to separate
   // its facets from the stream, as in a physical optical instrument.
   const prism=at(group,new T.OctahedronGeometry(1.17),mint,0,.03,-1.2)
   prism.scale.set(.93,1.38,.69)
+  const kernel=at(prism,new T.OctahedronGeometry(.69),cool)
+  kernel.rotation.set(.16,.51,.09)
   for(let k=0;k<6;k++){
     const t=.24+k*.10,p=node(t,k%2,0)
     const hoop=at(group,new T.TorusGeometry(.52,.023,7,54),silver,...p)
@@ -173,7 +198,7 @@ function conduit(scene:T.Group,dust:T.Material,rand:()=>number) {
   return prism
 }
 
-function observatory(scene:T.Group,dust:T.Material,rand:()=>number) {
+function observatory(scene:T.Group,coreDust:T.Material,rand:()=>number) {
   const frame=new T.Group();frame.position.set(2.15,0,-93);scene.add(frame)
   const steel=alloy(0x222533,0x9f9bba,.93),quartz=alloy(0x2c273b,0xc0adc9,1.24),black=alloy(0x12161c,0x505765,.64)
   const torus=(r:number,t:number,y:number,mat:T.Material,arc=TAU)=>{
@@ -205,17 +230,28 @@ function observatory(scene:T.Group,dust:T.Material,rand:()=>number) {
   const kernel=new T.Group();frame.add(kernel)
   const bank=new Bank(rand)
   for(let i=0;i<5100;i++){
-    const ct=rand()*2-1,theta=TAU*rand(),s=Math.sqrt(1-ct*ct)
-    const radius=1.13+.14*Math.sin(theta*4+ct*7)+.19*Math.cos(theta*3-ct*5)+.28*(rand()-.5)
-    bank.add(radius*s*Math.cos(theta),radius*ct*1.13+.11,radius*s*Math.sin(theta),
-      rand()>.79?[.97,.92,.80]:rand()>.42?[.64,.57,.84]:[.49,.68,.81],
-      .013+.093*rand()**3,.38+.62*rand())
+    const a=TAU*rand(),b=TAU*rand()
+    const centre=.895+.11*Math.sin(a*3.0+.45)
+    const r=.34+.11*Math.cos(4*a)+.19*(rand()-.48)
+    const span=centre+r*Math.cos(b)
+    const near=.48+.52*Math.max(0,Math.sin(a+.38))
+    bank.add(span*Math.cos(a),span*Math.sin(a)*1.16+.10,r*Math.sin(b)+.21*Math.sin(2*a+.25),
+      rand()>.72?[.96,.90,.79]:rand()>.46?[.70,.59,.88]:[.53,.82,.89],
+      .023+.084*rand()**2,(.59+.70*rand())*near)
   }
-  bank.mesh(kernel,dust)
-  instanced(kernel,new T.IcosahedronGeometry(1,0),quartz,200,o=>{
-    const ct=rand()*2-1,a=TAU*rand(),s=Math.sqrt(1-ct*ct),r=.7+.52*rand()
-    o.position.set(r*s*Math.cos(a),r*ct*1.14,r*s*Math.sin(a))
-    const sc=.029+.15*rand()**2;o.scale.set(sc,sc*(.6+rand()),sc)
+  bank.mesh(kernel,coreDust)
+  const skin=new T.TorusGeometry(.89,.23,18,112)
+  const body=skin.getAttribute('position')
+  for(let i=0;i<body.count;i++){
+    const x=body.getX(i),y=body.getY(i),z=body.getZ(i),a=Math.atan2(y,x)
+    const span=1+.11*Math.sin(a*3+.45)
+    body.setXYZ(i,x*span,y*span*1.16+.1,z+.21*Math.sin(a*2+.25))
+  }
+  skin.computeVertexNormals();at(kernel,skin,jewelSkin())
+  instanced(kernel,new T.TetrahedronGeometry(1),quartz,124,o=>{
+    const a=rand()*TAU,b=rand()*TAU,r=.845+.33*Math.cos(b)
+    o.position.set(r*Math.cos(a),r*Math.sin(a)*1.16,.32*Math.sin(b)+.18*Math.sin(2*a))
+    const sc=.019+.09*rand()**2;o.scale.set(sc*.75,sc*(.73+rand()),sc*.63)
     o.rotation.set(rand()*pi,rand()*pi,rand()*pi)
   })
   // Layered rock shelf: large fragments in silhouette, small faceted scree picking up the crown.
@@ -237,22 +273,64 @@ function observatory(scene:T.Group,dust:T.Material,rand:()=>number) {
     const shaft=at(frame,new T.PlaneGeometry(1.4+i*.43,8.6),beamMaterial(i&1?0x99c6d7:0xbb9cda),-.82+i*.64,1.8,-1.2+.13*i)
     shaft.rotation.z=-.15+.055*i
   }
+  const basin=at(frame,new T.PlaneGeometry(51,48),liquidFloor(),0,-3.24,-1.4)
+  basin.rotation.x=-pi/2;basin.layers.set(WATER_LAYER)
   return {kernel,crown}
 }
 
-export function worldForms(scene:T.Scene,dust:T.Material){
+// The archive unwinds into one continuous strip, passing through the data
+// conduit and grazing the observatory basin before it disappears under water.
+function relayRibbon(parent:T.Group){
+  const spine=line([[2.8,-4.55,-43.0],[4.2,-3.1,-44.4],[5.1,-1.3,-47.0],
+    [5.35,-1.66,-49.8],[6.15,-1.70,-52.3],[5.35,-1.60,-55.3],
+    [4.60,-1.30,-57.4],[4.10,-.60,-60.8],[3.80,.56,-63.1],
+    [2.33,1.23,-66.7],[.73,-.1,-70.3],[1.6,-1.63,-74.3],
+    [3.46,-.62,-78.5],[4.85,1.69,-82.3],[5.13,1.92,-85.1],
+    [4.73,.76,-87.5],[4.12,-1.61,-89.7],[3.7,-3.21,-92.4]])
+  const rows=230,columns=12,positions:number[]=[],uv:number[]=[],indices:number[]=[]
+  const frames=spine.computeFrenetFrames(rows,false)
+  const strand=(offset:number,width:number)=>{
+    positions.length=uv.length=indices.length=0
+    for(let i=0;i<=rows;i++){
+      const t=i/rows,at=spine.getPointAt(t),twist=t*9.3+.41*Math.sin(t*11.4)
+      const nx=frames.normals[i],ny=frames.binormals[i]
+      const scale=Math.min(1,.10+7*t,.10+9*(1-t))
+      for(let j=0;j<=columns;j++){
+        const f=j/columns*TAU,dx=scale*(offset+width*Math.cos(f)),dy=scale*.034*Math.sin(f)
+        const a=dx*Math.cos(twist)-dy*Math.sin(twist),b=dx*Math.sin(twist)+dy*Math.cos(twist)
+        positions.push(at.x+a*nx.x+b*ny.x,at.y+a*nx.y+b*ny.y,at.z+a*nx.z+b*ny.z)
+        uv.push(t,j/columns)
+        if(i<rows&&j<columns){const k=i*(columns+1)+j;indices.push(k,k+1,k+columns+1,k+1,k+columns+2,k+columns+1)}
+      }
+    }
+    const geo=new T.BufferGeometry()
+    geo.setAttribute('position',new T.Float32BufferAttribute(positions,3))
+    geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();return geo
+  }
+  at(parent,strand(0,.19),quartz(0x8dc4c0,1.04,.92,.7))
+  at(parent,strand(-.18,.021),fibre(0xb3d2c4))
+  at(parent,strand(.19,.017),alloy(0x292330,0xc6aabb,1.09))
+}
+
+export function worldForms(scene:T.Scene,dust:T.Material,coreDust:T.Material){
   const rand=seeded()
   const groups=[new T.Group(),new T.Group(),new T.Group(),new T.Group()]
   for(const group of groups)scene.add(group)
   estuary(groups[0],dust,rand)
   const column=archive(groups[1],dust,rand),prism=conduit(groups[2],dust,rand)
-  const {kernel,crown}=observatory(groups[3],dust,rand)
+  const {kernel,crown}=observatory(groups[3],coreDust,rand)
+  const relay=new T.Group();scene.add(relay);relayRibbon(relay)
+  scene.traverse(obj=>{
+    const mat=(obj as T.Mesh).material
+    if(mat instanceof T.ShaderMaterial&&mat.userData.quartz)obj.layers.set(QUARTZ_LAYER)
+  })
   return (time:number,p:number)=>{
-    groups[0].visible=p<.57;groups[1].visible=p>.24&&p<.64
-    groups[2].visible=p>.53&&p<.82;groups[3].visible=p>.76
+    groups[0].visible=p<.58;groups[1].visible=p>.21&&p<.68
+    groups[2].visible=p>.43&&p<.875;groups[3].visible=p>.695
+    relay.visible=p>.245
     column.rotation.y=.42*Math.sin(time*.072)+p*.88
     prism.rotation.y=.47+time*.071
-    kernel.rotation.set(.11*Math.sin(time*.13),time*.075+p*.80,.29)
+    kernel.rotation.set(.25+.10*Math.sin(time*.14),.22+.48*Math.sin(time*.17+p),.25+.15*Math.sin(time*.11))
     kernel.position.y=.10+.087*Math.sin(time*.64)
     crown.rotation.z=Math.sin(time*.105)*.22+p*.42
   }

@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { Button } from '@/components/ui/button'
+import { blend, galleryAngle, galleryWorks, panelWindow } from './journey/galleryPath'
 import { useClipboard } from '@/composables/useClipboard'
 import { formatMultiplier } from '@/utils/formatters'
 import type { HomepageStatusResponse } from '@/api/homepageStatus'
@@ -31,49 +32,58 @@ const ease = (n: number) => { const c = clamp(n); return c * c * (3 - 2 * c) }
 const chapters = [[.15,.32], [.32,.55], [.55,.78], [.78,1]] as const
 const chapter = computed(() => props.progress < .15 ? -1 : props.progress < .32 ? 0 : props.progress < .55 ? 1 : props.progress < .78 ? 2 : 3)
 const phase = (i: number) => (props.progress - chapters[i][0]) / (chapters[i][1] - chapters[i][0])
+const editorialWindows = [[.147,.182,.286,.348], [.315,.352,.50,.544], [.551,.600,.748,.789], [.774,.828,1.03,1.08]] as const
 function layer(i: number) {
-  const q = phase(i)
   if (props.reduced) return { visibility: chapter.value === i ? 'visible' as const : 'hidden' as const, opacity: chapter.value === i ? 1 : 0 }
-  const opacity = ease((q + .045)/.14) * (i === 3 ? 1 : 1 - ease((q - .91)/.14))
+  const [start,,end,stop]=editorialWindows[i]
+  const opacity=blend(start,start+.017,props.progress)*(1-blend(end+.018,stop,props.progress))
   return { visibility: opacity <= 0 ? 'hidden' as const : 'visible' as const, opacity }
 }
 function lift(i: number) {
   if (props.reduced) return undefined
-  const q = phase(i)
-  const enter = 1 - ease(q/.21), depart = i === 3 ? 0 : ease((q-.85)/.20)
-  return { transform: `translate3d(0,${enter*30-depart*20}px,0)` }
+  const [from,full,end,to]=editorialWindows[i], p=props.progress
+  const enter=1-blend(from,full,p), depart=blend(end,to,p)
+  // Different depths on the two sides of each handoff: the departing caption
+  // rides upward, the instrument readout arrives below its optical edge.
+  const x=i===0?-depart*4 : i===1?-depart*2.6 : enter*.6
+  const y=i===1?enter*4-depart*5 : enter*12-depart*(i===3?0:i===2?26:14)
+  const cut=enter*103
+  return {
+    transform: `translate3d(${x}vw,${y}vh,0)`,
+    clipPath: `polygon(0 0, 100% 0, 100% ${102-cut}%, 0 ${102-cut*.83}%)`,
+  }
 }
 function lineStyle(index: number) {
   if (props.reduced) return undefined
   const enter = ease((phase(0)*1.8 - index*.11)/.50)
-  return { opacity: enter, transform: `translate3d(${(1-enter)*-30}px,${(1-enter)*42}px,0) rotateX(${(1-enter)*45}deg)` }
+  return { opacity: enter, transform: `translate3d(${(1-enter)*-22}px,${(1-enter)*36}px,0) rotateX(${(1-enter)*35}deg)` }
 }
 
-const specimens = [
-  { name:'Claude', code:'MESSAGES', image:'corona', number:'01' },
-  { name:'GPT', code:'CHAT COMPLETIONS', image:'strata', number:'02' },
-  { name:'Gemini', code:'GENERATE CONTENT', image:'interference', number:'03' },
-] as const
+const fallbackPresence = computed(() => {
+  const p=props.progress
+  if(props.reduced)return chapter.value===1 ? 1 : 0
+  return blend(.262,.31,p)*(1-blend(.626,.674,p))
+})
 function specimenStyle(index: number) {
-  const f = clamp(phase(1)) * 2.88 - .40
+  const p=props.progress
   if (props.reduced) {
-    // Reduced motion uses three discrete plates; never slide or scale one across the lens.
-    const current = Math.min(2, Math.floor(clamp(phase(1)) * 3))
-    return { opacity: index === current ? 1 : 0, zIndex: 20-index, '--plane-x': '0vw' }
+    const current=Math.min(3,Math.max(0,Math.floor((p-.32)/.063)))
+    return { opacity:index===current?1:0, zIndex:20-index, '--plane-x':'0vw', '--image-coverage':'.48' }
   }
-  const d = index - f
-  // Each plate approaches the lens from the far right, passes the sculpture,
-  // and leaves the viewport close to the camera on the opposite side.
-  const u = clamp(d,-1.45,2.1)
-  const visible = ease((d + 1.45)/.42) * (1-ease((d-1.64)/.65))
-  const near = Math.max(0,-u)
+  const a=galleryAngle(p,index)-.18, near=Math.cos(a), side=Math.sin(a)
+  const transfer=index===3?blend(.525,.596,p):0
+  const grab=index===0 ? 1-blend(.319,.373,p) : 0
+  const ringX=side*33*(1-transfer) + (.22-blend(.554,.657,p))*52*transfer
+  const ringY=(Math.sin(index*1.8)*3 + (1-blend(.276,.358,p))*29)*(1-transfer) - blend(.55,.665,p)*56*transfer
+  const x=ringX*(1-grab)-5*grab
+  const y=ringY*(1-grab)+(71-67*blend(.261,.313,p)-17*blend(.314,.34,p))*grab
+  const visible=panelWindow(p,index) + transfer*(1-blend(.602,.674,p))*.32
   return {
-    opacity: visible, zIndex: 20-index,
-    '--plane-x': `${u*28 - near*near*10}vw`,
-    '--plane-y': `${u*-4 + Math.sin(index*1.8)*2}vh`,
-    '--plane-z': `${-u*335 - 15}px`,
-    '--plane-yaw': `${u*-39 + 5}deg`,
-    '--plane-roll': `${u*3.4 - 1.1}deg`,
+    opacity:clamp(visible), zIndex:10+Math.round((near+1)*10),
+    '--plane-x':`${x}vw`, '--plane-y':`${y}vh`, '--plane-z':`${(near-.34)*160*(1-transfer)*(1-grab)}px`,
+    '--plane-yaw':`${(a*180/Math.PI)*(1-transfer)*(1-grab) + 10*grab - transfer*38}deg`,
+    '--plane-roll':`${-side*3.1+transfer*4}deg`,
+    '--image-coverage': String(.29+.23*(1-near)/2),
   }
 }
 const endpointIndex = ref(0)
@@ -127,22 +137,8 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 
 <template>
   <div class="journey-chapters" :class="{ 'is-reduced': reduced }">
-    <section class="j-scene manifest" data-journey="manifesto" :style="layer(0)"
-      :inert="chapter !== 0 ? true : undefined" :aria-hidden="chapter !== 0" aria-labelledby="j-manifest">
-      <div class="manifest-copy">
-        <p class="folio"><i></i>01 / TRANSMISSION</p>
-        <h2 id="j-manifest">
-          <span><b :style="lineStyle(0)">{{ t('home.journey.manifestoA') }}</b></span>
-          <span><b :style="lineStyle(1)">{{ t('home.journey.manifestoB') }}</b></span>
-        </h2>
-        <p class="j-caption" :style="lift(0)">{{ t('home.journey.manifestoText') }}</p>
-      </div>
-    </section>
-
-    <section class="j-scene archive" data-journey="gallery" :style="layer(1)"
-      :inert="chapter !== 1 ? true : undefined" :aria-hidden="chapter !== 1" aria-labelledby="j-archive">
-      <div class="archive-depth" aria-hidden="true">
-        <figure v-for="(specimen,index) in specimens" :key="specimen.name" class="art-plane"
+      <div class="archive-depth" aria-hidden="true" :style="{ visibility: fallbackPresence ? 'visible' : 'hidden', opacity: fallbackPresence }">
+        <figure v-for="(specimen,index) in galleryWorks" :key="specimen.name" class="art-plane"
           :style="specimenStyle(index)">
           <img :src="`/assets/home/z30-archive-${specimen.image}.webp`" width="688" height="484" alt="" />
           <figcaption>
@@ -152,6 +148,20 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
           </figcaption>
         </figure>
       </div>
+    <section class="j-scene manifest" data-journey="manifesto" :style="layer(0)"
+      :inert="chapter !== 0 ? true : undefined" :aria-hidden="chapter !== 0" aria-labelledby="j-manifest">
+      <div class="manifest-copy" :style="lift(0)">
+        <p class="folio"><i></i>01 / TRANSMISSION</p>
+        <h2 id="j-manifest">
+          <span><b :style="lineStyle(0)">{{ t('home.journey.manifestoA') }}</b></span>
+          <span><b :style="lineStyle(1)">{{ t('home.journey.manifestoB') }}</b></span>
+        </h2>
+        <p class="j-caption">{{ t('home.journey.manifestoText') }}</p>
+      </div>
+    </section>
+
+    <section class="j-scene archive" data-journey="gallery" :style="layer(1)"
+      :inert="chapter !== 1 ? true : undefined" :aria-hidden="chapter !== 1" aria-labelledby="j-archive">
       <div class="archive-copy" :style="lift(1)">
         <p class="folio"><i></i>02 / MODEL ATLAS</p>
         <h2 id="j-archive">{{ t('home.journey.galleryTitle') }}</h2>
@@ -242,7 +252,7 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 .journey-chapters {
   --j-ink:#f4f6f1; --j-faint:#c5d0d2; --j-line:rgba(186,219,226,.38); --j-signal:#b9f2d0;
   --j-mono:'Geist Mono Variable',ui-monospace,monospace;
-  position:absolute; z-index:2; inset:0; pointer-events:none;
+  position:absolute; z-index:auto; inset:0; pointer-events:none;
   color:var(--j-ink); font-family:'Geist Variable','PingFang SC','Microsoft YaHei',sans-serif;
 }
 .j-scene { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
@@ -266,24 +276,39 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 .manifest-copy h2 b { display:block; font-weight:inherit; transform-origin:0 90%; }
 .manifest-copy h2 span:last-child { color:#d5e8df; }
 .manifest-copy .j-caption { max-width:41ch; }
-.archive-depth { position:absolute; inset:0; perspective:820px; perspective-origin:60% 49%; transform-style:preserve-3d; }
-.art-plane {
-  position:absolute; left:55%; top:44%; width:clamp(220px,32vw,520px); aspect-ratio:688 / 484;
-  transform:translate(-50%,-50%) translate3d(var(--plane-x),var(--plane-y),var(--plane-z)) rotateY(var(--plane-yaw)) rotateZ(var(--plane-roll));
-  border:1px solid rgba(230,241,240,.35); border-radius:3px; overflow:hidden;
-  box-shadow:1px 0 #a2b4bf80,4px 2px #222c3d,10px 24px 75px #03080c75; background:#19242a;
+.archive-depth {
+  position:absolute; inset:0; z-index:4; perspective:850px; perspective-origin:64% 46%; transform-style:preserve-3d;
+  pointer-events:none; overflow:clip;
 }
-.art-plane img { width:100%; height:100%; object-fit:cover; }
-.art-plane figcaption { position:absolute; inset:0; display:flex; flex-direction:column; justify-content:flex-end;
-  padding:5%; text-shadow:0 2px 15px #030708; background:linear-gradient(transparent 48%,rgba(1,8,12,.56)); }
-.art-index { position:absolute; top:6%; left:5%; color:#e9f5f0; }
-.art-plane strong { font-size:clamp(27px,3vw,52px); line-height:1; letter-spacing:-.05em; font-weight:500; }
-.art-plane small { margin-top:7px; font-size:9px; }
+.art-plane {
+  position:absolute; left:60%; top:42%; width:clamp(230px,38vw,560px); aspect-ratio:1.53;
+  transform:translate(-50%,-50%) translate3d(var(--plane-x),var(--plane-y),var(--plane-z)) rotateY(var(--plane-yaw)) rotateZ(var(--plane-roll));
+  border:1px solid rgba(187,222,232,.46); border-radius:14px; overflow:hidden;
+  box-shadow:1px 0 #b5d0d185,3px 2px #222c3d70,8px 12px 55px #03090b55;
+  background:linear-gradient(148deg,rgba(159,207,222,.13),rgba(4,15,23,.08) 47%,rgba(86,107,149,.22));
+  backdrop-filter:blur(1.6px) saturate(1.45) contrast(1.18);
+}
+.art-plane img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:var(--image-coverage,.42);
+  animation:archive-flow 13s ease-in-out alternate infinite; }
+.art-plane:nth-child(even) img { animation-direction:alternate-reverse; animation-duration:17s; }
+@keyframes archive-flow { from { transform:scale(1.025) translate(-1%,.5%); } to { transform:scale(1.12) translate(1.5%,-1.6%); } }
+.art-plane::after { content:''; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(127deg,transparent 21%,#b4dfe614 37%,transparent 45%,#72aaa510 82%,transparent); }
+.art-plane figcaption { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:5%; text-shadow:0 2px 13px #030708; }
+.art-index { position:absolute; top:8%; left:5%; color:#e4e9e4; }
+.art-plane strong { order:2; font-size:clamp(28px,3.8vw,58px); line-height:1; letter-spacing:-.056em; font-weight:480; }
+.art-plane small { order:1; margin-bottom:6px; font-size:10px; }
+.manifest { z-index:2; }
+.archive { z-index:5; }
+.connection,.observatory {z-index:3}
+.j-scene[inert] .j-link,.j-scene[inert] .console-links,.j-scene[inert] .feed-sample button { visibility:hidden; }
+.is-reduced .art-plane img { animation:none; }
 .archive-copy { left:clamp(25px,6vw,120px); bottom:18%; max-width:min(29vw,400px); }
 .archive-copy h2, .console-body h2, .observatory-body h2 { margin:13px 0 12px; font-size:clamp(34px,min(4.4vw,8.2vh),84px); }
 .archive-copy::before, .console-body::before, .observatory-body::before {
   content:''; z-index:-1; position:absolute; inset:-30% -19%; pointer-events:none;
-  background:radial-gradient(ellipse at center,rgba(3,9,13,.82),transparent 69%);
+  background:radial-gradient(ellipse at 32% 55%,rgba(3,9,13,.86) 0%,rgba(3,9,13,.56) 36%,transparent 75%);
 }
 .j-outline { margin-top:15px; min-height:44px; padding:0 16px; border:1px solid #bcdee975; border-radius:50px;
   color:var(--j-ink); background:rgba(4,15,21,.77); font-weight:500; box-shadow:none; }
@@ -339,7 +364,7 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
   .archive-copy { top:auto; bottom:15%; }
   .archive-copy h2, .console-body h2, .observatory-body h2 { margin:8px 0; font-size:clamp(31px,8vw,49px); }
   .archive-depth { perspective:660px; perspective-origin:50% 44%; }
-  .art-plane { width:clamp(170px,61vw,340px); left:49%; top:38%; }
+  .art-plane { width:clamp(175px,66vw,350px); left:53%; top:38%; }
   .console-body, .observatory-body { top:auto; translate:none; bottom:15%; }
   .command,.readout { margin-top:12px; }
   .console-links { gap:0 12px; margin-top:6px; }
@@ -360,4 +385,12 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
   .console-links a, .j-outline { min-height:36px; }
   .art-plane { width:min(28vw,53vh); }
 }
+</style>
+
+<style>
+/* The DOM cylinder is strictly a context-loss / GPU-less alternative; never
+   stamp prepainted cards over the live scene's physical optical surfaces. */
+.signal:has(.journey-world[data-renderer="webgl"] canvas[data-archive-optics="ready"]) .archive-depth { display:none; }
+.signal[data-motion="off"] .art-plane img { animation-play-state:paused; }
+@media (prefers-reduced-motion: reduce) { .art-plane img { animation:none; } }
 </style>
