@@ -88,14 +88,14 @@
         </div>
 
         <!-- Submit Button -->
-        <button
+        <Button
           type="submit"
           :disabled="
             isLoading ||
             (turnstileEnabled && !turnstileToken) ||
             (geetestEnabled && !geetestValidation)
           "
-          class="btn btn-primary w-full"
+          class="h-11 w-full"
         >
           <svg
             v-if="isLoading"
@@ -119,7 +119,7 @@
           </svg>
           <Icon v-else name="mail" size="md" class="mr-2" />
           {{ isLoading ? t('auth.sendingResetLink') : t('auth.sendResetLink') }}
-        </button>
+        </Button>
       </form>
     </div>
 
@@ -139,6 +139,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AuthLayout } from '@/components/layout'

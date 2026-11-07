@@ -5,9 +5,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        background: 'hsl(var(--background) / <alpha-value>)',
+        foreground: 'hsl(var(--foreground) / <alpha-value>)',
+        border: 'hsl(var(--border) / <alpha-value>)',
+        input: 'hsl(var(--input) / <alpha-value>)',
+        ring: 'hsl(var(--ring) / <alpha-value>)',
+        signal: 'hsl(var(--signal) / <alpha-value>)',
+        ...Object.fromEntries(['card', 'popover', 'secondary', 'muted', 'destructive'].map(key => [
+          key, {
+            DEFAULT: `hsl(var(--${key}) / <alpha-value>)`,
+            foreground: `hsl(var(--${key}-foreground) / <alpha-value>)`
+          }
+        ])),
         // 主色调 - Geist 中性灰阶(黑白灰设计语言)
         // 500-900 用于前景/主操作(近黑),50-200 用于浅底/边框
         primary: {
+          DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
+          foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
           50: '#fafafa',
           100: '#f5f5f5',
           200: '#e5e5e5',
@@ -22,6 +36,8 @@ export default {
         },
         // 辅助色 - 中性灰阶(原 slate 蓝灰,已去蓝相)
         accent: {
+          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
+          foreground: 'hsl(var(--accent-foreground) / <alpha-value>)',
           50: '#fafafa',
           100: '#f5f5f5',
           200: '#e5e5e5',
@@ -51,6 +67,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          'Geist Variable',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -63,7 +80,7 @@ export default {
           'Microsoft YaHei',
           'sans-serif'
         ],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+        mono: ['Geist Mono Variable', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
       boxShadow: {
         glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
@@ -116,6 +133,9 @@ export default {
         xs: '2px'
       },
       borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
         '4xl': '2rem'
       }
     }

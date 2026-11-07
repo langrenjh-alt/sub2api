@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <label v-if="label" :for="id" class="input-label mb-1.5 block">
+    <label v-if="label" :for="fieldId" class="input-label mb-1.5 block">
       {{ label }}
       <span v-if="required" class="text-red-500">*</span>
     </label>
@@ -13,24 +13,26 @@
         <slot name="prefix"></slot>
       </div>
 
-      <input
-        :id="id"
+      <UiInput
+        :id="fieldId"
+        :aria-invalid="Boolean(error)"
+        :aria-describedby="error || hint ? fieldId + '-description' : undefined"
         ref="inputRef"
         :type="type"
-        :value="modelValue"
+        :model-value="modelValue ?? ''"
         :disabled="disabled"
         :required="required"
         :placeholder="placeholderText"
         :autocomplete="autocomplete"
         :readonly="readonly"
         :class="[
-          'input w-full',
+          'w-full',
           $slots.prefix ? 'pl-11' : '',
           $slots.suffix ? 'pr-11' : '',
           error ? 'input-error' : '',
           disabled ? 'cursor-not-allowed opacity-60' : ''
         ]"
-        @input="onInput"
+        @update:model-value="$emit('update:modelValue', String($event))"
         @change="$emit('change', ($event.target as HTMLInputElement).value)"
         @blur="$emit('blur', $event)"
         @focus="$emit('focus', $event)"
@@ -46,17 +48,18 @@
       </div>
     </div>
     <!-- Hint / Error Text -->
-    <p v-if="error" class="input-error-text mt-1.5">
+    <p v-if="error" :id="fieldId + '-description'" class="input-error-text mt-1.5">
       {{ error }}
     </p>
-    <p v-else-if="hint" class="input-hint mt-1.5">
+    <p v-else-if="hint" :id="fieldId + '-description'" class="input-hint mt-1.5">
       {{ hint }}
     </p>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, useId } from 'vue'
+import { Input as UiInput } from '@/components/ui/input'
 
 interface Props {
   modelValue: string | number | null | undefined
@@ -79,7 +82,7 @@ const props = withDefaults(defineProps<Props>(), {
   readonly: false
 })
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'change', value: string): void
   (e: 'blur', event: FocusEvent): void
@@ -87,13 +90,10 @@ const emit = defineEmits<{
   (e: 'enter', event: KeyboardEvent): void
 }>()
 
-const inputRef = ref<HTMLInputElement | null>(null)
+const generatedId = useId()
+const fieldId = computed(() => props.id || generatedId)
+const inputRef = ref<InstanceType<typeof UiInput> | null>(null)
 const placeholderText = computed(() => props.placeholder || '')
-
-const onInput = (event: Event) => {
-  const value = (event.target as HTMLInputElement).value
-  emit('update:modelValue', value)
-}
 
 // Expose focus method
 defineExpose({

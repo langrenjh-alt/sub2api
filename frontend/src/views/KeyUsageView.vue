@@ -1,13 +1,13 @@
 <template>
-  <div class="relative flex min-h-screen flex-col bg-[var(--geist-background-200)] text-[var(--geist-foreground-100)]">
+  <div class="relative flex min-h-screen flex-col bg-background text-foreground">
     <!-- Header (same pattern as HomeView) -->
-    <header class="relative z-20 px-6 py-4">
+    <header class="relative z-20 border-b border-border bg-card px-4 py-3 sm:px-6">
       <nav class="mx-auto flex max-w-6xl items-center justify-between">
-        <router-link to="/home" class="flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-black text-white dark:bg-white dark:text-black">
-            <img :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />
+        <router-link to="/home" class="flex min-w-0 items-center gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full">
+            <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
           </div>
-          <span class="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">{{ siteName }}</span>
+          <span class="truncate text-lg font-semibold tracking-tight">{{ siteName }}</span>
         </router-link>
         <div class="flex items-center gap-3">
           <LocaleSwitcher />
@@ -54,14 +54,19 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
             </div>
-            <input
+            <Input
               v-model="apiKey"
+              :aria-label="t('keyUsage.placeholder')"
+              autocomplete="off"
+              spellcheck="false"
               :type="keyVisible ? 'text' : 'password'"
               :placeholder="t('keyUsage.placeholder')"
-              class="input h-12 pl-12 pr-12 rounded-lg"
+              class="h-12 bg-card pl-12 pr-12"
               @keydown.enter="queryKey"
             />
             <button
+              :aria-label="keyVisible ? t('common.hideApiKey') : t('common.showApiKey')"
+              :aria-pressed="keyVisible"
               @click="keyVisible = !keyVisible"
               class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:text-dark-500 dark:hover:text-white transition-colors"
             >
@@ -74,10 +79,11 @@
               </svg>
             </button>
           </div>
-          <button
+          <Button
+            type="button"
             @click="queryKey"
             :disabled="isQuerying"
-            class="btn btn-primary h-12 px-7 flex items-center gap-2 whitespace-nowrap"
+            class="h-12 gap-2 px-4 sm:px-7"
           >
             <svg v-if="isQuerying" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" opacity="0.25"/>
@@ -87,7 +93,7 @@
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             {{ isQuerying ? t('keyUsage.querying') : t('keyUsage.query') }}
-          </button>
+          </Button>
         </div>
         <p class="text-xs text-gray-400 dark:text-dark-500 mt-3 text-center">
           {{ t('keyUsage.privacyNote') }}
@@ -421,6 +427,8 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { FeatureFlags, resolveFeatureFlag } from '@/utils/featureFlags'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { buildGatewayUrl } from '@/api/client'

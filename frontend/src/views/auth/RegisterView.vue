@@ -269,14 +269,14 @@
         />
 
         <!-- Submit Button -->
-        <button
+        <Button
           type="submit"
           :disabled="
             registrationActionDisabled ||
             (turnstileEnabled && !turnstileToken) ||
             (geetestEnabled && !geetestValidation)
           "
-          class="btn btn-primary w-full"
+          class="h-11 w-full"
         >
           <svg
             v-if="isLoading"
@@ -306,7 +306,7 @@
                 ? t('auth.continue')
                 : t('auth.createAccount')
           }}
-        </button>
+        </Button>
 
       </form>
 
@@ -371,6 +371,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { computed, ref, reactive, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

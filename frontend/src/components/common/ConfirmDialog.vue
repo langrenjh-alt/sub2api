@@ -7,24 +7,12 @@
 
     <template #footer>
       <div class="flex justify-end space-x-3">
-        <button
-          @click="handleCancel"
-          type="button"
-          class="btn btn-secondary"
-        >
+        <Button type="button" variant="outline" @click="handleCancel">
           {{ cancelText }}
-        </button>
-        <button
-          @click="handleConfirm"
-          type="button"
-          :class="[
-            danger
-              ? 'rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none disabled:opacity-50'
-              : 'btn btn-primary'
-          ]"
-        >
+        </Button>
+        <Button type="button" :variant="danger ? 'destructive' : 'default'" @click="handleConfirm">
           {{ confirmText }}
-        </button>
+        </Button>
       </div>
     </template>
   </BaseDialog>
@@ -33,6 +21,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Button } from '@/components/ui/button'
 import BaseDialog from './BaseDialog.vue'
 
 const { t } = useI18n()

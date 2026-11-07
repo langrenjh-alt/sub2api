@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell min-h-screen">
-    <div class="app-grid pointer-events-none fixed inset-0"></div>
+    <div aria-hidden="true" class="app-grid pointer-events-none fixed inset-0"></div>
 
     <!-- Sidebar -->
     <AppSidebar />
@@ -54,17 +54,15 @@ defineExpose({ replayTour })
 
 <style scoped>
 .app-shell {
-  background: var(--geist-background-200);
-  color: var(--geist-foreground-100);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
 
 .app-grid {
-  background-image:
-    linear-gradient(var(--geist-border-100) 1px, transparent 1px),
-    linear-gradient(90deg, var(--geist-border-100) 1px, transparent 1px);
-  background-size: 64px 64px;
-  opacity: 0.32;
-  mask-image: linear-gradient(to bottom, black, transparent 420px);
+  /* A quiet coordinate field tying dense data views to the public masthead. */
+  background-image: radial-gradient(hsl(var(--input) / .6) .7px, transparent .9px);
+  background-size: 16px 16px;
+  mask-image: linear-gradient(to bottom, black 4rem, transparent 25rem);
 }
 
 .app-main {

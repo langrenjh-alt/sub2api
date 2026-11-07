@@ -1,19 +1,21 @@
+@import './styles/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: light;
-  --geist-background-100: #ffffff;
-  --geist-background-200: #fafafa;
-  --geist-background-300: #f2f2f2;
-  --geist-foreground-100: #171717;
-  --geist-foreground-200: #4d4d4d;
-  --geist-foreground-300: #7d7d7d;
-  --geist-foreground-400: #a8a8a8;
-  --geist-border-100: #ebebeb;
-  --geist-border-200: #e6e6e6;
-  --geist-border-300: #c9c9c9;
+  --geist-background-100: hsl(var(--card));
+  --geist-background-200: hsl(var(--background));
+  --geist-background-300: hsl(var(--muted));
+  --geist-foreground-100: hsl(var(--foreground));
+  --geist-foreground-200: hsl(var(--secondary-foreground));
+  --geist-foreground-300: hsl(var(--muted-foreground));
+  --geist-foreground-400: hsl(var(--muted-foreground));
+  --geist-border-100: hsl(var(--border));
+  --geist-border-200: hsl(var(--border));
+  --geist-border-300: hsl(var(--input));
   --geist-blue: #0070f3;
   --geist-blue-light: #eaf4ff;
   --geist-green: #0a7c42;
@@ -28,16 +30,16 @@
 
 .dark {
   color-scheme: dark;
-  --geist-background-100: #0a0a0a;
-  --geist-background-200: #111111;
-  --geist-background-300: #1a1a1a;
-  --geist-foreground-100: #ededed;
-  --geist-foreground-200: #a1a1a1;
-  --geist-foreground-300: #888888;
-  --geist-foreground-400: #666666;
-  --geist-border-100: #262626;
-  --geist-border-200: #333333;
-  --geist-border-300: #525252;
+  --geist-background-100: hsl(var(--card));
+  --geist-background-200: hsl(var(--background));
+  --geist-background-300: hsl(var(--muted));
+  --geist-foreground-100: hsl(var(--foreground));
+  --geist-foreground-200: hsl(var(--secondary-foreground));
+  --geist-foreground-300: hsl(var(--muted-foreground));
+  --geist-foreground-400: hsl(var(--muted-foreground));
+  --geist-border-100: hsl(var(--border));
+  --geist-border-200: hsl(var(--border));
+  --geist-border-300: hsl(var(--input));
   --geist-blue: #52a8ff;
   --geist-blue-light: #10243e;
   --geist-green: #45d483;
@@ -91,7 +93,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--geist-foreground-100);
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 
@@ -150,14 +152,16 @@
     @apply px-3 text-sm font-medium;
     min-height: 36px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: calc(var(--radius) - 3px);
     transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
     @apply focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  .btn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
   .btn-primary {
-    background: var(--geist-foreground-100);
-    color: var(--geist-background-100);
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
     @apply shadow-none;
     filter: none;
   }
@@ -245,7 +249,7 @@
     @apply w-full px-3 text-sm;
     min-height: 40px;
     border: 1px solid var(--geist-border-200);
-    border-radius: 6px;
+    border-radius: calc(var(--radius) - 3px);
     background: var(--geist-background-100);
     color: var(--geist-foreground-100);
     @apply transition-colors duration-150;
@@ -253,7 +257,7 @@
   }
 
   .input::placeholder { color: var(--geist-foreground-400); }
-  .input:focus { border-color: var(--geist-foreground-300); box-shadow: 0 0 0 1px var(--geist-foreground-300); }
+  .input:focus { border-color: hsl(var(--ring)); box-shadow: 0 0 0 1px hsl(var(--ring)); }
   .input:disabled { background: var(--geist-background-300); color: var(--geist-foreground-300); }
 
   .dark .input[type='date'],
@@ -304,7 +308,7 @@
     background: var(--geist-background-100);
     @apply backdrop-blur-xl;
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     @apply shadow-none;
     @apply transition-all duration-300;
   }
@@ -313,7 +317,7 @@
   .card {
     background: var(--geist-background-100);
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     @apply shadow-none;
     @apply transition-all duration-300;
   }
@@ -352,7 +356,7 @@
 
   .stat-icon {
     @apply h-9 w-9;
-    border-radius: 6px;
+    border-radius: calc(var(--radius) - 3px);
     @apply flex items-center justify-center;
     @apply text-xl;
   }
@@ -374,7 +378,8 @@
   }
 
   .stat-value {
-    @apply truncate text-2xl font-semibold;
+    @apply truncate text-2xl font-semibold tabular-nums;
+    letter-spacing: -.035em;
     color: var(--geist-foreground-100);
   }
 
@@ -399,7 +404,7 @@
   .table-container {
     @apply overflow-x-auto;
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
   }
 
   .table {
@@ -464,7 +469,7 @@
     @apply absolute z-50;
     background: var(--geist-background-100);
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     box-shadow: var(--geist-shadow-menu);
     @apply py-1;
     @apply origin-top-right animate-scale-in;
@@ -490,7 +495,7 @@
     @apply max-h-[95vh] sm:max-h-[90vh];
     background: var(--geist-background-100);
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     box-shadow: var(--geist-shadow-modal);
     @apply flex flex-col;
   }
@@ -613,7 +618,7 @@
     @apply min-w-[320px] max-w-md;
     background: var(--geist-background-100);
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     box-shadow: var(--geist-shadow-menu);
     @apply p-4;
     @apply animate-slide-in-right;
@@ -661,7 +666,7 @@
 
   .sidebar-link {
     @apply flex items-center gap-3 py-2;
-    border-radius: 6px;
+    border-radius: calc(var(--radius) - 3px);
     @apply overflow-hidden;
     @apply text-sm font-medium;
     color: var(--geist-foreground-200);
@@ -673,9 +678,9 @@
   .sidebar-link:hover { background: var(--geist-background-300); }
 
   .sidebar-link-active {
-    background: var(--geist-background-300);
+    background: hsl(var(--accent));
     color: var(--geist-foreground-100);
-    box-shadow: inset 2px 0 var(--geist-foreground-100);
+    box-shadow: inset 2px 0 hsl(var(--signal));
   }
 
   .sidebar-section {
@@ -744,13 +749,13 @@
   /* ============ 标签页 ============ */
   .tabs {
     @apply flex gap-1 p-1;
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: var(--geist-background-300);
   }
 
   .tab {
     @apply px-3 py-1.5 text-sm font-medium;
-    border-radius: 6px;
+    border-radius: calc(var(--radius) - 3px);
     color: var(--geist-foreground-200);
     @apply transition-all duration-200;
   }
@@ -807,7 +812,7 @@
     @apply font-mono text-sm;
     @apply overflow-x-auto p-4;
     border: 1px solid var(--geist-border-100);
-    border-radius: 8px;
+    border-radius: var(--radius);
     background: #0a0a0a;
     color: #ededed;
   }

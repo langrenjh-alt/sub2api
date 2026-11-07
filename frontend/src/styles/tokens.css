@@ -1,0 +1,41 @@
+/* Z30 • two surfaces, a single signal. Channels support Tailwind's /opacity syntax. */
+:root {
+  --background: 45 14% 96%;
+  --foreground: 228 11% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary: 228 12% 14%;
+  --primary-foreground: 45 20% 98%;
+  --secondary: 40 11% 92%;
+  --secondary-foreground: 228 11% 18%;
+  --muted: 42 10% 92%;
+  --muted-foreground: 232 5% 38%;
+  --accent: 152 28% 90%;
+  --accent-foreground: 164 45% 22%;
+  --destructive: 2 66% 44%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 40 8% 84%;
+  --input: 40 6% 72%;
+  --signal: 163 66% 30%;
+  --ring: var(--signal);
+  --radius: .625rem;
+}
+.dark {
+  --background: 228 12% 8%;
+  --foreground: 45 15% 94%;
+  --card: 226 10% 11%;
+  --primary: 42 19% 91%;
+  --primary-foreground: 228 11% 12%;
+  --secondary: 228 8% 18%;
+  --secondary-foreground: 43 14% 92%;
+  --muted: 228 8% 16%;
+  --muted-foreground: 220 6% 70%;
+  --accent: 163 19% 17%;
+  --accent-foreground: 151 42% 79%;
+  --destructive: 1 61% 43%;
+  --border: 224 8% 22%;
+  --input: 224 6% 36%;
+  --signal: 156 48% 70%;
+}

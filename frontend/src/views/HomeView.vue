@@ -6,6 +6,7 @@
       v-if="isHomeContentUrl"
       :src="homeContent.trim()"
       class="h-screen w-full border-0"
+      :title="brandName"
       allowfullscreen
     ></iframe>
     <!-- HTML mode - SECURITY: homeContent is admin-only setting, XSS risk is acceptable -->
@@ -90,103 +91,17 @@
     </footer>
   </div>
 
-  <div v-else ref="homeRootRef" class="geist-home terminal-container min-h-screen">
-    <header class="home-topbar">
-      <div class="home-shell home-topbar-inner">
-        <RouterLink to="/home" class="home-brand" aria-label="Home">
-          <span class="home-brand-mark">
-            <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
-          </span>
-          <span class="home-brand-copy">
-            <strong>{{ brandName }}</strong>
-            <span>{{ siteTagline }}</span>
-          </span>
-        </RouterLink>
+  <div v-else class="z30-home terminal-container min-h-screen">
+    <SignalHero
+      :brand-name="brandName"
+      :site-logo="siteLogo"
+      :tagline="siteTagline"
+      :workspace-path="workspacePath"
+      :authenticated="isAuthenticated"
+      :model-plaza="showModelPlazaEntry"
+    />
 
-        <nav class="home-topnav" aria-label="Primary">
-          <a href="#capabilities">{{ t('home.landing.sections.overview') }}</a>
-          <a href="#compatibility">{{ t('home.landing.sections.compatibility') }}</a>
-          <a href="#access">{{ t('home.landing.sections.accessSteps') }}</a>
-          <RouterLink v-if="showModelPlazaEntry" to="/model-plaza" class="home-model-plaza-nav">
-            {{ t('nav.modelPlaza') }}
-          </RouterLink>
-        </nav>
-
-        <div class="home-topbar-actions">
-          <LocaleSwitcher />
-          <RouterLink :to="workspacePath" class="home-button home-button-light home-auth-link">
-            {{ isAuthenticated ? t('home.goToDashboard') : t('home.login') }}
-            <Icon name="arrowRight" size="sm" />
-          </RouterLink>
-        </div>
-      </div>
-    </header>
-
-    <div class="home-scroll-progress" aria-hidden="true">
-      <span>01</span>
-      <i><b class="home-scroll-progress-fill"></b></i>
-      <span>07</span>
-    </div>
-
-    <GatewayField ref="gatewayFieldRef" :active="fieldActive" class="home-field" />
-
-    <section class="home-hero" aria-labelledby="home-title">
-      <div class="home-shell home-lunar-meta" aria-hidden="true">
-        <span>LUNAR SURFACE / NASA LRO</span>
-        <span>AI INFRASTRUCTURE / 2026</span>
-      </div>
-
-      <div class="home-shell home-hero-content">
-        <p class="home-hero-overline">
-          <span>UNIFIED AI GATEWAY</span>
-          <i aria-hidden="true"></i>
-          <span>统一智能网关</span>
-        </p>
-        <h1 id="home-title" class="home-hero-title">{{ brandName }}</h1>
-        <div class="home-hero-copy">
-          <p class="home-hero-statement">{{ siteTagline }}</p>
-          <p v-if="heroDescription !== siteTagline" class="home-lead">{{ heroDescription }}</p>
-        </div>
-
-        <div class="home-hero-actions">
-          <RouterLink :to="workspacePath" class="home-button home-button-light">
-            {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
-            <Icon name="arrowRight" size="sm" />
-          </RouterLink>
-          <a
-            :href="rechargeUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="home-button home-button-dark"
-          >
-            <Icon name="creditCard" size="sm" />
-            {{ t('home.landing.actions.rechargeNow') }}
-          </a>
-          <RouterLink
-            v-if="showModelPlazaEntry"
-            to="/model-plaza"
-            class="home-button home-button-dark home-model-plaza-cta"
-          >
-            <Icon name="grid" size="sm" />
-            {{ t('nav.modelPlaza') }}
-          </RouterLink>
-        </div>
-      </div>
-
-      <div class="home-shell home-request-rail">
-        <div class="home-request-method">
-          <span>POST</span>
-          <code>/v1/chat/completions</code>
-        </div>
-        <div class="home-request-state">
-          <span class="home-live-dot" aria-hidden="true"></span>
-          {{ t('home.landing.providerStatus.ready') }}
-          <strong>200</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="home-signal-strip" aria-label="Gateway summary">
+    <section class="home-signal-strip" :aria-label="t('home.signal.index')">
       <div class="home-shell home-signal-grid">
         <div class="home-signal-cell home-signal-endpoint">
           <span>Base URL</span>
@@ -210,6 +125,11 @@
         </div>
 
         <div class="home-action-grid">
+          <RouterLink v-if="showModelPlazaEntry" to="/model-plaza" class="home-action home-model-plaza-cta">
+            <span class="home-action-icon"><Icon name="grid" size="sm" /></span>
+            <span class="home-action-copy"><strong>{{ t('nav.modelPlaza') }}</strong></span>
+            <Icon name="arrowRight" size="sm" class="home-action-arrow" />
+          </RouterLink>
           <RouterLink
             v-for="action in primaryActions"
             :key="action.label"
@@ -239,51 +159,6 @@
             </span>
             <Icon name="externalLink" size="sm" class="home-action-arrow" />
           </a>
-        </div>
-      </section>
-
-      <section class="home-mission-archive" aria-labelledby="mission-archive-title">
-        <div class="home-shell home-mission-intro">
-          <p class="home-kicker home-kicker-inverse">APOLLO ARCHIVE / 1972</p>
-          <h2 id="mission-archive-title">
-            <span>One gateway.</span>
-            <span>Every frontier.</span>
-          </h2>
-          <p>从一个入口，抵达更远的边界。</p>
-        </div>
-
-        <figure class="home-mission-primary">
-          <img
-            src="/assets/home/apollo-17-astronaut.jpg"
-            alt="Apollo 17 astronaut on the lunar surface with crew reflected in the visor"
-            loading="lazy"
-            decoding="async"
-          />
-          <figcaption class="home-shell">
-            <span>FRAME 01 / LUNAR EVA</span>
-            <span>APOLLO ARCHIVE / NASA</span>
-          </figcaption>
-        </figure>
-
-        <div class="home-shell home-mission-secondary">
-          <figure>
-            <img
-              src="/assets/home/apollo-17-lunar-rover.jpg"
-              alt="Apollo 17 astronaut working beside the lunar rover and a large moon rock"
-              loading="lazy"
-              decoding="async"
-            />
-            <figcaption>
-              <span>FRAME 02 / SURFACE OPERATIONS</span>
-              <span>MISSION AS17</span>
-            </figcaption>
-          </figure>
-
-          <div class="home-mission-copy">
-            <span>02 / NEXT FRONTIER</span>
-            <h3>通向下一片疆域的基础设施</h3>
-            <p>Infrastructure for the next frontier.</p>
-          </div>
         </div>
       </section>
 
@@ -460,9 +335,9 @@
       <section class="home-terminal-cta" aria-labelledby="terminal-cta-title">
         <div class="home-shell home-terminal-cta-inner">
           <div>
-            <p class="home-kicker home-kicker-inverse">READY / GATEWAY ONLINE</p>
-            <h2 id="terminal-cta-title">下一段旅程，从这里开始。</h2>
-            <p>YOUR GATEWAY IS READY / {{ siteTagline }}</p>
+            <p class="home-kicker home-kicker-inverse">GATEWAY ACCESS</p>
+            <h2 id="terminal-cta-title">{{ t('home.signal.enter') }}</h2>
+            <p>{{ siteTagline }}</p>
           </div>
           <RouterLink :to="workspacePath" class="home-button home-button-light home-terminal-cta-action">
             {{ isAuthenticated ? t('home.goToDashboard') : t('home.getStarted') }}
@@ -486,14 +361,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore, useAuthStore } from '@/stores'
-import GatewayField from '@/components/home/GatewayField.vue'
+import SignalHero from '@/components/home/SignalHero.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
-import { useHomeParallax } from '@/composables/useHomeParallax'
 import {
   getHomepageStatus,
   type HomepageStatusResponse,
@@ -519,20 +393,12 @@ interface ExternalActionLink extends ActionLink {
   external?: boolean
 }
 
-interface GatewayFieldHandle {
-  setScrollProgress(progress: number): void
-}
-
 const { t } = useI18n()
 const appStore = useAppStore()
 const authStore = useAuthStore()
-const homeRootRef = ref<HTMLElement | null>(null)
-const gatewayFieldRef = ref<GatewayFieldHandle | null>(null)
 const homepageStatus = ref<HomepageStatusResponse | null>(null)
 
 let homepageStatusController: AbortController | null = null
-
-const { refresh: refreshHomeParallax } = useHomeParallax(homeRootRef, gatewayFieldRef)
 
 const homeContent = computed(() => appStore.cachedPublicSettings?.home_content || '')
 const trimmedHomeContent = computed(() => homeContent.value.trim())
@@ -569,7 +435,6 @@ const baseUrl = computed(() => {
   return `${window.location.origin}/v1`
 })
 
-const fieldActive = ref(true)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const modelPlazaRequiresAuth = computed(
   () => appStore.cachedPublicSettings?.model_plaza_require_auth === true,
@@ -715,9 +580,6 @@ async function loadHomepageStatus(): Promise<void> {
     const response = await getHomepageStatus({ signal: controller.signal })
     if (controller.signal.aborted || homepageStatusController !== controller) return
     homepageStatus.value = response
-    await nextTick()
-    if (controller.signal.aborted || homepageStatusController !== controller) return
-    refreshHomeParallax()
   } catch {
     // This public summary is optional; keep the homepage usable if it is unavailable.
   } finally {
@@ -725,14 +587,8 @@ async function loadHomepageStatus(): Promise<void> {
   }
 }
 
-function updateFieldActivity() {
-  fieldActive.value = document.visibilityState === 'visible'
-    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
+let mounted = true
 onMounted(async () => {
-  updateFieldActivity()
-  document.addEventListener('visibilitychange', updateFieldActivity)
   authStore.checkAuth()
   if (!appStore.publicSettingsLoaded) {
     try {
@@ -741,67 +597,36 @@ onMounted(async () => {
       return
     }
   }
-  if (!trimmedHomeContent.value) await loadHomepageStatus()
+  if (mounted && !trimmedHomeContent.value && !compactHomeEnabled.value) await loadHomepageStatus()
 })
 
 onBeforeUnmount(() => {
   homepageStatusController?.abort()
   homepageStatusController = null
-  document.removeEventListener('visibilitychange', updateFieldActivity)
+  mounted = false
 })
 </script>
 
 <style scoped>
-.geist-home {
-  --geist-background-100: #050505;
-  --geist-background-200: #0b0b0b;
-  --geist-background-300: #151515;
+.z30-home {
+  --geist-background-100: #080d11;
+  --geist-background-200: #0d1419;
+  --geist-background-300: #121d23;
   --geist-foreground-100: #ededed;
   --geist-foreground-200: #a1a1a1;
-  --geist-foreground-300: #888888;
-  --geist-foreground-400: #666666;
-  --geist-border-100: #262626;
+  --geist-foreground-300: #a2b0b6;
+  --geist-foreground-400: #a3aeb4;
+  --geist-border-100: #29333a;
   --geist-border-200: #333333;
   --geist-border-300: #525252;
-  --geist-green: #45d483;
+  --geist-green: #a1e6c3;
   position: relative;
   isolation: isolate;
-  background: #050505;
+  background: #080d11;
   color: #ededed;
   color-scheme: dark;
   font-family: 'Geist Variable', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-x: clip;
-}
-
-.home-scroll-progress {
-  position: fixed;
-  z-index: 45;
-  top: 50%;
-  right: 18px;
-  display: grid;
-  justify-items: center;
-  gap: 9px;
-  color: var(--geist-foreground-400);
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 8px;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
-.home-scroll-progress i {
-  position: relative;
-  display: block;
-  width: 1px;
-  height: 92px;
-  overflow: hidden;
-  background: var(--geist-border-200);
-}
-
-.home-scroll-progress b {
-  position: absolute;
-  inset: 0;
-  display: block;
-  background: var(--geist-foreground-100);
 }
 
 .home-shell {
@@ -809,92 +634,7 @@ onBeforeUnmount(() => {
   margin: 0 auto;
 }
 
-.home-topbar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 50;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(3, 3, 3, 0.5);
-  color: #ededed;
-  backdrop-filter: blur(14px) saturate(120%);
-}
-
-.home-topbar-inner {
-  display: flex;
-  min-height: 64px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.home-brand,
-.home-topbar-actions,
-.home-hero-actions,
-.home-request-method,
-.home-request-state,
-.home-provider-name,
-.home-final-cta > div {
-  display: inline-flex;
-  align-items: center;
-}
-
-.home-brand {
-  min-width: 0;
-  gap: 10px;
-  color: inherit;
-}
-
-.home-brand-mark {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border: 1px solid #333333;
-  border-radius: 6px;
-  background: #111111;
-}
-
-.home-brand-copy {
-  display: grid;
-  min-width: 0;
-  gap: 1px;
-}
-
-.home-brand-copy strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.home-brand-copy span {
-  overflow: hidden;
-  max-width: 260px;
-  color: #888888;
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.home-topnav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.home-topnav a {
-  padding: 7px 10px;
-  border-radius: 6px;
-  color: #a1a1a1;
-  font-size: 13px;
-  transition: background-color 150ms ease, color 150ms ease;
-}
-
-.home-topnav a:hover { background: #1a1a1a; color: #ffffff; }
-.home-topbar-actions { gap: 8px; }
+.home-provider-name, .home-final-cta > div { display: inline-flex; align-items: center; }
 
 .home-button {
   display: inline-flex;
@@ -913,168 +653,8 @@ onBeforeUnmount(() => {
 .home-button { padding: 0 14px; }
 .home-button-light { background: #ffffff; color: #0a0a0a; }
 .home-button-light:hover { background: #e6e6e6; }
-.home-button-dark { border-color: #333333; background: #111111; color: #ededed; }
-.home-button-dark:hover { border-color: #666666; background: #1a1a1a; }
-
-.home-hero {
-  position: relative;
-  z-index: 1;
-  height: 100svh;
-  min-height: 700px;
-  background: transparent;
-  color: #ffffff;
-}
-
-.home-hero::after {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.055);
-  content: '';
-  pointer-events: none;
-}
-
-.home-field {
-  position: fixed;
-  z-index: 0;
-  inset: 0;
-  width: 100%;
-  height: 100svh;
-  opacity: 1;
-  pointer-events: none;
-}
-
-.home-lunar-meta {
-  position: absolute;
-  z-index: 2;
-  top: 96px;
-  right: 0;
-  left: 0;
-  display: flex;
-  justify-content: space-between;
-  color: rgba(255, 255, 255, 0.38);
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 9px;
-  pointer-events: none;
-}
-
-.home-hero-content {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  height: 100%;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 76px;
-  padding-bottom: 106px;
-  pointer-events: none;
-  text-align: left;
-}
-
-.home-hero-actions {
-  pointer-events: auto;
-}
-
-.home-kicker {
-  margin: 0;
-  color: var(--geist-foreground-300);
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 11px;
-  font-weight: 560;
-  line-height: 1.3;
-  text-transform: uppercase;
-}
-
-.home-kicker-inverse { color: #a1a1a1; }
-.home-live-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 999px;
-  background: #45d483;
-  box-shadow: 0 0 0 4px rgba(69, 212, 131, 0.12);
-}
-.home-kicker .home-live-dot { display: inline-block; margin-right: 8px; }
-
-.home-hero-overline {
-  display: flex;
-  width: min(520px, 48%);
-  align-items: center;
-  gap: 14px;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.62);
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 10px;
-  line-height: 1.4;
-}
-
-.home-hero-overline i {
-  width: 38px;
-  height: 1px;
-  flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.32);
-}
-
-.home-hero-title {
-  width: min(710px, 60%);
-  margin: 28px 0 0;
-  overflow-wrap: anywhere;
-  font-size: 112px;
-  font-weight: 580;
-  line-height: 0.86;
-  text-shadow: 0 2px 18px #030303;
-}
-
-.home-hero-copy {
-  display: grid;
-  width: min(560px, 48%);
-  gap: 8px;
-  margin-top: 30px;
-}
-
-.home-hero-statement {
-  margin: 0;
-  color: #f0f0f0;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-.home-lead {
-  margin: 0;
-  color: #8f8f8f;
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.home-hero-actions { gap: 10px; margin-top: 32px; }
-
-.home-request-rail {
-  position: absolute;
-  z-index: 3;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  min-height: 62px;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  color: #888888;
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 11px;
-  pointer-events: none;
-}
-
-.home-request-method { gap: 12px; }
-.home-request-method span { color: #45d483; }
-.home-request-method code { color: #a1a1a1; }
-.home-request-state { gap: 9px; }
-.home-request-state strong { color: #45d483; font-weight: 500; }
+.home-kicker { margin: 0; color: var(--geist-green); font: 11px/1.4 'Geist Mono Variable', monospace; letter-spacing: .13em; text-transform: uppercase; }
+.home-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--geist-green); }
 
 .home-signal-strip {
   position: relative;
@@ -1136,119 +716,6 @@ onBeforeUnmount(() => {
 .home-action-copy small { color: var(--geist-foreground-300); font-size: 12px; line-height: 1.45; }
 .home-action-arrow { color: var(--geist-foreground-400); }
 
-.home-mission-archive {
-  position: relative;
-  z-index: 2;
-  overflow: clip;
-  padding-top: 132px;
-  border-top: 1px solid var(--geist-border-100);
-  background: #050505;
-  color: #ededed;
-}
-
-.home-mission-intro {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.42fr) minmax(420px, 1.25fr) minmax(180px, 0.52fr);
-  align-items: end;
-  gap: 48px;
-  padding-bottom: 72px;
-}
-
-.home-mission-intro .home-kicker { align-self: start; }
-
-.home-mission-intro h2 {
-  margin: 0;
-  font-size: 68px;
-  font-weight: 560;
-  line-height: 0.96;
-}
-
-.home-mission-intro h2 span { display: block; }
-.home-mission-intro h2 span:last-child { color: #686868; }
-.home-mission-intro > p:last-child { margin: 0 0 5px; color: #a1a1a1; font-size: 16px; line-height: 1.6; }
-
-.home-mission-primary,
-.home-mission-secondary figure { margin: 0; }
-
-.home-mission-primary {
-  position: relative;
-  height: min(86svh, 900px);
-  min-height: 620px;
-  border-top: 1px solid #262626;
-  border-bottom: 1px solid #262626;
-  background: #090909;
-}
-
-.home-mission-primary img,
-.home-mission-secondary img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.home-mission-primary img { object-position: center 48%; }
-
-.home-mission-primary figcaption,
-.home-mission-secondary figcaption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #777777;
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 9px;
-}
-
-.home-mission-primary figcaption {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  min-height: 52px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(5, 5, 5, 0.72);
-  color: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
-}
-
-.home-mission-secondary {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-  align-items: stretch;
-  gap: 80px;
-  padding-top: 120px;
-  padding-bottom: 140px;
-}
-
-.home-mission-secondary figure { display: grid; gap: 14px; }
-.home-mission-secondary img { height: auto; aspect-ratio: 1; }
-.home-mission-secondary figcaption { padding-top: 2px; }
-
-.home-mission-copy {
-  display: grid;
-  min-height: 100%;
-  grid-template-rows: auto 1fr auto;
-  padding-top: 16px;
-  border-top: 1px solid #333333;
-}
-
-.home-mission-copy > span,
-.home-mission-copy > p {
-  color: #777777;
-  font-family: 'Geist Mono Variable', monospace;
-  font-size: 10px;
-}
-
-.home-mission-copy h3 {
-  align-self: end;
-  margin: 0 0 24px;
-  font-size: 42px;
-  font-weight: 560;
-  line-height: 1.12;
-}
-
-.home-mission-copy > p { margin: 0; font-size: 12px; }
-
 .home-section-tint { border-top: 1px solid var(--geist-border-100); border-bottom: 1px solid var(--geist-border-100); background: var(--geist-background-200); }
 .home-feature-layout { display: grid; grid-template-columns: minmax(260px, 0.72fr) minmax(0, 1.4fr); gap: 80px; }
 .home-feature-intro { align-self: start; position: sticky; top: 96px; }
@@ -1295,21 +762,21 @@ onBeforeUnmount(() => {
 .home-homepage-status-value small { color: var(--geist-foreground-400); font-size: 8px; text-transform: uppercase; }
 .home-homepage-status-value strong { font-size: 12px; font-weight: 560; }
 
-.home-section-dark { background: #050505; color: #ffffff; }
-.home-section-dark .home-section-heading p:not(.home-kicker) { color: #888888; }
-.home-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 52px; border-top: 1px solid #262626; border-bottom: 1px solid #262626; }
+.home-section-dark { background: #080d11; color: #ffffff; }
+.home-section-dark .home-section-heading p:not(.home-kicker) { color: #a2b0b6; }
+.home-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 52px; border-top: 1px solid #29333a; border-bottom: 1px solid #29333a; }
 .home-steps { perspective: 1200px; }
-.home-step { min-height: 230px; padding: 22px; border-right: 1px solid #262626; }
-.home-step:first-child { border-left: 1px solid #262626; }
-.home-step > span { color: #666666; font-family: 'Geist Mono Variable', monospace; font-size: 11px; }
+.home-step { min-height: 230px; padding: 22px; border-right: 1px solid #29333a; }
+.home-step:first-child { border-left: 1px solid #29333a; }
+.home-step > span { color: #a3aeb4; font-family: 'Geist Mono Variable', monospace; font-size: 11px; }
 .home-step strong { display: block; margin-top: 68px; font-size: 16px; font-weight: 600; }
-.home-step p { margin: 10px 0 0; color: #888888; font-size: 13px; line-height: 1.6; }
-.home-final-cta { display: flex; min-height: 78px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #262626; }
+.home-step p { margin: 10px 0 0; color: #a2b0b6; font-size: 13px; line-height: 1.6; }
+.home-final-cta { display: flex; min-height: 78px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #29333a; }
 .home-final-cta > div { gap: 10px; }
 .home-final-cta strong { font-size: 13px; font-weight: 560; }
-.home-final-cta small { color: #666666; font-family: 'Geist Mono Variable', monospace; font-size: 11px; }
+.home-final-cta small { color: #a3aeb4; font-family: 'Geist Mono Variable', monospace; font-size: 11px; }
 
-.home-status-section { display: grid; grid-template-columns: minmax(220px, 0.5fr) minmax(0, 1.5fr); gap: 80px; padding-bottom: 240px; }
+.home-status-section { display: grid; grid-template-columns: minmax(220px, 0.5fr) minmax(0, 1.5fr); gap: 80px; padding-bottom: 104px; }
 .home-status-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--geist-border-100); }
 .home-status-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 76px; padding: 12px 16px; border-right: 1px solid var(--geist-border-100); border-bottom: 1px solid var(--geist-border-100); background: rgba(5, 5, 5, 0.76); }
 .home-status-row:nth-child(odd) { border-left: 1px solid var(--geist-border-100); }
@@ -1360,70 +827,17 @@ onBeforeUnmount(() => {
 .home-footer div div { display: flex; flex-wrap: wrap; gap: 16px; }
 .home-footer a:hover { color: var(--geist-foreground-100); }
 
-.home-field,
-.home-hero-content,
-.home-lunar-meta,
-.home-mission-intro,
-.home-mission-primary img,
-.home-mission-secondary,
-.home-signal-cell,
-.home-action,
-.home-feature,
-.home-provider-row,
-.home-step,
-.home-status-list {
-  will-change: transform, opacity;
-}
-
 @media (max-width: 1040px) {
-  .home-scroll-progress { display: none; }
-  .home-topnav { display: none; }
   .home-action-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-feature-layout,
   .home-compatibility,
   .home-homepage-status,
   .home-status-section { grid-template-columns: 1fr; gap: 42px; }
   .home-feature-intro { position: static; }
-  .home-hero-title { width: 62%; font-size: 86px; }
-  .home-hero-copy { width: 50%; }
-  .home-mission-intro { grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr); gap: 32px; }
-  .home-mission-intro .home-kicker { grid-column: 1 / -1; }
-  .home-mission-intro h2 { font-size: 56px; }
-  .home-mission-secondary { grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr); gap: 42px; }
-  .home-mission-copy h3 { font-size: 34px; }
 }
 
 @media (max-width: 720px) {
   .home-shell { width: min(100% - 28px, 1180px); }
-  .home-topbar-inner { min-height: 58px; }
-  .home-brand-copy span,
-  .home-auth-link { display: none; }
-  .home-hero { height: 100svh; min-height: 680px; }
-  .home-hero::after { display: none; }
-  .home-lunar-meta { top: 78px; }
-  .home-lunar-meta span:last-child { display: none; }
-  .home-hero-content { justify-content: flex-start; padding-top: 124px; padding-bottom: 64px; }
-  .home-hero-overline { width: 100%; gap: 10px; font-size: 9px; }
-  .home-hero-overline i { width: 24px; }
-  .home-hero-title { width: 100%; margin-top: 20px; font-size: 56px; line-height: 0.92; }
-  .home-hero-copy { width: 94%; gap: 6px; margin-top: 18px; }
-  .home-hero-statement { font-size: 16px; line-height: 1.4; }
-  .home-lead { font-size: 12px; line-height: 1.5; }
-  .home-hero-actions { flex-wrap: wrap; justify-content: flex-start; margin-top: 20px; }
-  .home-request-rail { min-height: 54px; }
-  .home-request-method code { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .home-mission-archive { padding-top: 80px; }
-  .home-mission-intro { grid-template-columns: 1fr; gap: 20px; padding-bottom: 48px; }
-  .home-mission-intro .home-kicker { grid-column: auto; }
-  .home-mission-intro h2 { font-size: 44px; line-height: 1; }
-  .home-mission-intro > p:last-child { font-size: 14px; }
-  .home-mission-primary { height: 72svh; min-height: 520px; }
-  .home-mission-primary img { object-position: 51% center; }
-  .home-mission-primary figcaption { min-height: 46px; }
-  .home-mission-primary figcaption span:last-child { display: none; }
-  .home-mission-secondary { grid-template-columns: 1fr; gap: 52px; padding-top: 72px; padding-bottom: 88px; }
-  .home-mission-copy { min-height: 280px; }
-  .home-mission-copy h3 { font-size: 32px; }
   .home-terminal-cta-inner { min-height: 330px; grid-template-columns: 1fr; align-content: center; gap: 36px; }
   .home-terminal-cta h2 { font-size: 36px; }
   .home-terminal-cta-action { width: 100%; }
@@ -1432,7 +846,7 @@ onBeforeUnmount(() => {
   .home-signal-cell:first-child { padding: 14px; border-left: 0; border-bottom: 1px solid var(--geist-border-100); }
   .home-signal-cell:nth-child(2n) { border-right: 0; }
   .home-section { padding-top: 72px; padding-bottom: 72px; }
-  .home-status-section { padding-bottom: 180px; }
+  .home-status-section { padding-bottom: 72px; }
   .home-section-heading-row { grid-template-columns: 1fr; align-items: start; gap: 20px; }
   .home-section-heading h2 { font-size: 32px; }
   .home-action-grid,
@@ -1445,7 +859,7 @@ onBeforeUnmount(() => {
   .home-feature h3 { margin-top: 64px; }
   .home-provider-row { grid-template-columns: 1fr auto; padding: 12px 0; }
   .home-provider-row > span { grid-column: 1 / -1; grid-row: 2; }
-  .home-step { min-height: 188px; border-left: 1px solid #262626; border-bottom: 1px solid #262626; }
+  .home-step { min-height: 188px; border-left: 1px solid #29333a; border-bottom: 1px solid #29333a; }
   .home-step strong { margin-top: 48px; }
   .home-final-cta { align-items: flex-start; flex-direction: column; padding: 22px 0; }
   .home-final-cta > div { flex-wrap: wrap; }
@@ -1454,7 +868,6 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-field { position: absolute; height: 100svh; }
   .home-action { transition-duration: 1ms; }
   .home-action:hover { transform: none; }
 }

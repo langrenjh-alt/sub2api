@@ -153,10 +153,10 @@
         </div>
 
         <!-- Submit Button -->
-        <button
+        <Button
           type="submit"
           :disabled="isLoading"
-          class="btn btn-primary w-full"
+          class="h-11 w-full"
         >
           <svg
             v-if="isLoading"
@@ -180,7 +180,7 @@
           </svg>
           <Icon v-else name="checkCircle" size="md" class="mr-2" />
           {{ isLoading ? t('auth.resettingPassword') : t('auth.resetPassword') }}
-        </button>
+        </Button>
       </form>
     </div>
 
@@ -200,6 +200,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'

@@ -11,7 +11,7 @@
       <!-- Custom Logo or Default Logo -->
       <router-link
         :to="homePath"
-        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-md bg-black text-white shadow-none transition-opacity hover:opacity-80 dark:bg-white dark:text-black"
+        class="sidebar-logo flex h-9 w-9 items-center justify-center overflow-hidden rounded-md shadow-none transition-opacity hover:opacity-80"
         @click="handleMenuItemClick(homePath)"
       >
         <img v-if="settingsLoaded" :src="siteLogo || '/logo.svg'" alt="Logo" class="h-full w-full object-contain" />

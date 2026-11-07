@@ -1,5 +1,5 @@
 <template>
-  <div class="stat-card">
+  <Card class="stat-card shadow-none">
     <div :class="['stat-icon', iconClass]">
       <component v-if="icon" :is="icon" class="h-6 w-6" aria-hidden="true" />
     </div>
@@ -18,12 +18,13 @@
         </span>
       </div>
     </div>
-  </div>
+  </Card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Component } from 'vue'
+import { Card } from '@/components/ui/card'
 import Icon from '@/components/icons/Icon.vue'
 
 type ChangeType = 'up' | 'down' | 'neutral'

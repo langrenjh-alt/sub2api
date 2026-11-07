@@ -3,15 +3,17 @@
     <div class="app-header-inner flex h-16 items-center justify-between gap-2 px-2 sm:px-4 md:px-6">
       <!-- Left: Mobile Menu Toggle + Page Title -->
       <div class="flex shrink-0 items-center gap-2 sm:gap-4">
-        <button
+        <Button
+          type="button"
+          variant="ghost" size="icon"
           @click="toggleMobileSidebar"
-          class="btn-ghost btn-icon lg:hidden"
+          class="lg:hidden"
           :aria-label="t('common.toggleMenu')"
         >
           <Icon name="menu" size="md" />
-        </button>
+        </Button>
 
-        <div class="hidden lg:block">
+        <div class="header-title hidden lg:block">
           <h1 class="text-base font-semibold text-[var(--geist-foreground-100)]">
             {{ pageTitle }}
           </h1>
@@ -252,6 +254,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -398,6 +401,11 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--geist-border-100);
   background: color-mix(in srgb, var(--geist-background-100) 88%, transparent);
   backdrop-filter: blur(16px) saturate(140%);
+}
+
+.header-title {
+  padding-left: .875rem;
+  border-left: 2px solid hsl(var(--signal));
 }
 
 .app-header-inner {

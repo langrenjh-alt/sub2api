@@ -14,6 +14,16 @@ export default {
     login: 'Login',
     getStarted: 'Get Started',
     goToDashboard: 'Go to Dashboard',
+    signal: {
+      navigation: 'Main navigation',
+      index: 'Gateway index',
+      explore: 'Explore the gateway',
+      motion: 'Scene motion',
+      pause: 'Pause motion',
+      resume: 'Resume motion',
+      still: 'Still frame',
+      enter: 'Enter the gateway.',
+    },
     landing: {
       nav: { recharge: 'Recharge' },
       actions: {

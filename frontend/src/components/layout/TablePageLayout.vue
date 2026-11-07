@@ -12,9 +12,9 @@
 
     <!-- 滚动区域：表格 -->
     <div class="layout-section-scrollable">
-      <div class="card table-scroll-container">
+      <Card class="table-scroll-container">
         <slot name="table" />
-      </div>
+      </Card>
     </div>
 
     <!-- 固定区域：分页器 -->
@@ -25,6 +25,7 @@
 </template>
 
 <script setup lang="ts">
+import { Card } from '@/components/ui/card'
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const isMobile = ref(false)
@@ -62,7 +63,7 @@ onUnmounted(() => {
 .table-scroll-container {
   @apply flex h-full flex-col overflow-hidden shadow-none;
   border: 1px solid var(--geist-border-100);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--geist-background-100);
 }
 
@@ -91,6 +92,8 @@ onUnmounted(() => {
   @apply px-4 py-3 text-left text-xs font-medium;
   border-bottom: 1px solid var(--geist-border-100);
   color: var(--geist-foreground-300);
+  @apply font-mono;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 

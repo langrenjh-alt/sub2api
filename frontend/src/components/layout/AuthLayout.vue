@@ -1,33 +1,34 @@
 <template>
   <div class="auth-shell min-h-screen">
-    <div class="auth-grid pointer-events-none fixed inset-0"></div>
+
     <div class="relative mx-auto flex min-h-screen w-full max-w-[1440px] flex-col lg:grid lg:grid-cols-[1.1fr_0.9fr]">
-      <section class="hidden border-r border-[var(--geist-border-100)] px-8 py-8 lg:flex lg:flex-col lg:justify-between">
+      <section class="auth-mast relative isolate hidden overflow-hidden px-10 py-10 lg:flex lg:flex-col lg:justify-between xl:px-14">
+        <div aria-hidden="true" class="auth-field"></div>
         <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-black text-white dark:bg-white dark:text-black">
+          <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md">
             <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
           </span>
           <div>
             <p class="text-sm font-semibold">{{ siteName }}</p>
-            <p class="text-xs text-[var(--geist-foreground-300)]">{{ siteSubtitle }}</p>
+            <p class="text-xs text-[#b2c4c0]">{{ siteSubtitle }}</p>
           </div>
         </div>
 
-        <div class="max-w-xl">
-          <p class="mb-4 font-mono text-xs uppercase text-[var(--geist-foreground-300)]">
+        <div class="relative max-w-xl">
+          <p class="auth-kicker mb-4 font-mono text-xs uppercase">
             {{ siteSubtitle }}
           </p>
-          <h1 class="break-words text-5xl font-semibold leading-none md:text-6xl">{{ siteName }}</h1>
+          <h1 class="break-words text-5xl font-medium leading-none tracking-tight xl:text-7xl">{{ siteName }}</h1>
         </div>
 
-        <p class="text-xs text-[var(--geist-foreground-400)]">&copy; {{ currentYear }} {{ siteName }}</p>
+        <p class="relative font-mono text-xs text-[#b2c4c0]">&copy; {{ currentYear }} {{ siteName }}</p>
       </section>
 
       <section class="flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
         <div class="w-full max-w-[460px]">
           <div class="mb-8 flex items-center justify-between lg:hidden">
             <div class="flex items-center gap-3">
-              <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md bg-black text-white dark:bg-white dark:text-black">
+              <span class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-md">
                 <img :src="siteLogo || '/logo.svg'" alt="" class="h-full w-full object-contain" />
               </span>
               <div>
@@ -37,9 +38,9 @@
             </div>
           </div>
 
-          <div class="auth-panel p-6 sm:p-8">
+          <Card class="auth-panel p-6 sm:p-8">
             <slot />
-          </div>
+          </Card>
 
           <div class="mt-6 px-1 text-sm">
             <slot name="footer" />
@@ -53,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { Card } from '@/components/ui/card'
 import { computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores'
 import { sanitizeUrl } from '@/utils/url'
@@ -72,33 +74,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.auth-grid {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
-}
-
 .auth-shell {
-  background: var(--geist-background-200);
-  color: var(--geist-foreground-100);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
 }
-
 .auth-panel {
-  border: 1px solid var(--geist-border-100);
-  border-radius: 8px;
-  background: var(--geist-background-100);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.07);
+  border-color: hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 12px 38px -24px rgb(0 0 0 / .28);
 }
-
-.dark .auth-panel {
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.32);
+.auth-mast {
+  color: #eff4f1;
+  background: linear-gradient(150deg, #192325, #0d1315 70%);
 }
-
-.dark .auth-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+.auth-field {
+  position: absolute;
+  z-index: -1;
+  inset: 16% -8% -4% 0;
+  background: url('@/assets/auth-field.svg') center right / 110% auto no-repeat;
+  opacity: .58;
+  mask-image: linear-gradient(180deg, transparent 1%, #000 32%, #000 86%, transparent);
+}
+.auth-kicker {
+  color: #c9dad4;
+  letter-spacing: .1em;
+}
+.auth-kicker::before {
+  display: inline-block;
+  content: '';
+  width: 1.6rem;
+  height: 2px;
+  margin-right: .65rem;
+  vertical-align: middle;
+  background: #a1d9bc;
 }
 </style>

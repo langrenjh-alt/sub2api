@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 92" role="img" aria-labelledby="title desc">
+  <title id="title">Z30</title>
+  <desc id="desc">Three free-standing, optically clear glass letters with polished facets. No plate or background.</desc>
+  <defs>
+    <g id="letters" transform="matrix(1 0 -.1405 1 4.45 -82)" fill-rule="evenodd">
+      <path d="M34 96H94V107L54 146H92L85 159H29V148L69 109H34Z"/>
+      <path d="M104 96H148L161 108V121L153 128L161 135V147L148 159H97L104 146H142L147 141V137L141 132H113L120 120H142L147 116V113L142 109H97Z"/>
+      <path d="M182 96H211L225 110V145L211 159H182L167 145V111ZM188 109L181 116V140L188 146H205L211 140V115L205 109Z"/>
+    </g>
+    <clipPath id="inside"><use href="#letters"/></clipPath>
+    <linearGradient id="face" x1="76" y1="9" x2="120" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e4fff8" stop-opacity=".25"/><stop offset=".18" stop-color="#b3efff" stop-opacity=".09"/>
+      <stop offset=".38" stop-color="#c2ebf0" stop-opacity=".02"/><stop offset=".52" stop-color="#9fb7c9" stop-opacity=".08"/>
+      <stop offset=".56" stop-color="#e1fffc" stop-opacity=".21"/><stop offset=".61" stop-color="#def9ff" stop-opacity=".03"/>
+      <stop offset=".84" stop-color="#9ecdee" stop-opacity=".07"/><stop offset="1" stop-color="#d8fff5" stop-opacity=".24"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="21" y1="16" x2="192" y2="83" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f3ffff" stop-opacity=".92"/><stop offset=".12" stop-color="#91d5e6" stop-opacity=".39"/>
+      <stop offset=".245" stop-color="#d7fff6" stop-opacity=".84"/><stop offset=".34" stop-color="#568993" stop-opacity=".45"/>
+      <stop offset=".49" stop-color="#edfffb" stop-opacity=".9"/><stop offset=".58" stop-color="#73979a" stop-opacity=".34"/>
+      <stop offset=".73" stop-color="#9bbdeb" stop-opacity=".67"/><stop offset=".8" stop-color="#ebfff8" stop-opacity=".93"/>
+      <stop offset="1" stop-color="#93bdea" stop-opacity=".49"/>
+    </linearGradient>
+    <linearGradient id="facet" x1="38" y1="19" x2="180" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e5fffa" stop-opacity=".54"/><stop offset=".22" stop-color="#92c8d3" stop-opacity=".08"/>
+      <stop offset=".54" stop-color="#d6f7ff" stop-opacity=".37"/><stop offset=".72" stop-color="#abcaff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#c7fae7" stop-opacity=".52"/>
+    </linearGradient>
+  </defs>
+  <!-- The far bevel has no face: its offset and dispersive edge convey thickness. -->
+  <use href="#letters" transform="translate(1.4 2.7)" fill="none" stroke="#071b26" stroke-opacity=".55" stroke-width="1.8" stroke-linejoin="round"/>
+  <use href="#letters" transform="translate(1.5 2.3)" fill="none" stroke="url(#edge)" stroke-opacity=".57" stroke-width=".85" stroke-linejoin="round"/>
+  <use href="#letters" fill="url(#face)" stroke="url(#edge)" stroke-width="1.25" stroke-linejoin="round"/>
+  <!-- Planar bevels catch a narrow reflection; the core stays clear. -->
+  <g clip-path="url(#inside)">
+    <g transform="matrix(1 0 -.1405 1 4.45 -82)" fill="url(#facet)">
+      <path d="M34 96H94L90 100H35ZM94 107L54 146L48 150L89 106ZM104 96H148L145 99H102ZM148 96L161 108L157 109L145 99ZM153 128L161 135L157 137L148 129ZM182 96H211L208 99H184L171 112L167 111ZM211 96L225 110L221 112L208 99ZM181 140L188 146H205L208 149H186L178 142Z"/>
+    </g>
+    <path d="M9 62C66 54 91 10 148 8M110 85C164 76 186 39 219 29" fill="none" stroke="#f0ffff" stroke-opacity=".17" stroke-width="1.2"/>
+  </g>
+</svg>

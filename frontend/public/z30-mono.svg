@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 224 92" role="img" aria-labelledby="title">
+  <title id="title">Z30</title>
+  <g transform="matrix(1 0 -.1405 1 4.45 -82)" fill="currentColor" fill-rule="evenodd">
+      <path d="M34 96H94V107L54 146H92L85 159H29V148L69 109H34Z"/>
+      <path d="M104 96H148L161 108V121L153 128L161 135V147L148 159H97L104 146H142L147 141V137L141 132H113L120 120H142L147 116V113L142 109H97Z"/>
+      <path d="M182 96H211L225 110V145L211 159H182L167 145V111ZM188 109L181 116V140L188 146H205L211 140V115L205 109Z"/>
+  </g>
+</svg>

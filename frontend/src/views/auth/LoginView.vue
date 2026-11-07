@@ -100,14 +100,14 @@
         </div>
 
         <!-- Submit Button -->
-        <button
+        <Button
           type="submit"
           :disabled="
             authActionDisabled ||
             (turnstileEnabled && !turnstileToken) ||
             (geetestEnabled && !geetestValidation)
           "
-          class="btn btn-primary w-full"
+          class="h-11 w-full"
         >
           <svg
             v-if="isLoading"
@@ -131,7 +131,7 @@
           </svg>
           <Icon v-else name="login" size="md" class="mr-2" />
           {{ isLoading ? t('auth.signingIn') : t('auth.signIn') }}
-        </button>
+        </Button>
 
         <LoginAgreementPrompt
           v-if="loginAgreementEnabled"
@@ -228,6 +228,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from '@/components/ui/button'
 import { computed, ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'

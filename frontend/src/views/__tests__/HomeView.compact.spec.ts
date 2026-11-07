@@ -33,17 +33,6 @@ vi.mock('@/api/homepageStatus', () => ({
   getHomepageStatus: vi.fn().mockResolvedValue({ enabled: false, groups: [], monitors: [] }),
 }))
 
-vi.mock('@/composables/useHomeParallax', () => ({
-  useHomeParallax: () => ({ refresh: vi.fn() }),
-}))
-
-vi.mock('@/components/home/GatewayField.vue', () => ({
-  default: {
-    name: 'GatewayFieldStub',
-    template: '<canvas data-testid="gateway-field" />',
-  },
-}))
-
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
   return {

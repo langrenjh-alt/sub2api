@@ -14,6 +14,16 @@ export default {
     login: '登录',
     getStarted: '立即开始',
     goToDashboard: '进入控制台',
+    signal: {
+      navigation: '主导航',
+      index: '网关索引',
+      explore: '探索网关',
+      motion: '场景动效',
+      pause: '暂停动效',
+      resume: '开启动效',
+      still: '静态画面',
+      enter: '从这里接入网关。',
+    },
     landing: {
       nav: { recharge: '充值' },
       actions: {

@@ -4,10 +4,7 @@ import { defineComponent, nextTick, reactive } from 'vue'
 
 const checkAuth = vi.fn()
 const fetchPublicSettings = vi.fn()
-const { getHomepageStatus, refreshHomeParallax } = vi.hoisted(() => ({
-  getHomepageStatus: vi.fn(),
-  refreshHomeParallax: vi.fn(),
-}))
+const { getHomepageStatus } = vi.hoisted(() => ({ getHomepageStatus: vi.fn() }))
 
 const authState = {
   isAuthenticated: false,
@@ -60,16 +57,6 @@ vi.mock('@/components/icons/Icon.vue', () => ({
   }),
 }))
 
-vi.mock('@/components/home/GatewayField.vue', () => ({
-  default: defineComponent({
-    name: 'GatewayFieldStub',
-    methods: {
-      setScrollProgress() {},
-    },
-    template: '<canvas class="gateway-field-stub" />',
-  }),
-}))
-
 vi.mock('@/api/setup', () => ({
   getSetupStatus: vi.fn(),
 }))
@@ -88,10 +75,6 @@ vi.mock('@/api/auth', () => ({
 
 vi.mock('@/api/homepageStatus', () => ({
   getHomepageStatus,
-}))
-
-vi.mock('@/composables/useHomeParallax', () => ({
-  useHomeParallax: () => ({ refresh: refreshHomeParallax }),
 }))
 
 vi.mock('vue-router', async () => {
@@ -117,7 +100,6 @@ describe('HomeView', () => {
     fetchPublicSettings.mockReset()
     fetchPublicSettings.mockResolvedValue(undefined)
     getHomepageStatus.mockReset()
-    refreshHomeParallax.mockReset()
     getHomepageStatus.mockResolvedValue({
       enabled: false,
       groups: [],
@@ -139,7 +121,7 @@ describe('HomeView', () => {
     })
   })
 
-  it('renders the Geist-style product fallback shell', async () => {
+  it('renders the Z30 signal field and gateway directory', async () => {
     const wrapper = mount(HomeView)
     await flushPromises()
     await nextTick()
@@ -149,14 +131,13 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('home.features.unifiedGateway')
     expect(wrapper.text()).toContain('home.landing.sections.overview')
     expect(wrapper.text()).toContain('home.providers.claude')
-    expect(wrapper.find('.geist-home').exists()).toBe(true)
-    expect(wrapper.find('.home-topnav').exists()).toBe(true)
-    expect(wrapper.find('.gateway-field-stub').exists()).toBe(true)
-    expect(wrapper.find('.home-hero-title').text()).toBe('Sub2API')
-    expect(wrapper.find('.home-hero-overline').text()).toContain('UNIFIED AI GATEWAY')
-    expect(wrapper.find('.home-lunar-meta').text()).toContain('NASA LRO')
-    expect(wrapper.find('.home-node-label').exists()).toBe(false)
-    expect(wrapper.find('.home-request-rail').exists()).toBe(true)
+    expect(wrapper.find('.z30-home').exists()).toBe(true)
+    expect(wrapper.find('.signal-nav').exists()).toBe(true)
+    expect(wrapper.get('h1 img').attributes('alt')).toBe('Z30')
+    expect(wrapper.get('h1 img').attributes('src')).toBe('/z30-emblem.svg')
+    expect(wrapper.get('.signal-plate').attributes('src')).toBe('/assets/home/z30-signal-field.webp')
+    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#actions')
+    expect(wrapper.find('#actions').exists()).toBe(true)
     expect(wrapper.find('.home-terminal-cta').exists()).toBe(true)
     expect(wrapper.find('.home-terminal-cta a').attributes('href')).toBe('/login')
   })
@@ -171,7 +152,7 @@ describe('HomeView', () => {
     expect(links.some((link) => link.attributes('href') === 'https://docs.example.com/')).toBe(true)
   })
 
-  it('shows model plaza entries in the top navigation and hero when enabled', async () => {
+  it('shows model plaza entries in the top navigation and directory when enabled', async () => {
     appState.cachedPublicSettings = { model_plaza_enabled: true }
 
     const wrapper = mount(HomeView)
@@ -228,14 +209,26 @@ describe('HomeView', () => {
     expect(links.some((link) => link.attributes('href') === '/admin/dashboard')).toBe(true)
   })
 
-  it('uses the permanent dark landing shell and renders the Apollo archive', async () => {
+  it('allows the visitor to pause and resume scene motion', async () => {
     const wrapper = mount(HomeView)
     await flushPromises()
+    const toggle = wrapper.get('[aria-label="home.signal.motion"]')
+    expect(toggle.attributes('aria-pressed')).toBe('true')
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-pressed')).toBe('false')
+    expect(wrapper.get('.signal').attributes('data-motion')).toBe('off')
+    await toggle.trigger('click')
+    expect(toggle.attributes('aria-pressed')).toBe('true')
+  })
 
-    expect(wrapper.find('button[title="home.switchToDark"]').exists()).toBe(false)
-    expect(wrapper.find('.home-mission-archive').exists()).toBe(true)
-    expect(wrapper.find('img[src="/assets/home/apollo-17-astronaut.jpg"]').exists()).toBe(true)
-    expect(wrapper.find('img[src="/assets/home/apollo-17-lunar-rover.jpg"]').exists()).toBe(true)
+  it('honors reduced motion while preserving the emblem and navigation', async () => {
+    vi.mocked(window.matchMedia).mockReturnValue({ matches: true } as MediaQueryList)
+    const wrapper = mount(HomeView)
+    await flushPromises()
+    expect(wrapper.get('.signal').attributes('data-motion')).toBe('off')
+    expect(wrapper.find('.signal-motion button').exists()).toBe(false)
+    expect(wrapper.get('h1 img').attributes('alt')).toBe('Z30')
+    expect(wrapper.get('.signal-explore').attributes('href')).toBe('#actions')
   })
 
   it('uses public settings for branding and API base URL', async () => {
@@ -256,7 +249,7 @@ describe('HomeView', () => {
     expect(wrapper.text()).toContain('https://api.example.com/v1')
     expect(wrapper.text()).toContain('home.providers.more +1')
     expect(wrapper.text()).toContain('Internal')
-    expect(wrapper.find('.geist-home').exists()).toBe(true)
+    expect(wrapper.find('.z30-home').exists()).toBe(true)
   })
 
   it('renders configured group rates and enabled channel uptime', async () => {
@@ -297,7 +290,6 @@ describe('HomeView', () => {
     expect(operationalMonitor.text()).toContain('99.46%')
     expect(operationalMonitor.find('.is-operational').exists()).toBe(true)
     expect(wrapper.find('[data-testid="homepage-status-monitor-13"]').text()).toContain('--')
-    expect(refreshHomeParallax).toHaveBeenCalledTimes(1)
   })
 
   it.each([
@@ -319,9 +311,8 @@ describe('HomeView', () => {
     await flushPromises()
 
     expect(getHomepageStatus).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('.geist-home').exists()).toBe(true)
+    expect(wrapper.find('.z30-home').exists()).toBe(true)
     expect(wrapper.find('[data-testid="homepage-status-section"]').exists()).toBe(false)
-    expect(refreshHomeParallax).not.toHaveBeenCalled()
   })
 
   it('aborts an in-flight status request when the homepage unmounts', async () => {
@@ -347,8 +338,8 @@ describe('HomeView', () => {
     const wrapper = mount(HomeView)
     await flushPromises()
 
-    expect(wrapper.find('.geist-home').exists()).toBe(false)
-    expect(wrapper.find('.home-topbar').exists()).toBe(false)
+    expect(wrapper.find('.z30-home').exists()).toBe(false)
+    expect(wrapper.find('.signal-header').exists()).toBe(false)
     expect(wrapper.find('.custom-home').exists()).toBe(true)
     expect(getHomepageStatus).not.toHaveBeenCalled()
   })
@@ -364,7 +355,7 @@ describe('HomeView', () => {
     const iframe = wrapper.find('iframe')
     expect(iframe.exists()).toBe(true)
     expect(iframe.attributes('src')).toBe('https://example.com/embed')
-    expect(wrapper.find('.geist-home').exists()).toBe(false)
+    expect(wrapper.find('.z30-home').exists()).toBe(false)
     expect(getHomepageStatus).not.toHaveBeenCalled()
   })
 

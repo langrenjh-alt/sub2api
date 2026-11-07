@@ -3,10 +3,12 @@
     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
       <Icon name="search" size="md" class="text-gray-400" />
     </div>
-    <input
-      v-model="searchValue"
+    <UiInput
+      :model-value="searchValue"
+      @update:model-value="searchValue = String($event)"
       type="text"
-      class="input pl-10"
+      :aria-label="placeholder"
+      class="pl-10"
       :placeholder="placeholder"
     />
   </div>
@@ -15,6 +17,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
+import { Input as UiInput } from '@/components/ui/input'
 import Icon from '@/components/icons/Icon.vue'
 
 const props = withDefaults(defineProps<{
