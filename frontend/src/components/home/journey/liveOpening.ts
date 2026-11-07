@@ -127,7 +127,7 @@ export function createLiveOpening(scene:T.Scene) {
         rt.scissor.set(x,y,Math.ceil(s.z*rt.width)-x,Math.ceil(s.w*rt.height)-y);rt.scissorTest=true
         b.proxy.visible=true;renderer.setRenderTarget(rt);renderer.render(exits,camera);b.proxy.visible=false
       }
-      function include(target:T.WebGLRenderTarget,src:T.Texture,solid:typeof solids[number]){
+      const include=(target:T.WebGLRenderTarget,src:T.Texture,solid:typeof solids[number])=>{
         blitMat.uniforms.source.value=src;solid.frontProxy.visible=true
         const u=solid.uniforms;u.field.value=src;u.resolution.value.set(target.width,target.height)
         renderer.setRenderTarget(target);renderer.render(composite,camera)
