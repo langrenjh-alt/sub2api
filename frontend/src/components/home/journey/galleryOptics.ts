@@ -143,13 +143,8 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
     up=new T.Vector3(),dir=new T.Vector3(),screenAnchor=new T.Vector3(),rotation=new T.Quaternion(),
     viewRotation=new T.Quaternion(),localTurn=new T.Quaternion(),euler=new T.Euler()
   let refraction:T.Texture=blank
-  // Each sheet is drawn inside the world. Subtract its projected quad from
-  // the separate DOM/glass canvases ONLY while they share the foreground.
-  const masks = [
-    {selector:'.signal-glass-layer', node:null as HTMLElement|null, cut:'', written:''},
-    {selector:'[data-journey="manifesto"]', node:null as HTMLElement|null, cut:'', written:''},
-    {selector:'[data-journey="access"]', node:null as HTMLElement|null, cut:'', written:''},
-  ]
+  // Only the HTML access copy needs a cut. Scene geometry handles glass occlusion.
+  const masks = [{selector:'[data-journey="access"]', node:null as HTMLElement|null, cut:'', written:''}]
   const clipCorner=new T.Vector3()
   function setCut(index:number,cut:string){
     const layer=masks[index]
@@ -258,12 +253,7 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
       u.time.value=time;u.peel.value=sheared;u.medium.value=finalWindow;u.visibility.value=visible
       u.lens.value=refraction
     }
-    const firstMask=p>=.275 && p<.356 && !reduced ? opticalCut(camera,0) : ''
-    setCut(0,firstMask)
-    // The plate still physically occludes the retiring glass. Editorial text
-    // clears before the sheet crosses it, avoiding a visible half-headline.
-    setCut(1,'')
-    setCut(2,p>=.533 && p<.587 && !reduced ? opticalCut(camera,3) : '')
+    setCut(0,p>=.533 && p<.587 && !reduced ? opticalCut(camera,3) : '')
   }
   return {
     update,

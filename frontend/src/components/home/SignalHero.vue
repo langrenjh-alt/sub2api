@@ -8,7 +8,6 @@ import Icon from '@/components/icons/Icon.vue'
 import { Button } from '@/components/ui/button'
 import GlassWordmark from './GlassWordmark.vue'
 import AtelierPlate from './AtelierPlate.vue'
-import OriginAtmosphere from './OriginAtmosphere.vue'
 import JourneyWorld from './JourneyWorld.vue'
 import JourneyChapters from './JourneyChapters.vue'
 import { clamp01, currentFlightStop, flightProgress, flightStops, followFocus, phase } from './journey/path'
@@ -26,11 +25,7 @@ const { t } = useI18n()
 const runway = ref<HTMLElement>()
 const stage = ref<HTMLElement>()
 const progress = ref(0)
-const glass = ref<InstanceType<typeof GlassWordmark>>()
-const air = ref<InstanceType<typeof OriginAtmosphere>>()
-const veilCanvas = ref<HTMLCanvasElement>()
-const veilReady = ref(false)
-let snapAspect = 0
+const rendererMode=ref<'pending'|'webgl'|'still'>('pending')
 const pointerX = ref(0), pointerY = ref(0)
 const paused = ref(false), reduced = ref(false), visible = ref(true), inView = ref(true)
 const active = computed(() => !paused.value && !reduced.value && visible.value && inView.value)
@@ -39,55 +34,6 @@ const openerStyle=computed(()=>{
   const out=phase(.013,.095,progress.value)
   return { opacity:1-out, transform:reduced.value?undefined:`translate3d(0,${-out*22}px,0)` }
 })
-const orbit = computed(() => reduced.value ? 0 :
-  phase(.005, .095, progress.value) * (1 - phase(.163, .286, progress.value)) +
-  .22 * phase(.26, .34, progress.value))
-const logoStyle = computed(() => {
-  const p = progress.value
-  if (reduced.value) return { opacity: p < .15 ? 1 : 0 }
-  const opening = phase(.135,.268,p), lift = phase(.279,.36,p)
-  const tilt = phase(.04,.13,p)
-  return {
-    opacity: 1-phase(.302,.358,p),
-    transform: `translate(calc(-50% + ${opening*4}% + ${opening*2}vw), calc(-50% - ${lift*36}svh + ${tilt*(1-opening)*2}svh)) scale(${1-.16*tilt+.86*opening})`,
-  }
-})
-const seamVisible = computed(() => !reduced.value && progress.value >= .125 && progress.value < .255)
-const veilStyle = computed(() => {
-  const p=progress.value,cut=phase(.155,.25,p)
-  const left=114-124*cut,right=105-131*cut
-  // A polished but imperfect edge: the highlight breaks in small sections,
-  // never a straight full-width comparison slider across the photograph.
-  const edge = Array.from({length:33}, (_, i) => {
-    const x=i/32
-    const grain=(Math.sin(x*37+p*15)*.18+Math.sin(x*77-p*28)*.11)*Math.sin(Math.PI*x)
-    return {x:x*100,y:left+(right-left)*x+grain}
-  })
-  const line=(offset:number,backward=false)=>(backward?[...edge].reverse():edge)
-    .map(v=>`${v.x}% ${(v.y+offset).toFixed(3)}%`).join(',')
-  return {
-    opacity:phase(.125,.15,p), '--lift':cut,
-    '--seam-shape':`polygon(0 0,100% 0,${line(0,true)})`,
-    '--seam-glint':`polygon(${line(-.21)},${line(0,true)})`,
-  }
-})
-function onVeil(source: HTMLCanvasElement) {
-  const out=veilCanvas.value, el=stage.value
-  if (!out || !el || !source.width || !source.height) return
-  const ctx=out.getContext('2d'); if (!ctx) return
-  out.width=source.width; out.height=source.height
-  ctx.drawImage(source,0,0)
-  // Bake the small, outgoing mark WITH the world. The live, larger letters
-  // are then revealed underneath it. No per-frame GPU readback is required.
-  const mark=glass.value?.capture()
-  if(mark) {
-    const b=mark.getBoundingClientRect(), v=el.getBoundingClientRect()
-    if(v.width && v.height) ctx.drawImage(mark,(b.left-v.left)*out.width/v.width,
-      (b.top-v.top)*out.height/v.height,b.width*out.width/v.width,b.height*out.height/v.height)
-  }
-  glass.value?.field(source)
-  snapAspect=source.width/source.height;veilReady.value=true
-}
 const anchors = [
   ...flightStops,
   { id: 'actions', point: 0.445 }, { id: 'compatibility', point: 0.445 },
@@ -111,7 +57,6 @@ function tick(now: number) {
     dirtyLayout=false
     const rect=el.getBoundingClientRect()
     target=flightProgress(rect.top,rect.height,view.offsetHeight)
-    if(snapAspect && Math.abs(view.clientWidth/Math.max(1,view.offsetHeight)-snapAspect)>.18) veilReady.value=false
   }
   if(reduced.value || snapNext || document.hidden) {
     progress.value=target;velocity=0;pointerX.value=0;pointerY.value=0
@@ -151,7 +96,7 @@ function point(e: PointerEvent) {
   const b = stage.value.getBoundingClientRect()
   aimX = 2 * clamp01((e.clientX-b.left)/Math.max(1,b.width)) - 1
   aimY = 2 * clamp01((e.clientY-b.top)/Math.max(1,b.height)) - 1
-  air.value?.disturb(aimX,aimY,performance.now());schedule()
+  schedule()
 }
 onMounted(() => {
   mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -189,32 +134,13 @@ onBeforeUnmount(() => {
     <div ref="stage" class="signal" :data-motion="active ? 'on' : 'off'"
       :data-stop="flightStops[index].id" :data-progress="progress.toFixed(4)"
       @pointermove="point" @pointerleave="resetPointer">
-      <AtelierPlate :progress="progress" :x="pointerX" :y="pointerY" :active="active" :reduced="reduced" />
-      <JourneyWorld :progress="progress" :active="active" :reduced="reduced" :pointer-x="pointerX" :pointer-y="pointerY" @veil="onVeil" />
-
-      <div class="signal-glass-layer" :aria-hidden="progress >= .358 ? true : undefined">
-        <div class="signal-core" :style="logoStyle">
-          <GlassWordmark ref="glass" :progress="progress" :travel="orbit" :active="active && progress < .358" :pointer-x="pointerX" :pointer-y="pointerY" />
-        </div>
-      </div>
-      <OriginAtmosphere ref="air" :progress="progress" :active="active" :reduced="reduced" />
+      <AtelierPlate v-if="rendererMode==='still' && progress<.12" :progress="progress" />
+      <JourneyWorld :progress="progress" :active="active" :reduced="reduced" :pointer-x="pointerX" :pointer-y="pointerY" @mode="rendererMode=$event" />
+      <GlassWordmark :mode="rendererMode" :progress="progress" />
       <JourneyChapters :progress="progress" :reduced="reduced" :model-plaza="modelPlaza"
         :workspace-path="workspacePath" :base-url="baseUrl" :doc-url="docUrl"
         :status="status" :status-state="statusState" :authenticated="authenticated"
         :recharge-url="rechargeUrl" :custom-endpoints="customEndpoints" :sample-ms="sampleMs" @refresh="emit('refresh')" />
-
-      <!-- A photographic cut along a real frame of the outgoing field, not a black interstitial. -->
-      <div v-show="seamVisible" class="signal-veil" aria-hidden="true" :style="veilStyle">
-        <div class="veil-surface">
-          <picture v-if="seamVisible && !veilReady">
-            <source media="(max-aspect-ratio: 3/4)" srcset="/assets/home/journey/estuary-mobile.webp" />
-            <img src="/assets/home/journey/estuary-wide.webp" alt="" />
-          </picture>
-          <canvas ref="veilCanvas" :class="{ 'veil-ready': veilReady }"></canvas>
-          <i class="veil-caustic"></i>
-        </div>
-        <i class="veil-lip"></i>
-      </div>
 
       <header class="signal-header">
         <a class="signal-brand" href="#origin" :aria-label="t('home.flight.restart')">
@@ -277,25 +203,6 @@ onBeforeUnmount(() => {
   --gutter: clamp(24px,4.2vw,76px);
   background: #050a0f; color: var(--silver);
 }
-.signal-glass-layer { position:absolute; z-index:3; inset:0; pointer-events:none; }
-.signal-core {
-  position:absolute; top:47.5%; left:50%; width:clamp(212px,min(36vw,75svh),650px);
-  pointer-events:none; transform:translate(-50%,-50%); transform-origin:50% 50%;
-}
-.signal-veil {
-  position:absolute;inset:0;z-index:6;pointer-events:none;overflow:hidden;
-  clip-path:var(--seam-shape);
-}
-.veil-surface {position:absolute;inset:-1%;transform:perspective(1500px) translateY(calc(var(--lift)*-7%)) rotateX(calc(var(--lift)*4deg)) rotateZ(calc(var(--lift)*-.65deg)) scale(1.11);transform-origin:50% 30%;}
-.veil-surface picture,.veil-surface img,.veil-surface canvas {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
-.veil-surface canvas:not(.veil-ready){visibility:hidden}
-.veil-caustic {position:absolute;inset:-20%;opacity:.22;background:linear-gradient(117deg,transparent 43%,#80e8b51a 49%,#b2e7f836 50%,transparent 54%);
-  animation:veil-drift 3.8s ease-in-out infinite alternate;}
-@keyframes veil-drift {from{transform:translateX(-8%)}to{transform:translateX(9%)}}
-.veil-lip {position:absolute;inset:0;clip-path:var(--seam-glint);opacity:.78;
-  background:linear-gradient(95deg,transparent 2%,#95c5ce90 13%,transparent 20%,transparent 33%,#c0eaf5b3 42%,transparent 51%,#c5dcca7d 66%,transparent 79%);}
-
-.signal[data-motion=off] .veil-caustic{animation-play-state:paused}
 .signal-header, .flight-hud {
   position:absolute; z-index:10; left:var(--gutter); right:var(--gutter); display:flex; align-items:center;
   justify-content:space-between; pointer-events:none;
@@ -349,7 +256,6 @@ onBeforeUnmount(() => {
   .signal-brand {gap:8px;}.signal-brand img{width:41px;}.signal-brand span{padding-left:9px;font-size:12px;}
   .signal-tools {gap:4px;}.signal-nav{padding:0 13px;gap:6px;}
   .signal-nav .home-model-plaza-nav,.signal-nav i {display:none;}
-  .signal-core{width:clamp(205px,62vw,360px);top:45%;}
   .origin-caption {max-width:85vw;bottom:max(100px,15svh);}
   .origin-caption h2 {font-size:clamp(34px,8vw,50px);margin:12px 0 8px;}
   .flight-hud {gap:7px;bottom:max(9px,env(safe-area-inset-bottom));}
@@ -361,7 +267,6 @@ onBeforeUnmount(() => {
 @media(max-height:500px) {
   .signal-header{top:3px;}.flight-hud{bottom:0;}.origin-caption{bottom:59px;max-width:37vw;}
   .origin-caption h2{font-size:26px;margin:6px 0;}.edition-deck{font-size:12px;}
-  .signal-core{top:44%;width:30vw;}
 }
 @media(prefers-reduced-motion:reduce) {
   .z30-home { height:490svh; }

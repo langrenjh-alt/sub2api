@@ -129,7 +129,7 @@ describe('HomeView', () => {
     expect(stage.get('h1 img').attributes('alt')).toBe('Z30')
     expect(stage.get('h1 img').attributes('src')).toBe('/z30-emblem.svg')
     expect(stage.get('.signal-plate').attributes('src')).toBe('/assets/home/atelier-landscape.webp')
-    expect(stage.get('.plate-far source').attributes('srcset')).toBe('/assets/home/atelier-portrait.webp')
+    expect(stage.get('.fallback-plate source').attributes('srcset')).toBe('/assets/home/atelier-portrait.webp')
     expect(stage.get('.origin-caption').exists()).toBe(true)
     expect(stage.get('.signal-explore').attributes('href')).toBe('#plaza')
     expect(stage.get('.signal-login').attributes('href')).toBe('/login')

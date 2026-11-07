@@ -1,62 +1,20 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { describe, expect, it } from 'vitest'
 import GlassWordmark from '../GlassWordmark.vue'
 
-const { make, engine } = vi.hoisted(() => ({
-  make: vi.fn(),
-  engine: { position: vi.fn(), active: vi.fn(), input: vi.fn(), orbit: vi.fn(), dispose: vi.fn() },
-}))
-vi.mock('../glass/scene', () => ({ createGlassScene: make }))
-
-function mountWord() {
-  const host = document.createElement('div')
-  host.className = 'signal'
-  document.body.append(host)
-  return mount(GlassWordmark, { attachTo: host, props: { active: true, pointerX: 0, pointerY: 0 } })
-}
-
-describe('glass wordmark enhancement', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    vi.stubGlobal('matchMedia', () => ({ matches: false }))
-    vi.stubGlobal('WebGL2RenderingContext', class {})
-    vi.stubGlobal('ResizeObserver', class {})
-    make.mockResolvedValue(engine)
+describe('semantic glass title',()=>{
+  it('defers all live optics to the world, with one accessible title',()=>{
+    const w=mount(GlassWordmark,{props:{mode:'webgl',progress:0}})
+    expect(w.get('h1').text()).toBe('Z30')
+    expect(w.find('img,canvas').exists()).toBe(false)
   })
-  afterEach(() => {
-    vi.unstubAllGlobals()
-    document.body.replaceChildren()
-  })
-
-  it('keeps the accessible vector if no WebGL implementation exists', async () => {
-    vi.stubGlobal('WebGL2RenderingContext', undefined)
-    const word = mountWord()
-    await flushPromises()
-    expect(make).not.toHaveBeenCalled()
-    expect(word.attributes('data-renderer')).toBe('svg')
-    expect(word.get('img').attributes('alt')).toBe('Z30')
-    word.unmount()
-  })
-
-  it('pauses the renderer and restores the vector after context loss', async () => {
-    const word = mountWord()
-    await flushPromises()
-    expect(word.attributes('data-renderer')).toBe('webgl')
-    await word.setProps({ active: false, pointerX: 0.7, pointerY: -0.4 })
-    expect(engine.active).toHaveBeenLastCalledWith(false)
-    expect(engine.input).toHaveBeenLastCalledWith(0.7, -0.4)
-    await word.get('canvas').trigger('webglcontextlost')
-    expect(word.attributes('data-renderer')).toBe('svg')
-    word.unmount()
-    expect(engine.dispose).toHaveBeenCalledOnce()
-  })
-
-  it('does not hide the vector when the optics pass fails to initialize', async () => {
-    make.mockRejectedValueOnce(new Error('context allocation failed'))
-    const word = mountWord()
-    await flushPromises()
-    expect(word.attributes('data-renderer')).toBe('svg')
-    expect(word.get('img').attributes('src')).toBe('/z30-emblem.svg')
-    word.unmount()
+  it('returns the unbacked vector only when the graphics context is absent',async()=>{
+    const w=mount(GlassWordmark,{props:{mode:'webgl',progress:0}})
+    await w.setProps({mode:'still'})
+    expect(w.get('h1').attributes('data-renderer')).toBe('svg')
+    expect(w.get('img').attributes('src')).toBe('/z30-emblem.svg')
+    expect(w.get('img').attributes('alt')).toBe('Z30')
+    await w.setProps({mode:'webgl'})
+    expect(w.find('canvas,img').exists()).toBe(false)
   })
 })

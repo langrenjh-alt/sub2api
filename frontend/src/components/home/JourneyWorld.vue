@@ -3,11 +3,12 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { JourneyRenderer, WorldInput } from './journey/worldScene'
 
 const props=defineProps<WorldInput>()
-const emit=defineEmits<{veil:[frame:HTMLCanvasElement]}>()
+const emit=defineEmits<{mode:[value:'pending'|'webgl'|'still']}>()
 const canvas=ref<HTMLCanvasElement>()
 const rendererMode=ref<'pending' | 'webgl' | 'still'>('pending')
+const mode=(value:'pending'|'webgl'|'still')=>{rendererMode.value=value;emit('mode',value)}
 const room=computed(()=>props.progress<.33?'estuary':props.progress<.565?'archive':props.progress<.79?'conduit':'observatory')
-const alpha=computed(()=>Math.min(1,Math.max(0,(props.progress-.014)/.104)))
+const alpha=computed(()=>rendererMode.value==='webgl'?1:Math.min(1,Math.max(0,(props.progress-.014)/.104)))
 // Additional handoff photographs preserve the winding relay and reflective
 // waterline in browsers without a GPU; static CSS gallery panels stay separate.
 const plates=[
@@ -29,19 +30,21 @@ const posterLayers=computed(()=>{
   })
 })
 let engine:JourneyRenderer|null=null
-let stopped=false
+let stopped=false, generation=0
 const feed=()=>engine?.update({progress:props.progress,active:props.active,reduced:props.reduced,pointerX:props.pointerX,pointerY:props.pointerY})
-function lost(event:Event){ event.preventDefault();engine?.dispose();engine=null;rendererMode.value='still' }
+function lost(event:Event){event.preventDefault();generation++;engine?.dispose();engine=null;mode('still')}
 async function create(){
-  if(stopped||!canvas.value)return
+  if(stopped||!canvas.value||engine)return
+  const ticket=++generation
   if(typeof WebGL2RenderingContext==='undefined'||window.matchMedia('(forced-colors: active)').matches){
-    rendererMode.value='still';return
+    mode('still');return
   }
   try {
     const { createJourneyRenderer }=await import('./journey/worldScene')
-    if(stopped||!canvas.value)return
-    engine=createJourneyRenderer(canvas.value,frame=>emit('veil',frame));feed();rendererMode.value='webgl'
-  } catch {rendererMode.value='still'}
+    if(stopped||generation!==ticket||!canvas.value)return
+    engine=createJourneyRenderer(canvas.value,()=>{if(!stopped&&ticket===generation)mode('webgl')})
+    feed()
+  } catch {if(!stopped&&ticket===generation)mode('still')}
 }
 onMounted(()=>{
   canvas.value?.addEventListener('webglcontextlost',lost)
@@ -50,7 +53,7 @@ onMounted(()=>{
 })
 watch(()=>[props.progress,props.active,props.reduced,props.pointerX,props.pointerY],feed)
 onBeforeUnmount(()=>{
-  stopped=true;canvas.value?.removeEventListener('webglcontextlost',lost)
+  stopped=true;generation++;canvas.value?.removeEventListener('webglcontextlost',lost)
   canvas.value?.removeEventListener('webglcontextrestored',create)
   engine?.dispose();engine=null
 })
@@ -70,12 +73,7 @@ onBeforeUnmount(()=>{
 </template>
 
 <style scoped>
-.journey-world { position:absolute; inset:0; z-index:0;pointer-events:none; overflow:hidden;
-  background-color:#0a0f14; background-image:radial-gradient(ellipse at 74% 38%,#1c3e35,transparent 54%),url('/assets/home/z30-signal-field.webp');
-  background-size:cover; background-position:center; }
-.journey-world[data-world=archive] {background-image:radial-gradient(at 68% 48%,#412c4d,transparent 58%),url('/assets/home/z30-signal-field.webp')}
-.journey-world[data-world=conduit] {background-image:radial-gradient(at 68% 48%,#1f5149,transparent 58%),url('/assets/home/z30-signal-field.webp')}
-.journey-world[data-world=observatory] {background-image:radial-gradient(at 68% 48%,#353244,transparent 55%),url('/assets/home/z30-signal-field.webp')}
+.journey-world {position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:#090d10;}
 .journey-poster,.journey-poster img { position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover; }
 .journey-world canvas { display:block; width:100%; height:100%; visibility:hidden; }
 .journey-world[data-renderer=webgl] canvas {visibility:visible;}

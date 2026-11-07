@@ -122,10 +122,10 @@ export function alloy(base:number,edge:number,polish=1){
 /** Transmit the actual opaque background with three slightly displaced reads.
  * The solid interior is rendered before this exterior surface, so fractures
  * and occluding mineral cores remain visible in the refracted image. */
-export function quartz(absorption:number,thickness:number,film=.72,flow=0){
+export function quartz(absorption:number,thickness:number,film=.72,flow=0,glaze=1){
   const m=shader(surface,varyingSurface+studio+`
     uniform sampler2D uTransmission;uniform vec2 uFrame;uniform vec3 tint;
-    uniform float thickness,film,flow;
+    uniform float thickness,film,flow,glaze;
     void main(){
       vec3 V=normalize(cameraPosition-vW);
       vec3 N=normalize(nW+.012*sin(vLocal.yzx*4.1))*(gl_FrontFacing?1.:-1.);
@@ -146,12 +146,12 @@ export function quartz(absorption:number,thickness:number,film=.72,flow=0){
       vec3 volume=tint*(.027+.052*pow(max(0.,dot(-D,uKey)),3.)+.038*internalCut);
       vec3 bounce=lightPrint(normalize(D+.17*vec3(vLocal.x,vLocal.y,-.25*vLocal.z)),.04);
       vec3 inner=bounce*(.12+.32*internalCut)*tint*min(1.,thickness);
-      vec3 col=mix(transmitted+volume+inner,silver,clamp(.075+fresnel*.925,0.,1.));
-      col+=silver*(.14+.38*coating)+spectrum*(film*coating*min(1.,dot(silver,vec3(.33)))*1.7);
+      vec3 col=mix(transmitted+glaze*(volume+inner),silver,clamp(.075*glaze+fresnel*.925,0.,1.));
+      col+=glaze*(silver*(.14+.38*coating)+spectrum*(film*coating*min(1.,dot(silver,vec3(.33)))*1.7));
       float packet=pow(.5+.5*cos(coords.x*11.-uTime*.95),5.);
       col+=flow*gel()*(.035+packet*.27)*(.39+.61*coating);
       gl_FragColor=vec4(fog(clamp(col,0.,1.),d),1.);
-    }`,{tint:{value:ink(absorption)},thickness:{value:thickness},film:{value:film},flow:{value:flow}},
+    }`,{tint:{value:ink(absorption)},thickness:{value:thickness},film:{value:film},flow:{value:flow},glaze:{value:glaze}},
     {side:T.FrontSide})
   m.userData.quartz=true
   return m
@@ -278,7 +278,7 @@ export function liquidFloor(){
       // A broad penumbra under the plinth and two tight wet contact shadows
       // under its actual feet keep the comparator seated in this pool.
       vec2 sole=vec2(max(0.,abs(basin.x)-1.42),basin.y-.18);
-      float contact=.55*exp(-dot(sole*vec2(1.6,1.5),sole*vec2(1.6,1.5)));
+      float contact=.58*exp(-dot(sole*vec2(1.52,1.48),sole*vec2(1.52,1.48)));
       contact+=.38*exp(-8.*dot(basin-vec2(-1.81,.50),basin-vec2(-1.81,.50)));
       contact+=.38*exp(-8.*dot(basin-vec2(1.79,.50),basin-vec2(1.79,.50)));
       colour*=1.-clamp(contact,0.,.80);
@@ -297,7 +297,7 @@ export function benchMaterial(){
       float key=exp(-.028*dot(vec2((q.x-2.8)*1.5,(q.y+42.)*.56),vec2((q.x-2.8)*1.5,(q.y+42.)*.56)));
       float second=exp(-.033*dot(vec2((q.x-3.4)*1.9,(q.y+63.)*.62),vec2((q.x-3.4)*1.9,(q.y+63.)*.62)));
       float scratch=.5+.5*cos(q.y*8.+q.x*1.7);
-      float occlusion=exp(-.82*dot((q-vec2(3.16,-62.8))*vec2(.80,1.24),(q-vec2(3.16,-62.8))*vec2(.80,1.24)));
+      float occlusion=exp(-.82*dot((q-vec2(3.28,-61.6))*vec2(.80,1.24),(q-vec2(3.28,-61.6))*vec2(.80,1.24)));
       float ribbon=exp(-3.5*abs(q.x-4.85+.21*(q.y+63.)))*exp(-.021*(q.y+63.)*(q.y+63.));
       vec3 col=vec3(.036,.039,.041)+gel()*(.032*ledge+.050*(key+second)*(.85+.15*scratch)+.065*ribbon);
       col*=1.-occlusion*.57;
@@ -321,13 +321,116 @@ export function comparatorTarget(){
   return shader(surface,varyingSurface+studio+`
     void main(){
       vec2 uv=vLocal.xy;
-      float pupil=length(uv),limit=1.-smoothstep(.47,.62,pupil);
-      float v=uv.x+.35*uv.y;
-      float left=exp(-180.*abs(v+.19)),right=exp(-95.*abs(v-.15));
-      float cut=exp(-6.0*abs(v-.15))*(1.-smoothstep(.22,.57,abs(uv.y+.08)));
-      vec3 field=mix(vec3(.33,.67,.65),vec3(.90,.54,.39),uWarmth);
-      vec3 col=vec3(.028,.036,.039)+field*.14*limit+cut*limit*field*.37;
-      col+=limit*(vec3(.93,.93,.79)*left+field*right)*1.35;
+      float pupil=length(uv),limit=1.-smoothstep(.74,.98,pupil);
+      // Scan a real ceramic detector. Its bright band advances behind the iris,
+      // so the blades themselves occult the beam on closure.
+      float seek=uTime*.42+smoothstep(.78,.985,uProgress)*1.90;
+      float v=uv.x+.22*uv.y-.34*sin(seek);
+      float incoming=exp(-pow((uProgress-.91)/.065,2.));
+      float left=exp(-pow(54.*(v+.19),2.)),right=exp(-pow(24.*(v-.15),2.));
+      float ruling=sin(142.*(uv.x-.16*uv.y))*(1.-smoothstep(.4,2.2,fwidth(142.*uv.x)));
+      float cut=exp(-4.8*abs(v-.15))*(1.-smoothstep(.42,.85,abs(uv.y+.08)));
+      vec3 field=mix(vec3(.34,.65,.76),vec3(.89,.60,.44),uWarmth*.80);
+      vec3 col=vec3(.021,.029,.035)+field*(.18+.012*ruling)*limit+cut*limit*field*(.49+.17*incoming);
+      col+=limit*(vec3(.93,.93,.79)*left+field*right)*1.54;
       gl_FragColor=vec4(fog(col,d),1.);
     }`)
+}
+/** Satin ceramic is an insulator, not chrome painted white. A soft diffuse
+ * body, narrow glazed shoulder and occasional raking highlight distinguish it. */
+export function ceramicFinish(){
+  return shader(surface,varyingSurface+studio+`
+    void main(){vec3 N=normalize(nW),V=normalize(cameraPosition-vW);
+      float diffuse=.28+.72*max(0.,dot(N,uKey));
+      float grazing=pow(1.-abs(dot(N,V)),3.);
+      vec3 neutral=mix(vec3(.79,.77,.71),vec3(.85,.77,.65),uWarmth*.56);
+      vec3 coat=env(reflect(-V,N),.36)+flags(vW,reflect(-V,N),.43);
+      vec3 col=neutral*(.36+.69*diffuse)+coat*(.07+.27*grazing);
+      gl_FragColor=vec4(fog(tone(col),d),1.);}
+  `,{},{side:T.DoubleSide})
+}
+/** Real diagonal coated face between the two prisms, visible in transmission. */
+export function bondCoat(){
+  return shader(surface,varyingSurface+studio+`
+    void main(){vec3 V=normalize(cameraPosition-vW);float c=abs(dot(V,normalize(nW)));
+      float edge=1.-smoothstep(.012,.084,min(coords.y,1.-coords.y));
+      float lamina=.5+.5*cos(vLocal.x*4.1+c*5.4+.10*uTime);
+      vec3 glint=mix(vec3(.24,.50,.63),vec3(.75,.60,.39),lamina);
+      float phase=mod(3.34-uTime*1.55-(uProgress-.57)*15.+4.2,8.4)-4.2;
+      float impact=exp(-dot(vLocal.xy,vLocal.xy)*8.)*exp(-phase*phase/.22);
+      gl_FragColor=vec4(glint*(.39+.51*(1.-c)+.39*edge)+impact*vec3(.84,.88,.79),.24+.33*(1.-c)+.25*edge+.12*impact);}
+  `,{},{transparent:true,depthWrite:false,side:T.DoubleSide})
+}
+/** One packet propagation clock, converted to optical distance on each arm.
+ * At distance zero in either output, phase equals phase at the incoming bond. */
+export function instrumentBeam(start:number,length:number,branch:number){
+  return shader(surface,varyingSurface+studio+`
+    uniform float pathStart,pathLength,branch;
+    void main(){
+      float x=pathStart+pathLength*coords.x;
+      float travelled=uTime*1.55+(uProgress-.57)*15.;
+      float delta=mod(x-travelled+4.2,8.4)-4.2;
+      float packet=exp(-delta*delta/.17), tail=exp(-abs(delta+.45)*3.6);
+      vec3 c=branch<.5?vec3(.76,.82,.83):branch<1.5?vec3(.42,.75,.88):vec3(.90,.69,.42);
+      float skin=.72+.28*pow(1.-abs(dot(normalize(nW),normalize(cameraPosition-vW))),2.);
+      vec3 col=c*skin*(.35+1.21*packet+.32*tail);
+      gl_FragColor=vec4(fog(col,d),1.);
+    }`,{pathStart:{value:start},pathLength:{value:length},branch:{value:branch}})
+}
+/** Blade pivots and the moving scan rake individual facets, leaving the
+ * aperture void intact. The subdued ruling is filtered at grazing angles. */
+export function coatedBlade(){
+  const vs='varying vec3 brushing;'+surface.replace('vW=(modelMatrix*p).xyz;', `
+      #ifdef USE_INSTANCING
+      brushing=normalize(mat3(modelMatrix)*mat3(instanceMatrix)*vec3(1.,0.,0.));
+      #else
+      brushing=normalize(mat3(modelMatrix)*vec3(1.,0.,0.));
+      #endif
+      vW=(modelMatrix*p).xyz;`)
+  return shader(vs,'varying vec3 brushing;'+varyingSurface+studio+`
+    void main(){vec3 N=normalize(nW+.041*brushing*sin(vLocal.y*3.4)),V=normalize(cameraPosition-vW);
+      vec3 R=reflect(-V,N);float f=abs(dot(V,N));
+      float grain=sin(150.*vLocal.y+24.*vLocal.x);
+      float cutoff=1.-smoothstep(.35,1.3,fwidth(vLocal.y*150.));
+      vec3 studioLight=env(R,.24)+flags(vW,R,.24);
+      float mono=dot(studioLight,vec3(.33,.45,.22));
+      float directional=pow(abs(dot(R,brushing)),2.);
+      vec3 col=vec3(.029,.038,.043)+vec3(.42,.50,.55)*mono*(.43+.59*directional)+
+        studioLight*.17+gel()*(1.-f)*.14+grain*cutoff*.011;
+      gl_FragColor=vec4(fog(tone(col),d),1.);
+    }`,{},{side:T.DoubleSide})
+}
+
+/** A single travelling line guides the eye from the cube into the scanning
+ * head. Contrast peaks only around the camera's current handoff region. */
+export function relayGuide(){
+  return shader(surface,varyingSurface+studio+`
+    void main(){vec3 N=normalize(nW),V=normalize(cameraPosition-vW);
+      float arrival=smoothstep(.50,.91,uProgress);
+      float dist=coords.x-(.055+.93*arrival+.012*sin(uTime*.55));
+      float glint=exp(-dist*dist/.0011);
+      vec3 l=mix(vec3(.54,.77,.81),vec3(.91,.73,.51),arrival*.69);
+      vec3 col=env(reflect(-V,N),.16)*.44+l*(.098+.91*glint);
+      gl_FragColor=vec4(fog(tone(col),d),1.);}
+  `,{},{side:T.DoubleSide})
+}
+/** Fine tool marks are local to the part: stainless faces reflect mostly
+ * neutral light, while colour is reserved for the dielectric coatings. */
+export function turnedMetal(base:number,mirror:number=.8){
+  return shader(surface,varyingSurface+studio+`
+    uniform vec3 pigment;uniform float mirror;
+    void main(){
+      vec3 N=normalize(nW)*(gl_FrontFacing?1.:-1.);
+      vec3 V=normalize(cameraPosition-vW),R=reflect(-V,N);
+      float side=1.-abs(dot(V,N));
+      float cycles=vLocal.z*172.+.061*atan(vLocal.y,vLocal.x);
+      float groove=sin(cycles)*max(0.,1.-smoothstep(.50,2.2,fwidth(cycles)));
+      float rough=mix(.47,.09,mirror);
+      vec3 bath=env(R,rough)+flags(vW,R,rough*.84);
+      float neutral=dot(bath,vec3(.24,.65,.11));
+      vec3 metal=mix(vec3(neutral),bath,.10)*mix(vec3(.78,.80,.82),pigment,.18);
+      vec3 colour=pigment*(.12+.21*max(.0,dot(N,uKey)))+metal*(.42+.77*mirror+.19*side);
+      colour+=groove*.011*(.23+.77*side)+vec3(.095,.10,.103)*side*mirror;
+      gl_FragColor=vec4(fog(tone(colour),d),1.);
+    }`,{pigment:{value:ink(base)},mirror:{value:mirror}},{side:T.DoubleSide})
 }

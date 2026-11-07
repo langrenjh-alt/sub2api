@@ -1,6 +1,7 @@
 import * as T from 'three'
-import { alloy, vaporMaterial, fibre, quartz, QUARTZ_LAYER } from './worldMaterials'
-import { thresholds, entranceLeaf, sampleArchive, beamDivider, comparator, grounding, indexSector } from './worldAtelier'
+import { alloy, vaporMaterial, relayGuide, quartz, QUARTZ_LAYER } from './worldMaterials'
+import { thresholds, sampleArchive, grounding } from './worldAtelier'
+import { splitterBench, scanningComparator } from './worldInstruments'
 
 const pi=Math.PI,TAU=pi*2
 type Vec=[number,number,number]
@@ -43,7 +44,7 @@ function estuary(scene:T.Group,dust:T.Material,rand:()=>number) {
   const river=(t:number,a:number,spread:number):Vec=>{
     const twist=t*6.8 + a + .42*Math.sin(t*8.2)
     const radius=3.25+.8*Math.sin(t*13+a)*.6+spread
-    return [Math.sin(t*8+.4)*1.21+Math.cos(twist)*radius*1.36,.4*Math.cos(5*t)+Math.sin(twist)*radius*.92,12.-t*54]
+    return [Math.sin(t*8+.4)*1.21+Math.cos(twist)*radius*1.36,.4*Math.cos(5*t)+Math.sin(twist)*radius*.92,-6.0-t*36]
   }
   // Spatial vapor follows the same river as the grains. The near bank
   // occasionally washes over the lens; broad wisps and pinpoints read as
@@ -88,47 +89,50 @@ function estuary(scene:T.Group,dust:T.Material,rand:()=>number) {
   })
 }
 
-// The archive unwinds into one continuous strip, passing through the data
-// conduit and grazing the observatory basin before it disappears under water.
+// Two physical carriers, one measured signal path. Leave the beam splitter's
+// working volume empty: it is the beams, not a ribbon through a solid, that
+// cross the gap. The second carrier terminates at the iris-side ferrule.
 function relayRibbon(parent:T.Group){
-  const spine=line([[2.8,-4.55,-43.0],[4.2,-3.1,-44.4],[5.1,-1.3,-47.0],
-    [5.35,-1.66,-49.8],[6.15,-1.70,-52.3],[5.35,-1.60,-55.3],
-    [4.60,-1.30,-57.4],[4.10,-.60,-60.8],[3.80,.56,-63.1],
-    [2.33,1.23,-66.7],[.73,-.1,-70.3],[1.6,-1.63,-74.3],
-    [3.46,-.62,-78.5],[4.85,1.69,-82.3],[5.13,1.92,-85.1],
-    [4.73,.76,-87.5],[4.12,-1.61,-89.7],[3.7,-3.21,-92.4]])
-  const rows=230,columns=12,positions:number[]=[],uv:number[]=[],indices:number[]=[]
-  const frames=spine.computeFrenetFrames(rows,false)
-  const strand=(offset:number,width:number)=>{
-    positions.length=uv.length=indices.length=0
-    for(let i=0;i<=rows;i++){
-      const t=i/rows,at=spine.getPointAt(t),twist=t*9.3+.41*Math.sin(t*11.4)
-      const nx=frames.normals[i],ny=frames.binormals[i]
-      const scale=Math.min(1,.10+7*t,.10+9*(1-t))
-      for(let j=0;j<=columns;j++){
-        const f=j/columns*TAU,dx=scale*(offset+width*Math.cos(f)),dy=scale*.034*Math.sin(f)
-        const a=dx*Math.cos(twist)-dy*Math.sin(twist),b=dx*Math.sin(twist)+dy*Math.cos(twist)
-        positions.push(at.x+a*nx.x+b*ny.x,at.y+a*nx.y+b*ny.y,at.z+a*nx.z+b*ny.z)
-        uv.push(t,j/columns)
-        if(i<rows&&j<columns){const k=i*(columns+1)+j;indices.push(k,k+1,k+columns+1,k+1,k+columns+2,k+columns+1)}
+  const inlet=line([[2.8,-4.55,-43],[4.2,-3.1,-44.4],[5.1,-1.3,-47],
+    [5.35,-1.66,-49.8],[6.25,-1.75,-52.3],[6.46,-1.62,-55.1],[6.52,-2.18,-58.50]])
+  const outlet=line([[.03,.84,-62.89],[-.58,.78,-63.82],[-.88,.36,-65.36],
+    [.11,-.32,-68.4],[1.58,-1.39,-74.2],[3.45,-.62,-78.5],[4.85,1.69,-82.3],
+    [5.13,1.92,-85.1],[5.27,1.13,-87.6],[5.63,.92,-89.7],[5.86,.98,-91.1],
+    [5.69,1.02,-92.65],[5.28,1.02,-92.83]])
+  const skin=quartz(0x8dc4c0,.94,.60,.20,.60),guide=relayGuide(),back=alloy(0x232429,0x9e9fa6,.97)
+  function carry(spine:T.CatmullRomCurve3,rows:number,start:number,end:number){
+    const columns=10,frames=spine.computeFrenetFrames(rows,false)
+    function stripe(offset:number,width:number,mat:T.Material){
+      const positions:number[]=[],uv:number[]=[],indices:number[]=[]
+      for(let i=0;i<=rows;i++){
+        const local=i/rows,u=start+(end-start)*local,at=spine.getPointAt(local)
+        const twist=u*9.3+.41*Math.sin(u*11.4),nx=frames.normals[i],ny=frames.binormals[i]
+        const taper=Math.min(1,.23+5.5*local,.23+6*(1-local))
+        for(let j=0;j<=columns;j++){
+          const f=j/columns*TAU,dx=taper*(offset+width*Math.cos(f)),dy=taper*.032*Math.sin(f)
+          const x=dx*Math.cos(twist)-dy*Math.sin(twist),y=dx*Math.sin(twist)+dy*Math.cos(twist)
+          positions.push(at.x+x*nx.x+y*ny.x,at.y+x*nx.y+y*ny.y,at.z+x*nx.z+y*ny.z)
+          uv.push(u,j/columns)
+          if(i<rows&&j<columns){const k=i*(columns+1)+j;indices.push(k,k+1,k+columns+1,k+1,k+columns+2,k+columns+1)}
+        }
       }
+      const geo=new T.BufferGeometry()
+      geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2))
+      geo.setIndex(indices);geo.computeVertexNormals();at(parent,geo,mat)
     }
-    const geo=new T.BufferGeometry()
-    geo.setAttribute('position',new T.Float32BufferAttribute(positions,3))
-    geo.setAttribute('uv',new T.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();return geo
+    stripe(0,.14,skin);stripe(-.135,.019,guide);stripe(.14,.013,back)
   }
-  at(parent,strand(0,.19),quartz(0x8dc4c0,1.04,.92,.7))
-  at(parent,strand(-.18,.021),fibre(0xb3d2c4))
-  at(parent,strand(.19,.017),alloy(0x292330,0xc6aabb,1.09))
+  carry(inlet,82,0,.34);carry(outlet,145,.42,1)
 }
 
 export function worldForms(scene:T.Scene,dust:T.Material){
   const rand=seeded()
   const groups=[new T.Group(),new T.Group(),new T.Group(),new T.Group()]
   for(const group of groups)scene.add(group)
-  estuary(groups[0],dust,rand);thresholds(groups[0]);entranceLeaf(groups[0])
-  const column=sampleArchive(groups[1]),prism=beamDivider(groups[2])
-  const {head,lensRig}=comparator(groups[3]);indexSector(head)
+  estuary(groups[0],dust,rand)
+  const stops=new T.Group();groups[0].add(stops);thresholds(stops)
+  const column=sampleArchive(groups[1]),setDivider=splitterBench(groups[2])
+  const setIris=scanningComparator(groups[3])
   const floor=new T.Group();scene.add(floor);grounding(floor)
   const relay=new T.Group();scene.add(relay);relayRibbon(relay)
   scene.traverse(obj=>{
@@ -140,11 +144,11 @@ export function worldForms(scene:T.Scene,dust:T.Material){
     groups[2].visible=p>.43&&p<.875;groups[3].visible=p>.695
     relay.visible=p>.245
     floor.visible=p<.85
+    const lift=T.MathUtils.smoothstep(p,.12,.215)
+    stops.visible=lift>.002;stops.position.y=-8.*(1-lift)
     column.rotation.y=-.19+.15*Math.sin(time*.075)+p*.72
-    prism.rotation.y=-.34+.085*Math.sin(time*.085)
-    head.rotation.set(.18+.065*Math.sin(time*.13),-.56+.19*Math.sin(time*.12+p),-.25)
-    lensRig.rotation.y=-.12+.28*Math.sin(time*.16+p)
-    lensRig.position.x=.28+.12*Math.sin(time*.18)
+    if(groups[2].visible)setDivider(time,p)
+    if(groups[3].visible)setIris(time,p)
 
   }
 }
