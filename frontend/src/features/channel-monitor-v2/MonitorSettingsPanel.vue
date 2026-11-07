@@ -14,7 +14,7 @@
           {{ t('channelMonitorV2.settings.description') }}
         </p>
       </div>
-      <button
+      <ShButton variant="default"
         type="button"
         class="btn btn-primary"
         :disabled="saving || !dirty"
@@ -22,7 +22,7 @@
       >
         <Icon name="check" size="sm" />
         {{ t('channelMonitorV2.settings.save') }}
-      </button>
+      </ShButton>
     </header>
 
     <div
@@ -39,15 +39,15 @@
       <router-link class="ml-1 font-medium underline" to="/admin/settings">{{ t('admin.settings.tabs.features') }}</router-link>
     </div>
 
-    <div
+    <ShCard
       v-if="loading"
       class="card flex min-h-[200px] items-center justify-center !rounded-lg !border-0 text-sm text-gray-400 ring-1 ring-gray-900/5 dark:ring-dark-700"
     >
       <span class="animate-pulse">{{ t('channelMonitorV2.settings.loading') }}</span>
-    </div>
+    </ShCard>
 
     <template v-else-if="draft">
-      <div class="card divide-y divide-gray-100 !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:divide-dark-700 dark:!bg-dark-800 dark:ring-dark-700">
+      <ShCard class="card divide-y divide-gray-100 !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:divide-dark-700 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="flex flex-wrap items-center justify-between gap-4 px-5 py-4">
           <div>
             <strong class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.enableTitle') }}</strong>
@@ -81,9 +81,9 @@
             </button>
           </div>
         </div>
-      </div>
+      </ShCard>
 
-      <div class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
+      <ShCard class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="card-header !py-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.platformsTitle') }}</h3>
           <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
@@ -98,14 +98,14 @@
               :placeholder="t('channelMonitorV2.settings.selectPlatform')"
               :disabled="saving"
             />
-            <button
+            <ShButton variant="outline" size="sm"
               type="button"
               class="btn btn-secondary btn-sm"
               :disabled="saving || !selectedPlatform"
               @click="addPlatform"
             >
               {{ t('channelMonitorV2.settings.addPlatform') }}
-            </button>
+            </ShButton>
           </div>
         </div>
         <div class="divide-y divide-gray-100 dark:divide-dark-700">
@@ -131,9 +131,9 @@
             </span>
           </div>
         </div>
-      </div>
+      </ShCard>
 
-      <div class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
+      <ShCard class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="card-header flex flex-wrap items-center justify-between gap-2 !py-3">
           <div>
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.groupsTitle') }}</h3>
@@ -145,14 +145,14 @@
               }}
             </p>
           </div>
-          <button
+          <ShButton variant="ghost" size="sm"
             v-if="draft.group_ids.length"
             type="button"
             class="btn btn-ghost btn-sm"
             @click="draft.group_ids = []"
           >
             {{ t('channelMonitorV2.settings.groupsAll') }}
-          </button>
+          </ShButton>
         </div>
         <div class="max-h-[min(40vh,280px)] overflow-y-auto px-3 py-2 sm:px-4">
           <div class="grid grid-cols-1 gap-1 sm:grid-cols-2">
@@ -173,9 +173,9 @@
           </div>
           <p v-if="groups.length === 0" class="empty-state py-8 text-sm text-gray-400">{{ t('channelMonitorV2.settings.groupsEmpty') }}</p>
         </div>
-      </div>
+      </ShCard>
 
-      <div class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
+      <ShCard class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="card-header !py-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.errorsTitle') }}</h3>
           <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
@@ -210,9 +210,9 @@
             })
           }}
         </div>
-      </div>
+      </ShCard>
 
-      <div class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
+      <ShCard class="card overflow-hidden !rounded-lg !border-0 ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="card-header !py-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.healthTitle') }}</h3>
           <p class="mt-0.5 text-xs text-gray-500 dark:text-dark-400">
@@ -253,7 +253,7 @@
             <input v-model.number="criticalCachePercent" class="input" type="number" min="0" max="100" step="0.1" />
           </label>
         </div>
-      </div>
+      </ShCard>
 
       <div class="space-y-2">
         <div class="rounded-lg border border-primary-200 bg-primary-50/80 px-4 py-3 text-sm text-primary-900 dark:border-primary-800/50 dark:bg-primary-900/20 dark:text-primary-100">
@@ -279,6 +279,8 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Card as ShCard } from "@/components/ui/card"
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Select from '@/components/common/Select.vue'

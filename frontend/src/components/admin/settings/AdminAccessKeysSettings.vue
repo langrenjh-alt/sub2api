@@ -8,12 +8,12 @@
     <div v-if="secret" class="space-y-2 rounded-lg border border-amber-300 p-4">
       <p>{{ t('adminAccessKeys.secretWarning') }}</p>
       <code class="block select-all break-all">{{ secret }}</code>
-      <button type="button" class="btn btn-secondary btn-sm" @click="copySecret">{{ t('adminAccessKeys.copySecret') }}</button>
-      <button type="button" data-test="dismiss-secret" class="btn btn-secondary btn-sm" @click="secret = ''">{{ t('adminAccessKeys.dismissSecret') }}</button>
+      <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="copySecret">{{ t('adminAccessKeys.copySecret') }}</ShButton>
+      <ShButton variant="outline" size="sm" type="button" data-test="dismiss-secret" class="btn btn-secondary btn-sm" @click="secret = ''">{{ t('adminAccessKeys.dismissSecret') }}</ShButton>
     </div>
     <div class="flex gap-2">
-      <button type="button" data-test="create" class="btn btn-primary" :disabled="busy || loading || !loaded" @click="edit()">{{ t('adminAccessKeys.create') }}</button>
-      <button type="button" class="btn btn-secondary" :disabled="busy || loading" @click="load">{{ t('adminAccessKeys.refresh') }}</button>
+      <ShButton variant="default" type="button" data-test="create" class="btn btn-primary" :disabled="busy || loading || !loaded" @click="edit()">{{ t('adminAccessKeys.create') }}</ShButton>
+      <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="busy || loading" @click="load">{{ t('adminAccessKeys.refresh') }}</ShButton>
     </div>
     <p v-if="loading">{{ t('adminAccessKeys.loading') }}</p>
     <div v-for="item in items" :key="item.id" class="space-y-2 rounded-lg border border-gray-200 p-4 dark:border-dark-700">
@@ -26,18 +26,18 @@
         <p v-for="(rule, index) in item.policy.rules" :key="index">{{ t('adminAccessKeys.ruleLine', { index: index + 1, summary: ruleSummary(rule) }) }}</p>
       </div>
       <div v-if="!item.revoked_at" class="flex flex-wrap gap-2">
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="edit(item)">{{ t('adminAccessKeys.editPermissions') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="toggle(item)">{{ item.enabled ? t('adminAccessKeys.disable') : t('adminAccessKeys.enable') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="rotateKey(item)">{{ t('adminAccessKeys.rotate') }}</button>
-        <button type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="revokeKey(item)">{{ t('adminAccessKeys.revoke') }}</button>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="edit(item)">{{ t('adminAccessKeys.editPermissions') }}</ShButton>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="toggle(item)">{{ item.enabled ? t('adminAccessKeys.disable') : t('adminAccessKeys.enable') }}</ShButton>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" :disabled="busy" @click="rotateKey(item)">{{ t('adminAccessKeys.rotate') }}</ShButton>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="revokeKey(item)">{{ t('adminAccessKeys.revoke') }}</ShButton>
       </div>
       <div v-else>
-        <button type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="deleteRecord(item)">{{ t('adminAccessKeys.deleteRecord') }}</button>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm text-red-600" :disabled="busy" @click="deleteRecord(item)">{{ t('adminAccessKeys.deleteRecord') }}</ShButton>
       </div>
     </div>
     <div v-if="draft" class="space-y-4 rounded-lg border border-gray-200 p-4 dark:border-dark-700">
       <h3 class="font-semibold">{{ editingID ? t('adminAccessKeys.editTitle') : t('adminAccessKeys.createTitle') }}</h3>
-      <label class="block">{{ t('adminAccessKeys.name') }}<input v-model="draft.name" data-test="name" class="input mt-1" maxlength="100" /></label>
+      <label class="block">{{ t('adminAccessKeys.name') }}<ShInput v-model="draft.name" data-test="name" class="input mt-1" maxlength="100" /></label>
       <label class="block">{{ t('adminAccessKeys.description') }}<textarea v-model="draft.description" class="input mt-1" maxlength="1000" /></label>
       <label class="block">{{ t('adminAccessKeys.expiration') }}<input v-model="expiration" type="datetime-local" class="input mt-1" /></label>
       <label class="block">{{ t('adminAccessKeys.allowedIps') }}<textarea v-model="ips" class="input mt-1" placeholder="192.0.2.1&#10;2001:db8::/32" /></label>
@@ -61,9 +61,9 @@
           <p class="text-sm text-amber-700 dark:text-amber-300">{{ t('adminAccessKeys.modelAllowlistHint') }}</p>
           <div class="grid gap-2 sm:grid-cols-2"><label v-for="permission in groupPermissions" :key="permission.id" class="flex gap-2"><input v-model="rule.permissions" type="checkbox" :value="permission.id" />{{ permissionLabel(permission) }} <span class="text-xs text-gray-500">{{ permission.id }}</span></label></div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" @click="draft.policy.rules.splice(index, 1)">{{ t('adminAccessKeys.removeRule') }}</button>
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="draft.policy.rules.splice(index, 1)">{{ t('adminAccessKeys.removeRule') }}</ShButton>
       </fieldset>
-      <button type="button" data-test="add-rule" class="btn btn-secondary btn-sm" @click="draft.policy.rules.push(emptyRule())">{{ t('adminAccessKeys.addRule') }}</button>
+      <ShButton variant="outline" size="sm" type="button" data-test="add-rule" class="btn btn-secondary btn-sm" @click="draft.policy.rules.push(emptyRule())">{{ t('adminAccessKeys.addRule') }}</ShButton>
       <fieldset class="space-y-3 rounded-lg border border-amber-300 p-3">
         <legend>{{ t('adminAccessKeys.globalPermissions') }}</legend>
         <fieldset v-for="category in globalCategories" :key="category.name" class="space-y-2 rounded border border-gray-200 p-3 dark:border-dark-700">
@@ -72,14 +72,14 @@
         </fieldset>
       </fieldset>
       </fieldset>
-      <div class="flex gap-2"><button type="button" data-test="save" class="btn btn-primary" :disabled="busy || fullAccessPrompt" @click="save">{{ busy ? t('adminAccessKeys.processing') : t('adminAccessKeys.save') }}</button><button type="button" class="btn btn-secondary" :disabled="busy" @click="draft = null">{{ t('adminAccessKeys.cancel') }}</button></div>
+      <div class="flex gap-2"><ShButton variant="default" type="button" data-test="save" class="btn btn-primary" :disabled="busy || fullAccessPrompt" @click="save">{{ busy ? t('adminAccessKeys.processing') : t('adminAccessKeys.save') }}</ShButton><ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="busy" @click="draft = null">{{ t('adminAccessKeys.cancel') }}</ShButton></div>
     </div>
     <BaseDialog :show="fullAccessPrompt" :title="t('adminAccessKeys.fullAccessConfirmTitle')" width="normal" @close="cancelFullAccess">
       <p class="text-red-700 dark:text-red-300">{{ t('adminAccessKeys.fullAccessWarning') }}</p>
-      <label class="mt-4 block">{{ t('adminAccessKeys.fullAccessPhraseHint', { phrase: t('adminAccessKeys.fullAccessPhrase') }) }}<input v-model="fullAccessPhrase" data-test="full-access-phrase" class="input mt-1" autocomplete="off" /></label>
+      <label class="mt-4 block">{{ t('adminAccessKeys.fullAccessPhraseHint', { phrase: t('adminAccessKeys.fullAccessPhrase') }) }}<ShInput v-model="fullAccessPhrase" data-test="full-access-phrase" class="input mt-1" autocomplete="off" /></label>
       <template #footer>
-        <button type="button" data-test="full-access-cancel" class="btn btn-secondary" @click="cancelFullAccess">{{ t('adminAccessKeys.cancel') }}</button>
-        <button type="button" data-test="full-access-confirm" class="btn btn-danger" :disabled="fullAccessPhrase !== t('adminAccessKeys.fullAccessPhrase')" @click="confirmFullAccess">{{ t('adminAccessKeys.fullAccessConfirmTitle') }}</button>
+        <ShButton variant="outline" type="button" data-test="full-access-cancel" class="btn btn-secondary" @click="cancelFullAccess">{{ t('adminAccessKeys.cancel') }}</ShButton>
+        <ShButton variant="destructive" type="button" data-test="full-access-confirm" class="btn btn-danger" :disabled="fullAccessPhrase !== t('adminAccessKeys.fullAccessPhrase')" @click="confirmFullAccess">{{ t('adminAccessKeys.fullAccessConfirmTitle') }}</ShButton>
       </template>
     </BaseDialog>
     <TotpStepUpDialog :controller="stepUp" />
@@ -87,6 +87,8 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import * as api from '@/api/admin/adminAccessKeys'

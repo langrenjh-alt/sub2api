@@ -1,6 +1,16 @@
 <template>
   <div class="relative" ref="containerRef">
-    <button
+    <UiSelect v-if="adminSurface && options.length && !isSearchable && !remote && !creatable && !options.some(isGroupHeaderOption) && !$slots.selected && !$slots.option"
+      :model-value="selectedIndex" :disabled="disabled" @update:model-value="pickRegistered">
+      <UiSelectTrigger :id="id" :aria-label="ariaLabel || placeholderText" :aria-describedby="ariaDescribedby" :aria-invalid="error || undefined">
+        <UiSelectValue :placeholder="placeholderText"/>
+      </UiSelectTrigger>
+      <UiSelectContent>
+        <UiSelectItem v-if="clearable && hasValue" value="clear">{{t('common.reset')}}</UiSelectItem>
+        <UiSelectItem v-for="(option,i) in options" :key="i" :value="'o'+i" :disabled="isOptionDisabled(option)">{{getOptionLabel(option)}}</UiSelectItem>
+      </UiSelectContent>
+    </UiSelect>
+    <button v-else
       ref="triggerRef"
       type="button"
       @click="toggle"
@@ -122,7 +132,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import {Select as UiSelect, SelectContent as UiSelectContent, SelectItem as UiSelectItem, SelectTrigger as UiSelectTrigger, SelectValue as UiSelectValue} from '@/components/ui/select'
+import { ref, inject, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 
@@ -182,6 +193,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
+const adminSurface = inject('adminSurface', ref(false))
+const selectedIndex = computed(() => {
+  const i = props.options.findIndex(o => getOptionValue(o) === props.modelValue)
+  return i < 0 ? undefined : 'o'+i
+})
+function pickRegistered(id:unknown) {
+  if(id === 'clear') return clearSelection()
+  const index=typeof id === 'string' && /^o\d+$/.test(id) ? Number(id.slice(1)) : -1
+  if(index >= 0 && index < props.options.length) selectOption(props.options[index])
+}
 const isOpen = ref(false)
 const searchQuery = ref('')
 const focusedIndex = ref(-1)

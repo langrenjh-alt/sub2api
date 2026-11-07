@@ -1,3 +1,4 @@
+import { menuStubs } from './groupsMenuTestStubs'
 import { defineComponent, h, type PropType } from "vue";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
@@ -219,6 +220,8 @@ const mountView = () =>
         DataTable: DataTableStub,
         Pagination: true,
         BaseDialog: BaseDialogStub,
+        GroupEditorDialog: BaseDialogStub,
+        ...menuStubs,
         ConfirmDialog: true,
         EmptyState: true,
         Select: true,

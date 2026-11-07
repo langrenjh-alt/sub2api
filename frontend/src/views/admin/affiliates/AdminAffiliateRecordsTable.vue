@@ -5,14 +5,14 @@
         <div class="flex flex-wrap items-center gap-3">
           <div class="relative w-full md:w-80">
             <Icon name="search" size="md" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input v-model="filters.search" type="text" class="input pl-10" :placeholder="t('admin.affiliates.records.searchPlaceholder')" @input="debounceLoad" />
+            <ShInput v-model="filters.search" type="text" class="input pl-10" :placeholder="t('admin.affiliates.records.searchPlaceholder')" @input="debounceLoad" />
           </div>
           <input v-model="filters.start_at" type="date" class="input w-full sm:w-44" :title="t('admin.affiliates.records.startAt')" @change="reloadFromFirstPage" />
           <input v-model="filters.end_at" type="date" class="input w-full sm:w-44" :title="t('admin.affiliates.records.endAt')" @change="reloadFromFirstPage" />
-          <button class="btn btn-secondary px-2 md:px-3" :disabled="loading" :title="t('common.refresh')" @click="loadRecords">
+          <ShButton variant="outline" class="btn btn-secondary px-2 md:px-3" :disabled="loading" :title="t('common.refresh')" @click="loadRecords">
             <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             v-if="props.type === 'transfers'"
             type="button"
             class="btn btn-primary ml-auto"
@@ -20,7 +20,7 @@
             @click="withdrawDialog = true"
           >
             {{ t('admin.affiliates.withdraw.button') }}
-          </button>
+          </ShButton>
         </div>
       </template>
 
@@ -169,6 +169,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, defineComponent, h, onMounted, reactive, ref, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppLayout from '@/components/layout/AppLayout.vue'

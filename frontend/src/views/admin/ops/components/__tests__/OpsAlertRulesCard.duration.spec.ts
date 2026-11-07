@@ -18,7 +18,7 @@ vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showError: vi.fn(), showS
 
 async function openRule() {
   const wrapper = shallowMount(OpsAlertRulesCard, {
-    global: { stubs: { BaseDialog: { props: ['show'], template: '<div v-if="show"><slot /><slot name="footer" /></div>' } } },
+    global: { stubs: { Button: false, Primitive: false, Input: false, BaseDialog: { props: ['show'], template: '<div v-if="show"><slot /><slot name="footer" /></div>' } } },
   })
   await flushPromises()
   await wrapper.findAll('button').find(b => b.text().includes('admin.ops.alertRules.create'))!.trigger('click')

@@ -187,7 +187,7 @@
             </div>
 
             <!-- Validate Button -->
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !refreshTokenInput.trim()"
@@ -219,7 +219,7 @@
                   ? t(getOAuthKey('validating'))
                   : t(getOAuthKey('validateAndCreate'))
               }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -266,7 +266,7 @@
               </p>
             </div>
 
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !ssoCookieInput.trim()"
@@ -294,7 +294,7 @@
               </svg>
               <Icon v-else name="sparkles" size="sm" class="mr-2" />
               {{ loading ? t(getOAuthKey('convertingSSO')) : t(getOAuthKey('convertSSOAndCreate')) }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -339,7 +339,7 @@
                 {{ error }}
               </p>
             </div>
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !emailPasswordInput.trim()"
@@ -367,7 +367,7 @@
               </svg>
               <Icon v-else name="sparkles" size="sm" class="mr-2" />
               {{ loading ? t(getOAuthKey('validating')) : t(getOAuthKey('validateAndCreate')) }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -414,7 +414,7 @@
               </p>
             </div>
 
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !codexSessionInput.trim()"
@@ -446,7 +446,7 @@
                   ? t('admin.accounts.oauth.openai.validating')
                   : t('admin.accounts.oauth.openai.codexSessionImportAndCreate')
               }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -487,7 +487,7 @@
               </p>
             </div>
 
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !codexPATInput.trim()"
@@ -519,7 +519,7 @@
                   ? t('admin.accounts.oauth.openai.validating')
                   : t('admin.accounts.oauth.openai.codexPatImportAndCreate')
               }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -619,7 +619,7 @@
             </div>
 
             <!-- Auth Button -->
-            <button
+            <ShButton variant="default"
               type="button"
               class="btn btn-primary w-full"
               :disabled="loading || !sessionKeyInput.trim()"
@@ -651,7 +651,7 @@
                   ? t('admin.accounts.oauth.authorizing')
                   : t('admin.accounts.oauth.startAutoAuth')
               }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -690,7 +690,7 @@
                       {{ t('admin.accounts.oauth.gemini.howToGetProjectId') }}
                     </a>
                   </label>
-                  <input
+                  <ShInput
                     v-model="projectId"
                     type="text"
                     class="input w-full font-mono text-sm"
@@ -700,7 +700,7 @@
                     {{ t('admin.accounts.oauth.gemini.projectIdHint') }}
                   </p>
                 </div>
-                <button
+                <ShButton variant="default"
                   v-if="!authUrl"
                   type="button"
                   :disabled="loading"
@@ -729,7 +729,7 @@
                   </svg>
                   <Icon v-else name="link" size="sm" class="mr-2" />
                   {{ loading ? t('admin.accounts.oauth.generating') : oauthGenerateAuthUrl }}
-                </button>
+                </ShButton>
                 <div v-else class="space-y-3">
                   <div class="flex items-center gap-2">
                     <input
@@ -738,7 +738,7 @@
                       type="text"
                       class="input flex-1 bg-gray-50 font-mono text-xs dark:bg-gray-700"
                     />
-                    <button
+                    <ShButton variant="outline"
                       type="button"
                       class="btn btn-secondary p-2"
                       title="Copy URL"
@@ -765,7 +765,7 @@
                         class="text-green-500"
                         :stroke-width="2"
                       />
-                    </button>
+                    </ShButton>
                   </div>
                   <button
                     type="button"
@@ -894,6 +894,8 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useClipboard } from '@/composables/useClipboard'

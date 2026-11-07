@@ -39,9 +39,9 @@
             <p class="font-medium text-violet-800 dark:text-violet-300">{{ programLabel }}</p>
             <p class="mt-1 text-gray-600 dark:text-gray-300">{{ t('admin.accounts.openaiReferral.available') }} {{ countDisplay }}</p>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" :disabled="loading || sending" @click="refresh()">
+          <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" :disabled="loading || sending" @click="refresh()">
             {{ loading ? t('common.loading') : t('common.refresh') }}
-          </button>
+          </ShButton>
         </div>
         <div v-if="eligibility?.title || eligibility?.description || eligibility?.rules?.length" class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
           <p v-if="eligibility.title" class="font-medium">{{ eligibility.title }}</p>
@@ -55,7 +55,7 @@
         </p>
         <div>
           <label :for="emailID" class="input-label">{{ t('admin.accounts.openaiReferral.email') }}</label>
-          <input
+          <ShInput
             :id="emailID"
             v-model="email"
             type="email"
@@ -79,16 +79,18 @@
         <p v-if="warning" role="status" class="text-sm text-amber-700 dark:text-amber-400">{{ warning }}</p>
       </form>
       <template #footer>
-        <button type="button" class="btn btn-secondary" :disabled="sending" @click="closeDialog">{{ t('common.close') }}</button>
-        <button type="submit" :form="formID" class="btn btn-primary" :disabled="!canSend" data-testid="referral-send">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="sending" @click="closeDialog">{{ t('common.close') }}</ShButton>
+        <ShButton variant="default" type="submit" :form="formID" class="btn btn-primary" :disabled="!canSend" data-testid="referral-send">
           {{ sending ? t('admin.accounts.openaiReferral.sending') : t('admin.accounts.openaiReferral.send') }}
-        </button>
+        </ShButton>
       </template>
     </BaseDialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Account } from '@/types'

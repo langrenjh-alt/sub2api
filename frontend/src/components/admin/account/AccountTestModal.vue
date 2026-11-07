@@ -104,14 +104,14 @@
           {{ imageUploadLabel }}
         </label>
         <div class="flex items-center gap-3">
-          <button
+          <ShButton variant="outline" size="sm"
             type="button"
             class="btn btn-secondary btn-sm shrink-0"
             :disabled="status === 'connecting'"
             @click="imageFileInput?.click()"
           >
             {{ t('admin.accounts.grok.chooseImageFile') }}
-          </button>
+          </ShButton>
           <span class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">
             {{
               uploadImageName
@@ -143,14 +143,14 @@
           {{ t('admin.accounts.grok.audioUploadLabel') }}
         </label>
         <div class="flex items-center gap-3">
-          <button
+          <ShButton variant="outline" size="sm"
             type="button"
             class="btn btn-secondary btn-sm shrink-0"
             :disabled="status === 'connecting'"
             @click="audioFileInput?.click()"
           >
             {{ t('admin.accounts.grok.chooseAudioFile') }}
-          </button>
+          </ShButton>
           <span class="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400">
             {{
               uploadAudioName
@@ -365,6 +365,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

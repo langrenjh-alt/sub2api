@@ -1,3 +1,4 @@
+import { menuStubs } from './groupsMenuTestStubs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
@@ -201,6 +202,8 @@ const mountView = async () => {
         DataTable: DataTableStub,
         Pagination: true,
         BaseDialog: BaseDialogStub,
+        GroupEditorDialog: BaseDialogStub,
+        ...menuStubs,
         ConfirmDialog: true,
         EmptyState: true,
         Select: SelectStub,
@@ -281,6 +284,21 @@ describe('admin GroupsView column settings', () => {
       expect.anything(),
     )
     expect(wrapper.find('select').text()).not.toContain('admin.groups.allGroups')
+  })
+
+  it('resets all server-side filters without changing column preferences', async () => {
+    const wrapper = await mountView()
+    await wrapper.get('input[type="search"]').setValue('Core')
+    const status = wrapper.findAll('select')[1]
+    await status.setValue('inactive')
+    expect(listGroups).toHaveBeenLastCalledWith(1, expect.any(Number),
+      expect.objectContaining({status:'inactive',search:'Core'}), expect.anything())
+    await flushPromises()
+    const reset = wrapper.findAll('button').find(b => b.text().includes('common.reset'))!
+    await reset.trigger('click')
+    expect(listGroups).toHaveBeenLastCalledWith(1, expect.any(Number),
+      expect.objectContaining({status:'',search:undefined,platform:undefined}), expect.anything())
+    wrapper.unmount()
   })
 
   afterEach(() => {

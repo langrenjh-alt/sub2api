@@ -10,7 +10,7 @@
         <!-- Row 1: Core Stats -->
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <!-- Total API Keys -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
                 <Icon name="key" size="md" class="text-blue-600 dark:text-blue-400" :stroke-width="2" />
@@ -27,10 +27,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Service Accounts -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
                 <Icon name="server" size="md" class="text-purple-600 dark:text-purple-400" :stroke-width="2" />
@@ -52,10 +52,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Today Requests -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
                 <Icon name="chart" size="md" class="text-green-600 dark:text-green-400" :stroke-width="2" />
@@ -72,10 +72,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- New Users Today -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-emerald-100 p-2 dark:bg-emerald-900/30">
                 <Icon name="userPlus" size="md" class="text-emerald-600 dark:text-emerald-400" :stroke-width="2" />
@@ -92,13 +92,13 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
 
         <!-- Row 2: Token Stats -->
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <!-- Today Tokens -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
                 <Icon name="cube" size="md" class="text-amber-600 dark:text-amber-400" :stroke-width="2" />
@@ -131,10 +131,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Total Tokens -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-indigo-100 p-2 dark:bg-indigo-900/30">
                 <Icon name="database" size="md" class="text-indigo-600 dark:text-indigo-400" :stroke-width="2" />
@@ -167,10 +167,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Performance (RPM/TPM) -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-violet-100 p-2 dark:bg-violet-900/30">
                 <Icon name="bolt" size="md" class="text-violet-600 dark:text-violet-400" :stroke-width="2" />
@@ -193,10 +193,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Avg Response Time -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-rose-100 p-2 dark:bg-rose-900/30">
                 <Icon name="clock" size="md" class="text-rose-600 dark:text-rose-400" :stroke-width="2" />
@@ -213,11 +213,11 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
 
         <!-- Quick Actions -->
-        <div class="card p-4">
+        <ShCard class="card p-4">
           <div class="mb-3 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ t('admin.dashboard.quickActions') }}
@@ -262,12 +262,12 @@
               <Icon name="chevronRight" size="sm" class="text-gray-400 group-hover:text-emerald-500" />
             </button>
           </div>
-        </div>
+        </ShCard>
 
         <!-- Charts Section -->
         <div class="space-y-6">
           <!-- Date Range Filter -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="flex flex-wrap items-center gap-4">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -279,9 +279,9 @@
                   @change="onDateRangeChange"
                 />
               </div>
-              <button @click="loadDashboardStats" :disabled="chartsLoading" class="btn btn-secondary">
+              <ShButton variant="outline" @click="loadDashboardStats" :disabled="chartsLoading" class="btn btn-secondary">
                 {{ t('common.refresh') }}
-              </button>
+              </ShButton>
               <div class="ml-auto flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >{{ t('admin.dashboard.granularity') }}:</span
@@ -295,7 +295,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Charts Grid -->
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -317,7 +317,7 @@
           </div>
 
           <!-- User Usage Trend (Full Width) -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-4 flex items-center justify-between gap-3">
               <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.dashboard.recentUsage') }} (Top 12)</h3>
               <div class="flex gap-1" role="group" :aria-label="t('admin.dashboard.recentUsage')">
@@ -340,7 +340,7 @@
                 {{ t('admin.dashboard.noDataAvailable') }}
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
       </template>
     </div>
@@ -348,6 +348,8 @@
 </template>
 
 <script setup lang="ts">
+import { Card as ShCard } from "@/components/ui/card"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'

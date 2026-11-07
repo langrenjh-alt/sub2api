@@ -114,10 +114,10 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" @click="handleClose">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" @click="handleClose">
           {{ t('common.close') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="button"
           class="btn btn-primary"
           :disabled="!isActive || resetting"
@@ -144,13 +144,14 @@
             ></path>
           </svg>
           {{ t('admin.accounts.recoverState') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

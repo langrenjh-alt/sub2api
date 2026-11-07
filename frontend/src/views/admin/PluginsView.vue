@@ -31,7 +31,7 @@
             accept=".s2plugin,application/zip"
             @change="handleFileSelected"
           />
-          <button
+          <ShButton variant="default"
             type="button"
             class="btn btn-primary"
             :disabled="uploading"
@@ -39,8 +39,8 @@
           >
             <Icon name="upload" size="sm" />
             {{ uploading ? t("common.processing") : t("admin.plugins.upload") }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="outline"
             type="button"
             class="btn btn-secondary"
             :disabled="loading"
@@ -49,7 +49,7 @@
           >
             <Icon name="refresh" size="sm" />
             <span class="sr-only">{{ t("common.refresh") }}</span>
-          </button>
+          </ShButton>
         </div>
       </section>
 
@@ -121,14 +121,14 @@
                 {{ plugin.description }}
               </p>
             </div>
-            <button
+            <ShButton variant="outline" size="sm"
               type="button"
               class="btn btn-secondary btn-sm"
               @click="openConfiguration(plugin)"
             >
               <Icon name="cog" size="sm" />
               {{ t("admin.plugins.configure") }}
-            </button>
+            </ShButton>
           </div>
 
           <div class="grid grid-cols-1 gap-x-6 gap-y-4 p-5 md:grid-cols-2">
@@ -238,7 +238,7 @@
           <div
             class="flex flex-wrap justify-end gap-2 border-t border-gray-100 px-5 py-4 dark:border-dark-700"
           >
-            <button
+            <ShButton variant="outline" size="sm"
               type="button"
               class="btn btn-secondary btn-sm"
               :disabled="busyID === plugin.id"
@@ -246,8 +246,8 @@
             >
               <Icon name="beaker" size="sm" />
               {{ t("admin.plugins.test") }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="outline" size="sm"
               v-if="hasEnabledBinding(plugin)"
               type="button"
               class="btn btn-secondary btn-sm"
@@ -256,8 +256,8 @@
             >
               <Icon name="ban" size="sm" />
               {{ t("admin.plugins.disable") }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="default" size="sm"
               v-else
               type="button"
               class="btn btn-primary btn-sm"
@@ -270,8 +270,8 @@
             >
               <Icon name="play" size="sm" />
               {{ t("admin.plugins.enable") }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="destructive" size="sm"
               type="button"
               class="btn btn-danger btn-sm"
               :disabled="busyID === plugin.id || hasEnabledBinding(plugin)"
@@ -279,7 +279,7 @@
             >
               <Icon name="trash" size="sm" />
               {{ t("admin.plugins.uninstall") }}
-            </button>
+            </ShButton>
           </div>
         </article>
       </div>
@@ -333,6 +333,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {

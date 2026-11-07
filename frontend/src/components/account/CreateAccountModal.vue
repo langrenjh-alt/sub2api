@@ -47,7 +47,7 @@
     >
       <div>
         <label class="input-label">{{ t('admin.accounts.accountName') }}</label>
-        <input
+        <ShInput
           v-model="form.name"
           type="text"
           :required="!isGrokSSOInputMethod"
@@ -710,11 +710,11 @@
         <div class="mt-2 grid gap-4 sm:grid-cols-2">
           <div>
             <label class="input-label">{{ t('admin.accounts.cnProviders.zhipuTeam.organization') }}</label>
-            <input v-model="zhipuOrganization" type="text" class="input" :placeholder="t('admin.accounts.cnProviders.zhipuTeam.organizationPlaceholder')" />
+            <ShInput v-model="zhipuOrganization" type="text" class="input" :placeholder="t('admin.accounts.cnProviders.zhipuTeam.organizationPlaceholder')" />
           </div>
           <div>
             <label class="input-label">{{ t('admin.accounts.cnProviders.zhipuTeam.project') }}</label>
-            <input v-model="zhipuProject" type="text" class="input" :placeholder="t('admin.accounts.cnProviders.zhipuTeam.projectPlaceholder')" />
+            <ShInput v-model="zhipuProject" type="text" class="input" :placeholder="t('admin.accounts.cnProviders.zhipuTeam.projectPlaceholder')" />
           </div>
         </div>
         <p class="input-hint mt-2">{{ t('admin.accounts.cnProviders.zhipuTeam.hint') }}</p>
@@ -1164,7 +1164,7 @@
 
       <div v-if="form.platform === 'antigravity' && antigravityAccountType === 'oauth'">
         <label class="input-label">{{ t('admin.accounts.antigravityProjectIdLabel') }}</label>
-        <input
+        <ShInput
           v-model="antigravityProjectId"
           data-testid="antigravity-project-id-input"
           type="text"
@@ -1178,7 +1178,7 @@
       <div v-if="form.platform === 'antigravity' && antigravityAccountType === 'upstream'" class="space-y-4">
         <div>
           <label class="input-label">{{ t('admin.accounts.upstream.baseUrl') }}</label>
-          <input
+          <ShInput
             v-model="upstreamBaseUrl"
             type="text"
             required
@@ -1189,7 +1189,7 @@
         </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.upstream.apiKey') }}</label>
-          <input
+          <ShInput
             v-model="upstreamApiKey"
             type="password"
             required
@@ -1244,7 +1244,7 @@
         <template v-if="vertexUsesApiKey">
           <div>
             <label class="input-label">API Key</label>
-            <input
+            <ShInput
               v-model="vertexApiKey"
               type="password"
               required
@@ -1256,7 +1256,7 @@
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="input-label">Project ID</label>
-              <input
+              <ShInput
                 v-model="vertexProjectId"
                 type="text"
                 class="input font-mono"
@@ -1323,14 +1323,14 @@
                     {{ vertexClientEmail ? t('admin.accounts.vertexSaJsonKeyHidden') : t('admin.accounts.vertexSaJsonDropHint') }}
                   </p>
                 </div>
-                <button
+                <ShButton variant="outline"
                   type="button"
                   class="btn btn-secondary shrink-0"
                   @click="vertexServiceAccountFileInput?.click()"
                 >
                   <Icon name="upload" size="sm" />
                   {{ t('admin.accounts.vertexSaJsonSelectBtn') }}
-                </button>
+                </ShButton>
               </div>
               <div
                 v-if="vertexClientEmail"
@@ -1346,7 +1346,7 @@
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label class="input-label">Project ID</label>
-              <input
+              <ShInput
                 v-model="vertexProjectId"
                 type="text"
                 class="input font-mono"
@@ -1503,7 +1503,7 @@
       <div v-if="form.type === 'apikey' && form.platform !== 'antigravity'" class="space-y-4">
         <div v-if="!isMultiProtocolPlatform || apiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
-          <input
+          <ShInput
             v-model="apiKeyBaseUrl"
             type="text"
             class="input"
@@ -1532,7 +1532,7 @@
               <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 {{ t(`admin.accounts.cnProviders.apiProtocol.${item.labelKey}`) }}
               </label>
-              <input
+              <ShInput
                 v-model="adaptiveBaseUrls[item.value]"
                 type="text"
                 class="input"
@@ -1552,7 +1552,7 @@
         />
         <div>
           <label class="input-label">{{ t('admin.accounts.apiKeyRequired') }}</label>
-          <input
+          <ShInput
             v-model="apiKeyValue"
             type="password"
             required
@@ -1702,7 +1702,7 @@
                 :key="getModelMappingKey(mapping)"
                 class="flex items-center gap-2"
               >
-                <input
+                <ShInput
                   v-model="mapping.from"
                   type="text"
                   class="input flex-1"
@@ -1721,7 +1721,7 @@
                     d="M14 5l7 7m0 0l-7 7m7-7H3"
                   />
                 </svg>
-                <input
+                <ShInput
                   v-model="mapping.to"
                   type="text"
                   class="input flex-1"
@@ -1833,7 +1833,7 @@
           </div>
           <div v-if="poolModeEnabled" class="mt-3">
             <label class="input-label">{{ t('admin.accounts.poolModeRetryStatusCodes') }}</label>
-            <input
+            <ShInput
               v-model="poolModeRetryStatusCodesInput"
               type="text"
               class="input"
@@ -1950,7 +1950,7 @@
                 :placeholder="t('admin.accounts.enterErrorCode')"
                 @keyup.enter="addCustomErrorCode"
               />
-              <button type="button" @click="addCustomErrorCode" class="btn btn-secondary px-3">
+              <ShButton variant="outline" type="button" @click="addCustomErrorCode" class="btn btn-secondary px-3">
                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     stroke-linecap="round"
@@ -1959,7 +1959,7 @@
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-              </button>
+              </ShButton>
             </div>
 
             <!-- Selected codes summary -->
@@ -2062,7 +2062,7 @@
         <template v-if="bedrockAuthMode === 'sigv4'">
           <div>
             <label class="input-label">{{ t('admin.accounts.bedrockAccessKeyId') }}</label>
-            <input
+            <ShInput
               v-model="bedrockAccessKeyId"
               type="text"
               required
@@ -2072,7 +2072,7 @@
           </div>
           <div>
             <label class="input-label">{{ t('admin.accounts.bedrockSecretAccessKey') }}</label>
-            <input
+            <ShInput
               v-model="bedrockSecretAccessKey"
               type="password"
               required
@@ -2081,7 +2081,7 @@
           </div>
           <div>
             <label class="input-label">{{ t('admin.accounts.bedrockSessionToken') }}</label>
-            <input
+            <ShInput
               v-model="bedrockSessionToken"
               type="password"
               class="input font-mono"
@@ -2093,7 +2093,7 @@
         <!-- API Key field -->
         <div v-if="bedrockAuthMode === 'apikey'">
           <label class="input-label">{{ t('admin.accounts.bedrockApiKeyInput') }}</label>
-          <input
+          <ShInput
             v-model="bedrockApiKeyValue"
             type="password"
             required
@@ -2205,16 +2205,16 @@
           <!-- Mapping Mode -->
           <div v-else class="space-y-3">
             <div v-for="(mapping, index) in modelMappings" :key="index" class="flex items-center gap-2">
-              <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
+              <ShInput v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
               <span class="text-gray-400">→</span>
-              <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
+              <ShInput v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
               <button type="button" @click="modelMappings.splice(index, 1)" class="text-red-500 hover:text-red-700">
                 <Icon name="trash" size="sm" />
               </button>
             </div>
-            <button type="button" @click="modelMappings.push({ from: '', to: '' })" class="btn btn-secondary text-sm">
+            <ShButton variant="outline" type="button" @click="modelMappings.push({ from: '', to: '' })" class="btn btn-secondary text-sm">
               + {{ t('admin.accounts.addMapping') }}
-            </button>
+            </ShButton>
             <!-- Bedrock Preset Mappings -->
             <div class="flex flex-wrap gap-2">
               <button
@@ -2282,7 +2282,7 @@
           </div>
           <div v-if="poolModeEnabled" class="mt-3">
             <label class="input-label">{{ t('admin.accounts.poolModeRetryStatusCodes') }}</label>
-            <input
+            <ShInput
               v-model="poolModeRetryStatusCodesInput"
               type="text"
               class="input"
@@ -2429,7 +2429,7 @@
           </button>
         </div>
         <div v-if="grokOAuthCustomBaseUrlEnabled" class="space-y-2">
-          <input
+          <ShInput
             v-model="grokOAuthBaseUrl"
             type="text"
             class="input"
@@ -2560,7 +2560,7 @@
                 :key="'oauth-' + getModelMappingKey(mapping)"
                 class="flex items-center gap-2"
               >
-                <input
+                <ShInput
                   v-model="mapping.from"
                   type="text"
                   class="input flex-1"
@@ -2579,7 +2579,7 @@
                     d="M14 5l7 7m0 0l-7 7m7-7H3"
                   />
                 </svg>
-                <input
+                <ShInput
                   v-model="mapping.to"
                   type="text"
                   class="input flex-1"
@@ -2773,7 +2773,7 @@
                 </div>
                 <div class="sm:col-span-2">
                   <label class="input-label">{{ t('admin.accounts.tempUnschedulable.keywords') }}</label>
-                  <input
+                  <ShInput
                     v-model="rule.keywords"
                     type="text"
                     class="input"
@@ -2783,7 +2783,7 @@
                 </div>
                 <div class="sm:col-span-2">
                   <label class="input-label">{{ t('admin.accounts.tempUnschedulable.description') }}</label>
-                  <input
+                  <ShInput
                     v-model="rule.description"
                     type="text"
                     class="input"
@@ -3214,7 +3214,7 @@
             </button>
           </div>
           <div v-if="customBaseUrlEnabled" class="mt-3">
-            <input
+            <ShInput
               v-model="customBaseUrl"
               type="text"
               class="input"
@@ -3272,12 +3272,12 @@
         <label class="input-label">{{ t('admin.accounts.expiresAt') }}</label>
         <input v-model="expiresAtInput" type="datetime-local" class="input" />
         <div class="mt-2 flex gap-2">
-          <button type="button" class="btn btn-secondary btn-sm" @click="form.expires_at = getAccountExpiryTimestamp(1)">
+          <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="form.expires_at = getAccountExpiryTimestamp(1)">
             {{ t('payment.oneMonth') }}
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" @click="form.expires_at = getAccountExpiryTimestamp(12)">
+          </ShButton>
+          <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="form.expires_at = getAccountExpiryTimestamp(12)">
             {{ t('payment.oneYear') }}
-          </button>
+          </ShButton>
         </div>
         <p class="input-hint">
           {{ t('admin.accounts.expiresAtHint') }}
@@ -3567,17 +3567,17 @@
               :key="getOpenAICompactModelMappingKey(mapping)"
               class="flex items-center gap-2"
             >
-              <input v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
+              <ShInput v-model="mapping.from" type="text" class="input flex-1" :placeholder="t('admin.accounts.fromModel')" />
               <span class="text-gray-400">→</span>
-              <input v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
+              <ShInput v-model="mapping.to" type="text" class="input flex-1" :placeholder="t('admin.accounts.toModel')" />
               <button type="button" @click="removeOpenAICompactModelMapping(index)" class="text-red-500 hover:text-red-700">
                 <Icon name="trash" size="sm" />
               </button>
             </div>
           </div>
-          <button type="button" @click="addOpenAICompactModelMapping" class="btn btn-secondary text-sm">
+          <ShButton variant="outline" type="button" @click="addOpenAICompactModelMapping" class="btn btn-secondary text-sm">
             + {{ t('admin.accounts.addMapping') }}
-          </button>
+          </ShButton>
         </div>
       </div>
 
@@ -3809,10 +3809,10 @@
 
     <template #footer>
       <div v-if="step === 1" class="flex justify-end gap-3">
-        <button @click="handleClose" type="button" class="btn btn-secondary">
+        <ShButton variant="outline" @click="handleClose" type="button" class="btn btn-secondary">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="submit"
           form="create-account-form"
           :disabled="submitting"
@@ -3846,13 +3846,13 @@
                 ? t('admin.accounts.creating')
                 : t('common.create')
           }}
-        </button>
+        </ShButton>
       </div>
       <div v-else class="flex justify-between gap-3">
-        <button type="button" class="btn btn-secondary" @click="goBackToBasicInfo">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" @click="goBackToBasicInfo">
           {{ t('common.back') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           v-if="isManualInputMethod"
           type="button"
           :disabled="!canExchangeCode"
@@ -3884,7 +3884,7 @@
               ? t('admin.accounts.oauth.verifying')
               : t('admin.accounts.oauth.completeAuth')
           }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
@@ -3971,76 +3971,76 @@
         </p>
         <div class="overflow-x-auto">
           <table class="w-full text-xs">
-            <thead class="bg-gray-50 dark:bg-dark-600">
+            <ShTableHeader class="bg-gray-50 dark:bg-dark-600">
               <tr>
-                <th class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
+                <ShTableHead class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.accounts.gemini.quotaPolicy.columns.channel') }}
-                </th>
-                <th class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
+                </ShTableHead>
+                <ShTableHead class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.accounts.gemini.quotaPolicy.columns.account') }}
-                </th>
-                <th class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
+                </ShTableHead>
+                <ShTableHead class="px-3 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
                   {{ t('admin.accounts.gemini.quotaPolicy.columns.limits') }}
-                </th>
+                </ShTableHead>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 dark:divide-dark-600">
+            </ShTableHeader>
+            <ShTableBody class="divide-y divide-gray-200 dark:divide-dark-600">
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.googleOne.channel') }}
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Free</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                </ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Free</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.googleOne.limitsFree') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white"></td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Pro</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white"></ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Pro</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.googleOne.limitsPro') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white"></td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Ultra</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white"></ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Ultra</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.googleOne.limitsUltra') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.gcp.channel') }}
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Standard</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                </ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Standard</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.gcp.limitsStandard') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white"></td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Enterprise</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white"></ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Enterprise</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.gcp.limitsEnterprise') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.aiStudio.channel') }}
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Free</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                </ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Free</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.aiStudio.limitsFree') }}
-                </td>
+                </ShTableCell>
               </tr>
               <tr>
-                <td class="px-3 py-2 text-gray-900 dark:text-white"></td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">Paid</td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
+                <ShTableCell class="px-3 py-2 text-gray-900 dark:text-white"></ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">Paid</ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">
                   {{ t('admin.accounts.gemini.quotaPolicy.rows.aiStudio.limitsPaid') }}
-                </td>
+                </ShTableCell>
               </tr>
-            </tbody>
+            </ShTableBody>
           </table>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
@@ -4099,9 +4099,9 @@
 
     <template #footer>
       <div class="flex justify-end">
-        <button @click="showGeminiHelpDialog = false" type="button" class="btn btn-primary">
+        <ShButton variant="default" @click="showGeminiHelpDialog = false" type="button" class="btn btn-primary">
           {{ t('common.close') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
@@ -4120,6 +4120,12 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

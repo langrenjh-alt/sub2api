@@ -139,10 +139,10 @@
 
     <template #footer>
       <div v-if="account" class="flex justify-between gap-3">
-        <button type="button" class="btn btn-secondary" @click="handleClose">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" @click="handleClose">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           v-if="isManualInputMethod"
           type="button"
           :disabled="!canExchangeCode"
@@ -174,13 +174,14 @@
               ? t('admin.accounts.oauth.verifying')
               : t('admin.accounts.oauth.completeAuth')
           }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

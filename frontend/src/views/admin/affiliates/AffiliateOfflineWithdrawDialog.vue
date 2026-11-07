@@ -30,7 +30,7 @@
           </button>
         </div>
         <template v-else>
-          <input
+          <ShInput
             v-model="userQuery"
             type="text"
             class="input"
@@ -87,7 +87,7 @@
             :disabled="!selectedUser || overviewLoading || submitting || outcomeUncertain"
             data-test="withdraw-amount"
           />
-          <button
+          <ShButton variant="outline"
             type="button"
             class="btn btn-secondary shrink-0"
             :disabled="!selectedUser || overviewLoading || submitting || outcomeUncertain || availableQuota <= 0"
@@ -95,7 +95,7 @@
             @click="fillAll"
           >
             {{ t('admin.affiliates.withdraw.fillAll') }}
-          </button>
+          </ShButton>
         </div>
         <p v-if="amountError" class="input-error-text" data-test="withdraw-amount-error">{{ amountError }}</p>
         <p v-else class="input-hint">{{ t('admin.affiliates.withdraw.amountHint') }}</p>
@@ -116,10 +116,10 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" :disabled="submitting" @click="handleClose">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="submitting" @click="handleClose">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="button"
           class="btn btn-primary"
           :disabled="!canSubmit"
@@ -127,13 +127,15 @@
           @click="submit"
         >
           {{ submitting ? t('admin.affiliates.withdraw.submitting') : t('admin.affiliates.withdraw.submit') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

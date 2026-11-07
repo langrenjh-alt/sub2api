@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <ShCard class="card">
     <div
       class="flex flex-col gap-3 border-b border-gray-100 px-6 py-4 dark:border-dark-700 lg:flex-row lg:items-start lg:justify-between"
     >
@@ -12,30 +12,30 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button
+        <ShButton variant="outline" size="sm"
           type="button"
           class="btn btn-secondary btn-sm"
           :disabled="loadingTemplate || previewing || !canPreview"
           @click="refreshPreview"
         >
           {{ previewing ? t("admin.settings.emailTemplates.previewing") : t("admin.settings.emailTemplates.preview") }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="outline" size="sm"
           type="button"
           class="btn btn-secondary btn-sm"
           :disabled="loadingTemplate || restoring || !selectedEvent || !selectedLocale"
           @click="restoreOfficial"
         >
           {{ restoring ? t("admin.settings.emailTemplates.restoring") : t("admin.settings.emailTemplates.restoreOfficial") }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default" size="sm"
           type="button"
           class="btn btn-primary btn-sm"
           :disabled="loadingTemplate || saving || !canSave"
           @click="saveTemplate"
         >
           {{ saving ? t("admin.settings.emailTemplates.saving") : t("admin.settings.emailTemplates.save") }}
-        </button>
+        </ShButton>
       </div>
     </div>
 
@@ -140,7 +140,7 @@
               <label class="input-label" for="email-template-subject">
                 {{ t("admin.settings.emailTemplates.subject") }}
               </label>
-              <input
+              <ShInput
                 id="email-template-subject"
                 v-model="subject"
                 type="text"
@@ -226,10 +226,13 @@
         </div>
       </template>
     </div>
-  </div>
+  </ShCard>
 </template>
 
 <script setup lang="ts">
+import { Card as ShCard } from "@/components/ui/card"
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { adminAPI } from "@/api";

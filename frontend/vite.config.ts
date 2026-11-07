@@ -113,38 +113,9 @@ export default defineConfig(({ mode }) => {
             // Keep the optional hero renderer off the login, admin and SVG-only paths.
             if (id.includes('/three/')) return 'vendor-three'
 
-            // Vue 核心库
-            if (
-              id.includes('/vue/') ||
-              id.includes('/vue-router/') ||
-              id.includes('/pinia/') ||
-              id.includes('/@vue/')
-            ) {
-              return 'vendor-vue'
-            }
-
-            // UI 工具库（较大，单独分离）
-            if (id.includes('/@vueuse/') || id.includes('/xlsx/')) {
-              return 'vendor-ui'
-            }
-
-            // 图表库
-            if (id.includes('/chart.js/') || id.includes('/vue-chartjs/')) {
-              return 'vendor-chart'
-            }
-
-            // 国际化
-            if (id.includes('/vue-i18n/') || id.includes('/@intlify/')) {
-              return 'vendor-i18n'
-            }
-
-            // Stripe 仅在支付流程中按需加载，避免进入首页公共依赖。
-            if (id.includes('/@stripe/stripe-js/')) {
-              return 'vendor-stripe'
-            }
-
-            // 其他小型第三方库合并
-            return 'vendor-misc'
+            // Let Rollup order Vue, Reka and their shared helpers. Forcing them
+            // into vendor-vue/vendor-misc creates a cycle during a cold login.
+            if (id.includes('/@stripe/stripe-js/')) return 'vendor-stripe'
           }
 
           // 应用代码：按入口点自动分包，不手动干预

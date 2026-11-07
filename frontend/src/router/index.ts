@@ -999,7 +999,9 @@ router.beforeEach(async (to, _from, next) => {
 /**
  * Navigation guard: End loading and trigger prefetch
  */
-router.afterEach((to) => {
+router.afterEach((to, _from, failure) => {
+  // Scope the admin theme to routed pages, including menus teleported into body.
+  if (!failure) document.documentElement.toggleAttribute("data-admin-ui", to.meta.requiresAdmin === true)
   // 结束导航加载状态
   navigationLoading.endNavigation()
 

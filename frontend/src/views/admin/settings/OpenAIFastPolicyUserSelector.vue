@@ -34,7 +34,7 @@
         size="sm"
         class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
       />
-      <input
+      <ShInput
         v-model="searchQuery"
         type="text"
         autocomplete="off"
@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { adminAPI } from "@/api/admin";

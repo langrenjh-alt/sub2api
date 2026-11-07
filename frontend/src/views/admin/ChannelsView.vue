@@ -11,7 +11,7 @@
                 size="md"
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
               />
-              <input
+              <ShInput
                 v-model="searchQuery"
                 type="text"
                 :placeholder="t('admin.channels.searchChannels', 'Search channels...')"
@@ -31,18 +31,18 @@
 
           <!-- Right: Actions -->
           <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
-            <button
+            <ShButton variant="outline"
               @click="loadChannels"
               :disabled="loading"
               class="btn btn-secondary"
               :title="t('common.refresh', 'Refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
-            <button @click="openCreateDialog" class="btn btn-primary">
+            </ShButton>
+            <ShButton variant="default" @click="openCreateDialog" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.channels.createChannel', 'Create Channel') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </template>
@@ -178,7 +178,7 @@
             <!-- Name -->
             <div>
               <label class="input-label">{{ t('admin.channels.form.name', 'Name') }} <span class="text-red-500">*</span></label>
-              <input
+              <ShInput
                 v-model="form.name"
                 type="text"
                 required
@@ -532,7 +532,7 @@
                   </div>
                   <!-- Account search input -->
                   <div class="relative mt-1 rule-account-search-container">
-                    <input
+                    <ShInput
                       v-model="ruleAccountSearchKeyword[`${section.platform}-${ruleIndex}`]"
                       type="text"
                       class="input text-sm"
@@ -593,10 +593,10 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeDialog" type="button" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeDialog" type="button" class="btn btn-secondary">
             {{ t('common.cancel', 'Cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             type="submit"
             form="channel-form"
             :disabled="submitting"
@@ -608,7 +608,7 @@
                 ? t('common.update', 'Update')
                 : t('common.create', 'Create')
             }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -628,6 +628,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

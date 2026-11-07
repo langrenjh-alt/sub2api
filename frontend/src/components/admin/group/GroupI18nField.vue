@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-1.5 flex items-center justify-between gap-3">
-      <label class="input-label mb-0">{{ label }}</label>
+      <label :for="fieldId" class="input-label mb-0">{{ label }}</label>
       <div ref="menuRef" class="relative">
         <button
           type="button"
@@ -43,26 +43,26 @@
         </div>
       </div>
     </div>
-    <textarea
+    <Textarea
       v-if="multiline"
       v-bind="$attrs"
       ref="controlRef"
-      class="input"
-      :value="currentValue"
+      :id="fieldId"
+      :model-value="currentValue"
       :required="required && !activeLocale"
       :placeholder="currentPlaceholder"
-      @input="onInput"
-    ></textarea>
-    <input
+      @update:model-value="onInput"
+    />
+    <Input
       v-else
       v-bind="$attrs"
       ref="controlRef"
       type="text"
-      class="input"
-      :value="currentValue"
+      :id="fieldId"
+      :model-value="currentValue"
       :required="required && !activeLocale"
       :placeholder="currentPlaceholder"
-      @input="onInput"
+      @update:model-value="onInput"
     />
   </div>
 </template>
@@ -71,6 +71,9 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
+import { useId } from 'vue'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { availableLocales } from '@/i18n'
 import type { GroupI18n } from '@/types'
 
@@ -98,6 +101,7 @@ const emit = defineEmits<{
   'update:i18n': [value: GroupI18n]
 }>()
 
+const fieldId = useId()
 const { t } = useI18n()
 
 // 输入控件当前编辑的版本：空串为默认内容，其余为界面语言代码
@@ -139,8 +143,8 @@ const currentPlaceholder = computed(() =>
     : props.placeholder
 )
 
-function onInput(event: Event) {
-  const value = (event.target as HTMLInputElement | HTMLTextAreaElement).value
+function onInput(raw: string | number) {
+  const value = String(raw)
   if (!activeLocale.value) {
     emit('update:modelValue', value)
     return
@@ -151,7 +155,7 @@ function onInput(event: Event) {
   })
 }
 
-const controlRef = ref<HTMLInputElement | HTMLTextAreaElement | null>(null)
+const controlRef = ref<{focus: () => void} | null>(null)
 
 async function selectLocale(code: string) {
   menuOpen.value = false

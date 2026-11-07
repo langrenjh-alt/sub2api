@@ -248,7 +248,7 @@
             class="rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)]"
           />
         </div>
-        <input
+        <ShInput
           v-model="baseUrl"
           id="bulk-edit-base-url"
           type="text"
@@ -420,7 +420,7 @@
                   :key="index"
                   class="flex items-center gap-2"
                 >
-                  <input
+                  <ShInput
                     v-model="mapping.from"
                     type="text"
                     class="input flex-1"
@@ -439,7 +439,7 @@
                       d="M14 5l7 7m0 0l-7 7m7-7H3"
                     />
                   </svg>
-                  <input
+                  <ShInput
                     v-model="mapping.to"
                     type="text"
                     class="input flex-1"
@@ -563,7 +563,7 @@
               aria-labelledby="bulk-edit-custom-error-codes-label"
               @keyup.enter="addCustomErrorCode"
             />
-            <button type="button" class="btn btn-secondary px-3" @click="addCustomErrorCode">
+            <ShButton variant="outline" type="button" class="btn btn-secondary px-3" @click="addCustomErrorCode">
               <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
@@ -572,7 +572,7 @@
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-            </button>
+            </ShButton>
           </div>
 
           <!-- Selected codes summary -->
@@ -1270,7 +1270,7 @@
               :key="index"
               class="flex items-center gap-2"
             >
-              <input
+              <ShInput
                 v-model="mapping.from"
                 type="text"
                 class="input flex-1"
@@ -1278,7 +1278,7 @@
                 data-testid="bulk-edit-openai-compact-model-mapping-input"
               />
               <span class="text-gray-400">→</span>
-              <input
+              <ShInput
                 v-model="mapping.to"
                 type="text"
                 class="input flex-1"
@@ -1461,10 +1461,10 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" @click="handleClose">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" @click="handleClose">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="submit"
           form="bulk-edit-account-form"
           :disabled="submitting"
@@ -1493,7 +1493,7 @@
           {{
             submitting ? t('admin.accounts.bulkEdit.updating') : t('admin.accounts.bulkEdit.submit')
           }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
@@ -1511,6 +1511,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

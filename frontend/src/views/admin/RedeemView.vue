@@ -5,7 +5,7 @@
         <div class="flex flex-wrap items-center gap-3">
           <!-- Left: Search + Filters -->
           <div class="flex-1 sm:max-w-64">
-            <input
+            <ShInput
               v-model="searchQuery"
               type="text"
               :placeholder="t('admin.redeem.searchCodes')"
@@ -28,18 +28,18 @@
 
           <!-- Right: Action buttons -->
           <div class="flex flex-1 flex-wrap items-center justify-end gap-2">
-            <button
+            <ShButton variant="outline"
               @click="loadCodes"
               :disabled="loading"
               class="btn btn-secondary"
               :title="t('common.refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
-            <button @click="handleExportCodes" class="btn btn-secondary">
+            </ShButton>
+            <ShButton variant="outline" @click="handleExportCodes" class="btn btn-secondary">
               {{ t('admin.redeem.exportCsv') }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="outline"
               data-test="batch-update-open"
               @click="openBatchUpdateDialog"
               :disabled="selectedCount === 0 || batchUpdating"
@@ -47,10 +47,10 @@
             >
               <Icon name="edit" size="md" class="mr-2" />
               {{ t('admin.redeem.batchUpdate') }}
-            </button>
-            <button @click="showGenerateDialog = true" class="btn btn-primary">
+            </ShButton>
+            <ShButton variant="default" @click="showGenerateDialog = true" class="btn btn-primary">
               {{ t('admin.redeem.generateCodes') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </template>
@@ -220,13 +220,13 @@
             >
               {{ t('admin.redeem.clearSelection') }}
             </button>
-            <button
+            <ShButton variant="default" size="sm"
               type="button"
               class="btn btn-primary btn-sm"
               @click="openBatchUpdateDialog"
             >
               {{ t('admin.redeem.batchUpdate') }}
-            </button>
+            </ShButton>
           </div>
         </div>
 
@@ -241,9 +241,9 @@
 
         <!-- Batch Actions -->
         <div v-if="filters.status === 'unused'" class="flex justify-end">
-          <button @click="showDeleteUnusedDialog = true" class="btn btn-danger">
+          <ShButton variant="destructive" @click="showDeleteUnusedDialog = true" class="btn btn-danger">
             {{ t('admin.redeem.deleteAllUnused') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </TablePageLayout>
@@ -397,12 +397,12 @@
               />
             </div>
             <div class="flex justify-end gap-3 pt-2">
-              <button type="button" @click="showGenerateDialog = false" class="btn btn-secondary">
+              <ShButton variant="outline" type="button" @click="showGenerateDialog = false" class="btn btn-secondary">
                 {{ t('common.cancel') }}
-              </button>
-              <button type="submit" :disabled="generating" class="btn btn-primary">
+              </ShButton>
+              <ShButton variant="default" type="submit" :disabled="generating" class="btn btn-primary">
                 {{ generating ? t('admin.redeem.generating') : t('admin.redeem.generate') }}
-              </button>
+              </ShButton>
             </div>
           </form>
         </div>
@@ -506,17 +506,17 @@
             </div>
 
             <div class="flex justify-end gap-3 pt-2">
-              <button type="button" @click="closeBatchUpdateDialog" class="btn btn-secondary">
+              <ShButton variant="outline" type="button" @click="closeBatchUpdateDialog" class="btn btn-secondary">
                 {{ t('common.cancel') }}
-              </button>
-              <button
+              </ShButton>
+              <ShButton variant="default"
                 data-test="batch-update-submit"
                 type="submit"
                 :disabled="batchUpdating"
                 class="btn btn-primary"
               >
                 {{ batchUpdating ? t('common.submitting') : t('admin.redeem.batchUpdate') }}
-              </button>
+              </ShButton>
             </div>
           </form>
         </div>
@@ -599,10 +599,10 @@
               </svg>
               {{ copiedAll ? t('admin.redeem.copied') : t('admin.redeem.copyAll') }}
             </button>
-            <button @click="downloadGeneratedCodes" class="btn btn-primary flex items-center gap-2">
+            <ShButton variant="default" @click="downloadGeneratedCodes" class="btn btn-primary flex items-center gap-2">
               <Icon name="download" size="sm" :stroke-width="2" />
               {{ t('admin.redeem.download') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </div>
@@ -611,6 +611,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

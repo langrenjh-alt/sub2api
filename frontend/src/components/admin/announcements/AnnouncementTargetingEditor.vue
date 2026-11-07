@@ -44,7 +44,7 @@
             ({{ anyOf.length }}/50)
           </span>
         </div>
-        <button
+        <ShButton variant="outline"
           type="button"
           class="btn btn-secondary"
           :disabled="anyOf.length >= 50"
@@ -52,7 +52,7 @@
         >
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.announcements.form.addOrGroup') }}
-        </button>
+        </ShButton>
       </div>
 
       <div v-if="anyOf.length === 0" class="rounded-xl border border-dashed border-gray-300 p-4 text-sm text-gray-500 dark:border-dark-600 dark:text-dark-400">
@@ -75,14 +75,14 @@
             </div>
           </div>
 
-          <button
+          <ShButton variant="outline"
             type="button"
             class="btn btn-secondary"
             @click="removeOrGroup(groupIndex)"
           >
             <Icon name="trash" size="sm" class="mr-1" />
             {{ t('common.delete') }}
-          </button>
+          </ShButton>
         </div>
 
         <div class="mt-4 space-y-3">
@@ -131,20 +131,20 @@
               </div>
 
               <div class="flex justify-end">
-                <button
+                <ShButton variant="outline"
                   type="button"
                   class="btn btn-secondary"
                   @click="removeAndCondition(groupIndex, condIndex)"
                 >
                   <Icon name="trash" size="sm" class="mr-1" />
                   {{ t('common.delete') }}
-                </button>
+                </ShButton>
               </div>
             </div>
           </div>
 
           <div class="flex justify-end">
-            <button
+            <ShButton variant="outline"
               type="button"
               class="btn btn-secondary"
               :disabled="(group.all_of?.length || 0) >= 50"
@@ -152,7 +152,7 @@
             >
               <Icon name="plus" size="sm" class="mr-1" />
               {{ t('admin.announcements.form.addAndCondition') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </div>
@@ -165,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {

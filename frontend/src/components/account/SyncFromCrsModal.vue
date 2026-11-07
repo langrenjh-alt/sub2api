@@ -30,7 +30,7 @@
       <div class="grid grid-cols-1 gap-4">
         <div>
           <label for="crs-base-url" class="input-label">{{ t('admin.accounts.crsBaseUrl') }}</label>
-          <input
+          <ShInput
             id="crs-base-url"
             v-model="form.base_url"
             type="text"
@@ -43,11 +43,11 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label for="crs-username" class="input-label">{{ t('admin.accounts.crsUsername') }}</label>
-            <input id="crs-username" v-model="form.username" type="text" class="input" required autocomplete="username" />
+            <ShInput id="crs-username" v-model="form.username" type="text" class="input" required autocomplete="username" />
           </div>
           <div>
             <label for="crs-password" class="input-label">{{ t('admin.accounts.crsPassword') }}</label>
-            <input
+            <ShInput
               id="crs-password"
               v-model="form.password"
               type="password"
@@ -191,49 +191,49 @@
       <div class="flex justify-end gap-3">
         <!-- Step 1: Input -->
         <template v-if="currentStep === 'input'">
-          <button
+          <ShButton variant="outline"
             class="btn btn-secondary"
             type="button"
             :disabled="previewing"
             @click="handleClose"
           >
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             class="btn btn-primary"
             type="submit"
             form="sync-from-crs-form"
             :disabled="previewing"
           >
             {{ previewing ? t('admin.accounts.crsPreviewing') : t('admin.accounts.crsPreview') }}
-          </button>
+          </ShButton>
         </template>
 
         <!-- Step 2: Preview -->
         <template v-else-if="currentStep === 'preview'">
-          <button
+          <ShButton variant="outline"
             class="btn btn-secondary"
             type="button"
             :disabled="syncing"
             @click="handleBack"
           >
             {{ t('admin.accounts.crsBack') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             class="btn btn-primary"
             type="button"
             :disabled="syncing || hasNewButNoneSelected"
             @click="handleSync"
           >
             {{ syncing ? t('admin.accounts.syncing') : t('admin.accounts.syncNow') }}
-          </button>
+          </ShButton>
         </template>
 
         <!-- Step 3: Result -->
         <template v-else-if="currentStep === 'result'">
-          <button class="btn btn-secondary" type="button" @click="handleClose">
+          <ShButton variant="outline" class="btn btn-secondary" type="button" @click="handleClose">
             {{ t('common.close') }}
-          </button>
+          </ShButton>
         </template>
       </div>
     </template>
@@ -241,6 +241,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

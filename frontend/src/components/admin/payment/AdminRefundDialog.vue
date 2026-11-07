@@ -147,9 +147,9 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" @click="emit('cancel')" class="btn btn-secondary">
+        <ShButton variant="outline" type="button" @click="emit('cancel')" class="btn btn-secondary">
           {{ t('common.cancel') }}
-        </button>
+        </ShButton>
         <button
           type="submit"
           form="refund-form"
@@ -164,6 +164,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

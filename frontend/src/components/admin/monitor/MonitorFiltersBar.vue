@@ -8,7 +8,7 @@
           size="md"
           class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
         />
-        <input
+        <ShInput
           v-model="search"
           type="text"
           :placeholder="t('admin.channelMonitor.searchPlaceholder')"
@@ -36,31 +36,33 @@
 
     <!-- Right: Actions -->
     <div class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto">
-      <button
+      <ShButton variant="outline"
         @click="$emit('reload')"
         :disabled="loading"
         class="btn btn-secondary"
         :title="t('common.refresh')"
       >
         <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-      </button>
-      <button
+      </ShButton>
+      <ShButton variant="outline"
         @click="$emit('manage-templates')"
         class="btn btn-secondary"
         :title="t('admin.channelMonitor.template.manageButton')"
       >
         <Icon name="cog" size="md" class="mr-2" />
         {{ t('admin.channelMonitor.template.manageButton') }}
-      </button>
-      <button @click="$emit('create')" class="btn btn-primary">
+      </ShButton>
+      <ShButton variant="default" @click="$emit('create')" class="btn btn-primary">
         <Icon name="plus" size="md" class="mr-2" />
         {{ t('admin.channelMonitor.createButton') }}
-      </button>
+      </ShButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Provider } from '@/api/admin/channelMonitor'

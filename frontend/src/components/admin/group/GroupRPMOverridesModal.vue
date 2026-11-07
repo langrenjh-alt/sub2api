@@ -22,7 +22,7 @@
         </h4>
         <div class="flex items-end gap-2">
           <div class="relative flex-1">
-            <input
+            <ShInput
               v-model="searchQuery"
               type="text"
               autocomplete="off"
@@ -59,14 +59,14 @@
               placeholder="100"
             />
           </div>
-          <button
+          <ShButton variant="default"
             type="button"
             class="btn btn-primary shrink-0"
             :disabled="!selectedUser || newRpm == null || !Number.isInteger(newRpm) || newRpm < 0"
             @click="handleAddLocal"
           >
             {{ t('common.add') }}
-          </button>
+          </ShButton>
         </div>
 
         <div v-if="localEntries.length > 0" class="mt-3 flex items-center justify-end border-t border-gray-100 pt-3 dark:border-dark-600">
@@ -104,28 +104,28 @@
           <div class="overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
             <div class="max-h-[420px] overflow-auto">
               <table class="w-full min-w-max text-sm">
-                <thead class="sticky top-0 z-[1]">
+                <ShTableHeader class="sticky top-0 z-[1]">
                   <tr class="border-b border-gray-200 bg-gray-50 dark:border-dark-600 dark:bg-dark-700">
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userEmail') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">ID</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userName') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userNotes') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userStatus') }}</th>
-                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400" :title="t('admin.groups.columns.rpmOverrideHint')">{{ t('admin.groups.columns.rpmOverride') }}</th>
-                    <th class="w-10 px-2 py-2"></th>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userEmail') }}</ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">ID</ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userName') }}</ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userNotes') }}</ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('admin.groups.columns.userStatus') }}</ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400" :title="t('admin.groups.columns.rpmOverrideHint')">{{ t('admin.groups.columns.rpmOverride') }}</ShTableHead>
+                    <ShTableHead class="w-10 px-2 py-2"></ShTableHead>
                   </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-dark-600">
+                </ShTableHeader>
+                <ShTableBody class="divide-y divide-gray-100 dark:divide-dark-600">
                   <tr
                     v-for="entry in paginatedLocalEntries"
                     :key="entry.user_id"
                     class="hover:bg-gray-50 dark:hover:bg-dark-700/50"
                   >
-                    <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ entry.user_email }}</td>
-                    <td class="whitespace-nowrap px-3 py-2 text-gray-400 dark:text-gray-500">{{ entry.user_id }}</td>
-                    <td class="whitespace-nowrap px-3 py-2 text-gray-900 dark:text-white">{{ entry.user_name || '-' }}</td>
-                    <td class="max-w-[160px] truncate px-3 py-2 text-gray-500 dark:text-gray-400" :title="entry.user_notes">{{ entry.user_notes || '-' }}</td>
-                    <td class="whitespace-nowrap px-3 py-2">
+                    <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ entry.user_email }}</ShTableCell>
+                    <ShTableCell class="whitespace-nowrap px-3 py-2 text-gray-400 dark:text-gray-500">{{ entry.user_id }}</ShTableCell>
+                    <ShTableCell class="whitespace-nowrap px-3 py-2 text-gray-900 dark:text-white">{{ entry.user_name || '-' }}</ShTableCell>
+                    <ShTableCell class="max-w-[160px] truncate px-3 py-2 text-gray-500 dark:text-gray-400" :title="entry.user_notes">{{ entry.user_notes || '-' }}</ShTableCell>
+                    <ShTableCell class="whitespace-nowrap px-3 py-2">
                       <span
                         :class="[
                           'inline-flex rounded-full px-2 py-0.5 text-xs font-medium',
@@ -136,8 +136,8 @@
                       >
                         {{ entry.user_status }}
                       </span>
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-2">
+                    </ShTableCell>
+                    <ShTableCell class="whitespace-nowrap px-3 py-2">
                       <input
                         type="number"
                         step="1"
@@ -147,8 +147,8 @@
                         class="hide-spinner w-20 rounded border border-gray-200 bg-white px-2 py-1 text-center text-sm font-medium transition-colors focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-[var(--geist-foreground-300)] dark:border-dark-500 dark:bg-dark-700 dark:focus:border-primary-500"
                         @change="updateLocalRpm(entry.user_id, ($event.target as HTMLInputElement).value)"
                       />
-                    </td>
-                    <td class="px-2 py-2">
+                    </ShTableCell>
+                    <ShTableCell class="px-2 py-2">
                       <button
                         type="button"
                         class="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
@@ -156,9 +156,9 @@
                       >
                         <Icon name="trash" size="sm" />
                       </button>
-                    </td>
+                    </ShTableCell>
                   </tr>
-                </tbody>
+                </ShTableBody>
               </table>
             </div>
           </div>
@@ -186,10 +186,10 @@
           </button>
         </template>
         <div class="ml-auto flex items-center gap-3">
-          <button type="button" class="btn btn-sm px-4 py-1.5" @click="handleClose">
+          <ShButton variant="outline" size="sm" type="button" class="btn btn-sm px-4 py-1.5" @click="handleClose">
             {{ t('common.close') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default" size="sm"
             v-if="isDirty"
             type="button"
             class="btn btn-primary btn-sm px-4 py-1.5"
@@ -198,7 +198,7 @@
           >
             <Icon v-if="saving" name="refresh" size="sm" class="mr-1 animate-spin" />
             {{ t('common.save') }}
-          </button>
+          </ShButton>
         </div>
       </div>
     </div>
@@ -206,6 +206,12 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

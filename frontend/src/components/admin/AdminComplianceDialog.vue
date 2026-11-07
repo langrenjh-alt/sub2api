@@ -74,15 +74,15 @@
 
     <template #footer>
       <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <button
+        <ShButton variant="outline"
           type="button"
           class="btn btn-secondary"
           :disabled="complianceStore.submitting"
           @click="logout"
         >
           {{ t('adminCompliance.logout') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="button"
           class="btn btn-primary"
           :disabled="!canSubmit || complianceStore.submitting"
@@ -90,13 +90,14 @@
         >
           <span v-if="complianceStore.submitting">{{ t('common.submitting') }}</span>
           <span v-else>{{ t('adminCompliance.accept') }}</span>
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, ref, watch } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'

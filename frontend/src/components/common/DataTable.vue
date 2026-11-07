@@ -100,9 +100,9 @@
     }"
   >
     <table class="w-full min-w-max divide-y divide-gray-200 dark:divide-dark-700">
-      <thead class="table-header bg-gray-50 dark:bg-dark-800">
+      <component :is="adminSurface ? TableHeader : 'thead'" class="table-header bg-gray-50 dark:bg-dark-800">
         <tr>
-          <th
+          <component :is="adminSurface ? TableHead : 'th'"
             v-if="selectable"
             scope="col"
             class="sticky-header-cell w-11 min-w-11 px-3 py-3 text-center"
@@ -116,8 +116,8 @@
               data-test="select-all"
               @change="toggleAllVisible(($event.target as HTMLInputElement).checked)"
             />
-          </th>
-          <th
+          </component>
+          <component :is="adminSurface ? TableHead : 'th'"
             v-for="(column, index) in columns"
             :key="column.key"
             scope="col"
@@ -163,25 +163,25 @@
                 </svg>
               </span>
             </div>
-          </th>
+          </component>
         </tr>
-      </thead>
-      <tbody class="table-body divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+      </component>
+      <component :is="adminSurface ? TableBody : 'tbody'" class="table-body divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
         <!-- Loading skeleton -->
         <tr v-if="loading" v-for="i in 5" :key="i">
-          <td v-if="selectable" class="w-11 min-w-11 px-3 py-4">
+          <component :is="adminSurface ? TableCell : 'td'" v-if="selectable" class="w-11 min-w-11 px-3 py-4">
             <div class="mx-auto h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
-          </td>
-          <td v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-4', getAdaptivePaddingClass()]">
+          </component>
+          <component :is="adminSurface ? TableCell : 'td'" v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-4', getAdaptivePaddingClass()]">
             <div class="animate-pulse">
               <div class="h-4 w-3/4 rounded bg-gray-200 dark:bg-dark-700"></div>
             </div>
-          </td>
+          </component>
         </tr>
 
         <!-- Empty state -->
         <tr v-else-if="!data || data.length === 0">
-          <td
+          <component :is="adminSurface ? TableCell : 'td'"
             :colspan="tableColumnCount"
             :class="['py-12 text-center text-gray-500 dark:text-dark-400', getAdaptivePaddingClass()]"
           >
@@ -197,15 +197,15 @@
                 </p>
               </div>
             </slot>
-          </td>
+          </component>
         </tr>
 
         <!-- Data rows: windowed when large, fully rendered when small (shared row/cell template) -->
         <template v-else>
           <tr v-if="virtualPaddingTop > 0" aria-hidden="true">
-            <td :colspan="tableColumnCount"
+            <component :is="adminSurface ? TableCell : 'td'" :colspan="tableColumnCount"
                 :style="{ height: virtualPaddingTop + 'px', padding: 0, border: 'none' }">
-            </td>
+            </component>
           </tr>
           <tr
             v-for="item in renderRows"
@@ -220,7 +220,7 @@
             }"
             @click="clickableRows && emit('rowClick', item.row)"
           >
-            <td v-if="selectable" class="w-11 min-w-11 px-3 py-4 text-center">
+            <component :is="adminSurface ? TableCell : 'td'" v-if="selectable" class="w-11 min-w-11 px-3 py-4 text-center">
               <input
                 type="checkbox"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-[var(--geist-foreground-300)] dark:border-dark-600 dark:bg-dark-800"
@@ -230,8 +230,8 @@
                 @click.stop
                 @change="toggleRowSelection(item.row, item.index, ($event.target as HTMLInputElement).checked)"
               />
-            </td>
-            <td
+            </component>
+            <component :is="adminSurface ? TableCell : 'td'"
               v-for="(column, colIndex) in columns"
               :key="column.key"
               :class="[
@@ -249,26 +249,28 @@
                    ? column.formatter(item.row[column.key], item.row)
                    : item.row[column.key] }}
               </slot>
-            </td>
+            </component>
           </tr>
           <tr v-if="virtualPaddingBottom > 0" aria-hidden="true">
-            <td :colspan="tableColumnCount"
+            <component :is="adminSurface ? TableCell : 'td'" :colspan="tableColumnCount"
                 :style="{ height: virtualPaddingBottom + 'px', padding: 0, border: 'none' }">
-            </td>
+            </component>
           </tr>
         </template>
-      </tbody>
+      </component>
     </table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { TableHeader, TableBody, TableHead, TableCell } from "@/components/ui/table"
+import { computed, inject, ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useVirtualizer, observeElementRect as observeElementRectDefault } from '@tanstack/vue-virtual'
 import { useI18n } from 'vue-i18n'
 import type { Column } from './types'
 import Icon from '@/components/icons/Icon.vue'
 
+const adminSurface = inject('adminSurface', ref(false))
 const { t } = useI18n()
 
 const desktopViewportQuery = '(min-width: 768px)'

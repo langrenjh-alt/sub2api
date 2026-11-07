@@ -70,7 +70,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <button
+        <ShButton variant="default" size="sm"
           type="button"
           class="btn btn-primary btn-sm"
           :disabled="saving || !session.trim() || !state.encryption_key_configured"
@@ -79,8 +79,8 @@
         >
           <Icon name="check" size="xs" class="mr-1.5" />
           {{ t('common.save') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="outline" size="sm"
           v-if="state.configured"
           type="button"
           class="btn btn-secondary btn-sm text-red-600 dark:text-red-400"
@@ -90,8 +90,8 @@
         >
           <Icon name="trash" size="xs" class="mr-1.5" />
           {{ t('admin.accounts.ollamaCloud.deleteSession') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="outline" size="sm"
           v-if="state.configured"
           type="button"
           class="btn btn-secondary btn-sm"
@@ -101,7 +101,7 @@
         >
           <Icon name="refresh" size="xs" class="mr-1.5" :class="{ 'animate-spin': refreshing }" />
           {{ t('admin.accounts.ollamaCloud.refreshNow') }}
-        </button>
+        </ShButton>
       </div>
 
       <div v-if="state.configured" class="flex items-center justify-between gap-4 border-t border-gray-100 pt-4 dark:border-dark-700">
@@ -136,6 +136,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

@@ -91,33 +91,34 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 border-t border-gray-200 pt-4 dark:border-dark-700">
-        <button
+        <ShButton variant="outline" size="sm"
           v-if="order.status === 'PENDING'"
           @click="emit('cancel', order)"
           class="btn btn-sm rounded-md bg-yellow-50 px-3 py-1.5 text-sm text-yellow-600 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
         >
           {{ t('payment.orders.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="outline" size="sm"
           v-if="order.status === 'FAILED'"
           @click="emit('retry', order)"
           class="btn btn-sm btn-secondary"
         >
           {{ t('payment.admin.retry') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="outline" size="sm"
           v-if="canRefund(order)"
           @click="emit('refund', order)"
           class="btn btn-sm rounded-md bg-red-50 px-3 py-1.5 text-sm text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
         >
           {{ t('payment.admin.refund') }}
-        </button>
+        </ShButton>
       </div>
     </div>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '@/components/common/BaseDialog.vue'

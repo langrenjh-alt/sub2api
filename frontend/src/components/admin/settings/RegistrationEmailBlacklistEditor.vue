@@ -20,7 +20,7 @@
         </p>
       </div>
       <div class="flex shrink-0 gap-2">
-        <button
+        <ShButton variant="outline" size="sm"
           type="button"
           class="btn btn-secondary btn-sm"
           :disabled="loading || loadError || savedEmails.length === 0 || checking"
@@ -29,8 +29,8 @@
         >
           <Icon name="search" size="sm" class="mr-1" />
           {{ t('admin.settings.registration.emailBlacklist.checkUsers') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default" size="sm"
           type="button"
           class="btn btn-primary btn-sm"
           :disabled="loading || loadError || checking"
@@ -38,7 +38,7 @@
           @click="openEditor"
         >
           {{ t('admin.settings.registration.emailBlacklist.edit') }}
-        </button>
+        </ShButton>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
             data-testid="email-blacklist-bulk-input"
           />
           <div class="mt-2 flex flex-wrap items-center gap-3">
-            <button
+            <ShButton variant="outline" size="sm"
               type="button"
               class="btn btn-secondary btn-sm"
               :disabled="!bulkInput.trim()"
@@ -72,7 +72,7 @@
             >
               <Icon name="plus" size="sm" class="mr-1" />
               {{ t('admin.settings.registration.emailBlacklist.bulkAdd') }}
-            </button>
+            </ShButton>
             <span v-if="addResult" class="text-sm text-gray-600 dark:text-gray-400" data-testid="email-blacklist-add-result">
               {{
                 t('admin.settings.registration.emailBlacklist.addResult', {
@@ -114,14 +114,14 @@
               </span>
             </div>
             <div class="flex items-center gap-2">
-              <input
+              <ShInput
                 v-model="search"
                 type="search"
                 class="input w-full text-sm sm:w-64"
                 :placeholder="t('admin.settings.registration.emailBlacklist.searchPlaceholder')"
                 data-testid="email-blacklist-search"
               />
-              <button
+              <ShButton variant="outline" size="sm"
                 type="button"
                 class="btn btn-secondary btn-sm shrink-0"
                 :disabled="draft.length === 0"
@@ -129,7 +129,7 @@
                 @click="clearDraft"
               >
                 {{ t('admin.settings.registration.emailBlacklist.clear') }}
-              </button>
+              </ShButton>
             </div>
           </div>
 
@@ -179,10 +179,10 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" class="btn btn-secondary" :disabled="saving" @click="closeEditor">
+          <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="saving" @click="closeEditor">
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             type="button"
             class="btn btn-primary"
             :disabled="saving || !dirty || draft.length > maxEntries"
@@ -190,7 +190,7 @@
             @click="save"
           >
             {{ saving ? t('common.saving') : t('admin.settings.registration.emailBlacklist.save') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -236,10 +236,10 @@
       </div>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button type="button" class="btn btn-secondary" :disabled="disabling" @click="closeDisableDialog">
+          <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="disabling" @click="closeDisableDialog">
             {{ t('admin.settings.registration.emailBlacklist.disableLater') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="destructive"
             type="button"
             class="btn btn-danger"
             :disabled="disabling"
@@ -247,7 +247,7 @@
             @click="disableMatchedUsers"
           >
             {{ t('admin.settings.registration.emailBlacklist.disableConfirm', { count: formatCount(matchedUsers.length) }) }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -255,6 +255,8 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api'

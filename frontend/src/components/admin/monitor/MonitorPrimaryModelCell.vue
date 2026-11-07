@@ -30,27 +30,27 @@
             {{ t('monitorCommon.extraModelsHeader') }}
           </div>
           <table class="w-full text-left text-[11px]">
-            <thead>
+            <ShTableHeader>
               <tr class="text-gray-400">
-                <th class="py-0.5 pr-2 font-medium">{{ t('admin.channelMonitor.columns.primaryModel') }}</th>
-                <th class="py-0.5 pr-2 font-medium">{{ t('admin.channelMonitor.columns.actions') }}</th>
-                <th class="py-0.5 font-medium">{{ t('admin.channelMonitor.columns.latency') }}</th>
+                <ShTableHead class="py-0.5 pr-2 font-medium">{{ t('admin.channelMonitor.columns.primaryModel') }}</ShTableHead>
+                <ShTableHead class="py-0.5 pr-2 font-medium">{{ t('admin.channelMonitor.columns.actions') }}</ShTableHead>
+                <ShTableHead class="py-0.5 font-medium">{{ t('admin.channelMonitor.columns.latency') }}</ShTableHead>
               </tr>
-            </thead>
-            <tbody>
+            </ShTableHeader>
+            <ShTableBody>
               <tr v-for="m in (row.extra_models_status || [])" :key="m.model">
-                <td class="py-0.5 pr-2 text-gray-100">{{ m.model }}</td>
-                <td class="py-0.5 pr-2">
+                <ShTableCell class="py-0.5 pr-2 text-gray-100">{{ m.model }}</ShTableCell>
+                <ShTableCell class="py-0.5 pr-2">
                   <span
                     class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px]"
                     :class="statusBadgeClass(m.status)"
                   >
                     {{ statusLabel(m.status) }}
                   </span>
-                </td>
-                <td class="py-0.5 text-gray-100">{{ formatLatency(m.latency_ms) }}</td>
+                </ShTableCell>
+                <ShTableCell class="py-0.5 text-gray-100">{{ formatLatency(m.latency_ms) }}</ShTableCell>
               </tr>
-            </tbody>
+            </ShTableBody>
           </table>
         </div>
       </div>
@@ -62,6 +62,10 @@
 </template>
 
 <script setup lang="ts">
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { useI18n } from 'vue-i18n'
 import type { ChannelMonitor } from '@/api/admin/channelMonitor'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'

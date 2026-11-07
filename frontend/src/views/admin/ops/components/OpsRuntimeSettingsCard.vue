@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -264,7 +266,7 @@ onMounted(() => {
       <div class="rounded-lg bg-gray-50 p-4 dark:bg-dark-700/50">
         <div class="mb-3 flex items-center justify-between">
           <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('admin.ops.runtime.alertTitle') }}</h4>
-          <button class="btn btn-sm btn-secondary" @click="openAlertEditor">{{ t('common.edit') }}</button>
+          <ShButton variant="outline" size="sm" class="btn btn-sm btn-secondary" @click="openAlertEditor">{{ t('common.edit') }}</ShButton>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
           <div class="text-xs text-gray-600 dark:text-gray-300">
@@ -403,7 +405,7 @@ onMounted(() => {
         <div v-if="draftAlert.silencing.enabled" class="mt-4 space-y-4">
           <div>
             <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.runtime.silencing.globalUntil') }}</div>
-            <input
+            <ShInput
               v-model="draftAlert.silencing.global_until_rfc3339"
               type="text"
               class="input font-mono text-sm"
@@ -414,7 +416,7 @@ onMounted(() => {
 
           <div>
             <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.runtime.silencing.reason') }}</div>
-            <input
+            <ShInput
               v-model="draftAlert.silencing.global_reason"
               type="text"
               class="input"
@@ -428,9 +430,9 @@ onMounted(() => {
                 <div class="text-xs font-bold text-gray-900 dark:text-white">{{ t('admin.ops.runtime.silencing.entries.title') }}</div>
                 <p class="text-[11px] text-gray-500 dark:text-gray-400">{{ t('admin.ops.runtime.silencing.entries.hint') }}</p>
               </div>
-              <button class="btn btn-sm btn-secondary" type="button" @click="addSilenceEntry">
+              <ShButton variant="outline" size="sm" class="btn btn-sm btn-secondary" type="button" @click="addSilenceEntry">
                 {{ t('admin.ops.runtime.silencing.entries.add') }}
-              </button>
+              </ShButton>
             </div>
 
             <div v-if="!draftAlert.silencing.entries?.length" class="mt-3 rounded-lg bg-[var(--geist-background-200)] p-3 text-xs text-gray-500 dark:bg-[var(--geist-background-200)] dark:text-gray-400">
@@ -447,7 +449,7 @@ onMounted(() => {
                   <div class="text-xs font-bold text-gray-900 dark:text-white">
                     {{ t('admin.ops.runtime.silencing.entries.entryTitle', { n: idx + 1 }) }}
                   </div>
-                  <button class="btn btn-sm btn-danger" type="button" @click="removeSilenceEntry(idx)">{{ t('common.delete') }}</button>
+                  <ShButton variant="destructive" size="sm" class="btn btn-sm btn-danger" type="button" @click="removeSilenceEntry(idx)">{{ t('common.delete') }}</ShButton>
                 </div>
 
                 <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -475,7 +477,7 @@ onMounted(() => {
 
                   <div>
                     <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.runtime.silencing.entries.until') }}</div>
-                    <input
+                    <ShInput
                       v-model="(entry as any).until_rfc3339"
                       type="text"
                       class="input font-mono text-sm"
@@ -485,7 +487,7 @@ onMounted(() => {
 
                   <div>
                     <div class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-300">{{ t('admin.ops.runtime.silencing.entries.reason') }}</div>
-                    <input
+                    <ShInput
                       v-model="(entry as any).reason"
                       type="text"
                       class="input"
@@ -510,7 +512,7 @@ onMounted(() => {
           </div>
           <div class="md:col-span-2">
             <div class="mb-1 text-xs font-medium text-gray-500">{{ t('admin.ops.runtime.lockKey') }}</div>
-            <input v-model="draftAlert.distributed_lock.key" type="text" class="input text-xs font-mono" />
+            <ShInput v-model="draftAlert.distributed_lock.key" type="text" class="input text-xs font-mono" />
             <p v-if="draftAlert.distributed_lock.enabled" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
               {{ t('admin.ops.runtime.validation.lockKeyHint', { prefix: 'ops:' }) }}
             </p>
@@ -525,10 +527,10 @@ onMounted(() => {
 
     <template #footer>
       <div class="flex justify-end gap-2">
-        <button class="btn btn-secondary" @click="showAlertEditor = false">{{ t('common.cancel') }}</button>
-        <button class="btn btn-primary" :disabled="saving || !alertValidation.valid" @click="saveAlertSettings">
+        <ShButton variant="outline" class="btn btn-secondary" @click="showAlertEditor = false">{{ t('common.cancel') }}</ShButton>
+        <ShButton variant="default" class="btn btn-primary" :disabled="saving || !alertValidation.valid" @click="saveAlertSettings">
           {{ saving ? t('common.saving') : t('common.save') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>

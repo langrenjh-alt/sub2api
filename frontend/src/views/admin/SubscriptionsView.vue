@@ -16,7 +16,7 @@
                 size="md"
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-              <input
+              <ShInput
                 v-model="filterUserKeyword"
                 type="text"
                 :placeholder="t('admin.users.searchUsers')"
@@ -93,17 +93,17 @@
 
           <!-- Right: Actions -->
           <div class="ml-auto flex flex-wrap items-center justify-end gap-3">
-            <button
+            <ShButton variant="outline"
               @click="loadSubscriptions"
               :disabled="loading"
               class="btn btn-secondary"
               :title="t('common.refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
+            </ShButton>
             <!-- Column Settings Dropdown -->
             <div class="relative" ref="columnDropdownRef">
-              <button
+              <ShButton variant="outline"
                 @click="showColumnDropdown = !showColumnDropdown"
                 class="btn btn-secondary px-2 md:px-3"
                 :title="t('admin.users.columnSettings')"
@@ -112,7 +112,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
                 </svg>
                 <span class="hidden md:inline">{{ t('admin.users.columnSettings') }}</span>
-              </button>
+              </ShButton>
               <!-- Dropdown menu -->
               <div
                 v-if="showColumnDropdown"
@@ -152,17 +152,17 @@
                 </div>
               </div>
             </div>
-            <button
+            <ShButton variant="outline"
               @click="showGuideModal = true"
               class="btn btn-secondary"
               :title="t('admin.subscriptions.guide.showGuide')"
             >
               <Icon name="questionCircle" size="md" />
-            </button>
-            <button @click="showAssignModal = true" class="btn btn-primary">
+            </ShButton>
+            <ShButton variant="default" @click="showAssignModal = true" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.subscriptions.assignSubscription') }}
-            </button>
+            </ShButton>
           </div>
         </div>
         <div
@@ -185,9 +185,9 @@
             >
               {{ t(`admin.subscriptions.bulk.${action}`) }} ({{ bulkTargets[action].length }})
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" @click="clearSelection">
+            <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="clearSelection">
               {{ t('admin.subscriptions.bulk.clearSelection') }}
-            </button>
+            </ShButton>
           </div>
           <p class="text-xs text-gray-600 dark:text-gray-400">{{ t('admin.subscriptions.bulk.selectionHint') }}</p>
         </div>
@@ -509,7 +509,7 @@
         <div>
           <label class="input-label">{{ t('admin.subscriptions.form.user') }}</label>
           <div class="relative" data-assign-user-search>
-            <input
+            <ShInput
               v-model="userSearchKeyword"
               type="text"
               :disabled="submitting || (batchAssignEnabled && assignUsers.length >= 100)"
@@ -621,10 +621,10 @@
       </form>
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeAssignModal" type="button" :disabled="submitting" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeAssignModal" type="button" :disabled="submitting" class="btn btn-secondary">
             {{ batchAssignResult ? t('common.close') : t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             type="submit"
             form="assign-subscription-form"
             :disabled="submitting || (batchAssignEnabled && assignUsers.length === 0)"
@@ -651,7 +651,7 @@
               ></path>
             </svg>
             {{ submitting ? t('admin.subscriptions.assigning') : t('admin.subscriptions.assign') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -709,17 +709,17 @@
       </form>
       <template #footer>
         <div v-if="extendingSubscription" class="flex justify-end gap-3">
-          <button @click="closeExtendModal" type="button" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeExtendModal" type="button" class="btn btn-secondary">
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             type="submit"
             form="extend-subscription-form"
             :disabled="submitting"
             class="btn btn-primary"
           >
             {{ submitting ? t('admin.subscriptions.adjusting') : t('admin.subscriptions.adjust') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -814,12 +814,12 @@
               </h3>
               <div class="ml-8 overflow-hidden rounded-lg border border-gray-200 dark:border-dark-600">
                 <table class="w-full text-sm">
-                  <tbody>
+                  <ShTableBody>
                     <tr v-for="(row, i) in guideActionRows" :key="i" class="border-b border-gray-100 dark:border-dark-700 last:border-0">
-                      <td class="whitespace-nowrap bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-dark-700 dark:text-gray-300">{{ row.action }}</td>
-                      <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ row.desc }}</td>
+                      <ShTableCell class="whitespace-nowrap bg-gray-50 px-3 py-2 font-medium text-gray-700 dark:bg-dark-700 dark:text-gray-300">{{ row.action }}</ShTableCell>
+                      <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ row.desc }}</ShTableCell>
                     </tr>
-                  </tbody>
+                  </ShTableBody>
                 </table>
               </div>
             </div>
@@ -830,7 +830,7 @@
             </div>
 
             <div class="mt-4 text-right">
-              <button type="button" class="btn btn-primary btn-sm" @click="showGuideModal = false">{{ t('common.close') }}</button>
+              <ShButton variant="default" size="sm" type="button" class="btn btn-primary btn-sm" @click="showGuideModal = false">{{ t('common.close') }}</ShButton>
             </div>
           </div>
         </div>
@@ -840,6 +840,10 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

@@ -9,7 +9,7 @@
           :key="i"
           class="flex items-center gap-2"
         >
-          <input
+          <ShInput
             v-model="row.name"
             type="text"
             spellcheck="false"
@@ -17,7 +17,7 @@
             class="input w-52 flex-none font-mono text-xs"
             @blur="commitHeaders"
           />
-          <input
+          <ShInput
             v-model="row.value"
             type="text"
             spellcheck="false"
@@ -104,6 +104,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { APIMode, BodyOverrideMode, Provider } from '@/api/admin/channelMonitor'

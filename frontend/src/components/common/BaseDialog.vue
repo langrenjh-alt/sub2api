@@ -13,19 +13,20 @@
         <!-- Modal panel -->
         <div ref="dialogRef" :class="['modal-content', widthClasses]" @click.stop>
           <!-- Header -->
-          <div class="modal-header">
+          <component :is="adminSurface ? DialogHeader : 'div'" class="modal-header">
             <h3 :id="dialogId" class="modal-title">
               {{ title }}
             </h3>
-            <button
+            <component :is="adminSurface ? Button : 'button'"
+              v-bind="adminSurface ? {variant:'ghost',size:'icon'} : {}"
               v-if="showCloseButton"
               @click="emit('close')"
               class="btn-ghost btn-icon -mr-2 text-[var(--geist-foreground-300)]"
               aria-label="Close modal"
             >
               <Icon name="x" size="md" />
-            </button>
-          </div>
+            </component>
+          </component>
 
           <!-- Body -->
           <div ref="modalBodyRef" class="modal-body">
@@ -33,9 +34,9 @@
           </div>
 
           <!-- Footer -->
-          <div v-if="$slots.footer" class="modal-footer">
+          <component :is="adminSurface ? DialogFooter : 'div'" v-if="$slots.footer" class="modal-footer">
             <slot name="footer"></slot>
-          </div>
+          </component>
         </div>
       </div>
     </Transition>
@@ -48,10 +49,13 @@ const openDialogs = new Set<string>()
 </script>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { DialogHeader, DialogFooter } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { computed, inject, watch, onMounted, onUnmounted, ref, nextTick } from 'vue'
 import Icon from '@/components/icons/Icon.vue'
 
 // 生成唯一ID以避免多个对话框时ID冲突
+const adminSurface = inject('adminSurface', ref(false))
 const dialogId = `modal-title-${++dialogIdCounter}`
 
 // 焦点管理

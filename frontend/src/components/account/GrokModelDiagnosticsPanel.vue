@@ -22,7 +22,7 @@
           </span>
         </p>
       </div>
-      <button
+      <ShButton variant="outline" size="sm"
         v-if="canSync"
         type="button"
         data-testid="grok-diagnostics-sync"
@@ -34,7 +34,7 @@
       >
         <Icon name="refresh" size="xs" aria-hidden="true" class="max-sm:hidden" />
         {{ syncing ? t('common.loading') : t('admin.accounts.grokModelDiagnostics.syncCatalog') }}
-      </button>
+      </ShButton>
     </div>
 
     <p v-if="loading" class="px-4 pb-3 text-xs text-gray-500 dark:text-dark-400">
@@ -212,6 +212,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, defineComponent, h, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { GrokModelDiagnosticItem, GrokModelDiagnostics } from '@/types'

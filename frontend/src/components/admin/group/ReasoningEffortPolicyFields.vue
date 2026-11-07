@@ -211,7 +211,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { GroupPlatform } from "@/types";
 import Icon from "@/components/icons/Icon.vue";
-import Select from "@/components/common/Select.vue";
+import Select from "./GroupSelect.vue";
 import {
   createReasoningEffortMappingPair,
   createReasoningEffortMappingRow,

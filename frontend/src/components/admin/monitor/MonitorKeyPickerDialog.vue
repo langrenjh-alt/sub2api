@@ -11,7 +11,7 @@
       </p>
 
       <div class="relative">
-        <input
+        <ShInput
           v-model="search"
           type="text"
           class="input pl-9"
@@ -30,23 +30,23 @@
       </div>
       <div v-else class="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-dark-600">
         <table class="w-full text-sm">
-          <thead class="bg-gray-50 dark:bg-dark-800 sticky top-0 z-10">
+          <ShTableHeader class="bg-gray-50 dark:bg-dark-800 sticky top-0 z-10">
             <tr class="text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              <th class="px-3 py-2">{{ t('common.name') }}</th>
-              <th class="px-3 py-2">{{ t('keys.apiKey') }}</th>
-              <th class="px-3 py-2">{{ t('keys.group') }}</th>
+              <ShTableHead class="px-3 py-2">{{ t('common.name') }}</ShTableHead>
+              <ShTableHead class="px-3 py-2">{{ t('keys.apiKey') }}</ShTableHead>
+              <ShTableHead class="px-3 py-2">{{ t('keys.group') }}</ShTableHead>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-dark-700">
+          </ShTableHeader>
+          <ShTableBody class="divide-y divide-gray-200 dark:divide-dark-700">
             <tr
               v-for="k in filteredKeys"
               :key="k.id"
               class="cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-700"
               @click="$emit('pick', k)"
             >
-              <td class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ k.name }}</td>
-              <td class="px-3 py-2 font-mono text-xs text-gray-500 dark:text-gray-400">{{ maskApiKey(k.key) }}</td>
-              <td class="px-3 py-2">
+              <ShTableCell class="px-3 py-2 font-medium text-gray-900 dark:text-white">{{ k.name }}</ShTableCell>
+              <ShTableCell class="px-3 py-2 font-mono text-xs text-gray-500 dark:text-gray-400">{{ maskApiKey(k.key) }}</ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <GroupBadge
                   v-if="k.group"
                   :name="k.group.name"
@@ -56,23 +56,29 @@
                   :user-rate-multiplier="userGroupRates[k.group.id]"
                 />
                 <span v-else class="text-xs text-gray-400">—</span>
-              </td>
+              </ShTableCell>
             </tr>
-          </tbody>
+          </ShTableBody>
         </table>
       </div>
     </div>
     <template #footer>
       <div class="flex justify-end">
-        <button @click="$emit('close')" class="btn btn-secondary">
+        <ShButton variant="outline" @click="$emit('close')" class="btn btn-secondary">
           {{ t('common.cancel') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ApiKey } from '@/types'

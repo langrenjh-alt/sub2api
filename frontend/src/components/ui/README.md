@@ -13,3 +13,9 @@
 ```sh
 pnpm exec vitest run src/components/common/__tests__/designSystem.spec.ts src/components/common/__tests__/SearchInput.spec.ts
 ```
+
+## 分组管理
+
+`/admin/groups` 使用同一 New York / Tailwind 3 注册表的 Table、Badge、Select、Popover、Command、Dropdown Menu、Dialog 和 Textarea 源码。该页的行模型由 TanStack Table v8 管理；过滤、排序、分页仍交给现有分组 API。长列表使用虚拟滚动，小屏显示可操作的分组摘要。编辑器保留平台特有的字段、原有校验和提交协议。Dialog 固定操作区，Popover + Command 保留较长选项列表的搜索。
+
+参考：[Data Table](https://www.shadcn-vue.com/docs/components/data-table)、[Dialog](https://www.shadcn-vue.com/docs/components/dialog)。此迁移针对实际分组管理路由，不是对所有其他管理页的迁移。

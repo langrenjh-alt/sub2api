@@ -14,7 +14,7 @@
     <div v-if="rows.length > 0" class="mb-2 space-y-2">
       <div v-for="(row, index) in rows" :key="getRowKey(row)">
         <div class="flex items-center gap-2">
-          <input
+          <ShInput
             v-model="row.pattern"
             type="text"
             class="input flex-1 font-mono text-sm"
@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'

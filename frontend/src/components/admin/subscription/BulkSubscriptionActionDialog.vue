@@ -97,9 +97,9 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn btn-secondary" :disabled="!canClose" @click="handleClose">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="!canClose" @click="handleClose">
           {{ result ? t('common.close') : t('common.cancel') }}
-        </button>
+        </ShButton>
         <button
           v-if="!result"
           type="submit"
@@ -115,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, reactive, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

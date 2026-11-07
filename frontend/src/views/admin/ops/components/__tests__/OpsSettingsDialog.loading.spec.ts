@@ -28,7 +28,7 @@ vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showError, showSuccess: v
 async function openDialog() {
   const wrapper = shallowMount(OpsSettingsDialog, {
     props: { show: false },
-    global: { stubs: { BaseDialog: { template: '<div><slot name="footer" /></div>' } } },
+    global: { stubs: { Button:false, Primitive:false, BaseDialog: { template: '<div><slot name="footer" /></div>' } } },
   })
   await wrapper.setProps({ show: true })
   return wrapper

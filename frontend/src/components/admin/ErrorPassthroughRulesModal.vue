@@ -11,10 +11,10 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ t('admin.errorPassthrough.description') }}
         </p>
-        <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
+        <ShButton variant="default" size="sm" @click="showCreateModal = true" class="btn btn-primary btn-sm">
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.errorPassthrough.createRule') }}
-        </button>
+        </ShButton>
       </div>
 
       <!-- Rules Table -->
@@ -36,45 +36,45 @@
 
       <div v-else class="max-h-96 overflow-auto rounded-lg border border-gray-200 dark:border-dark-600">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
-          <thead class="sticky top-0 bg-gray-50 dark:bg-dark-700">
+          <ShTableHeader class="sticky top-0 bg-gray-50 dark:bg-dark-700">
             <tr>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.priority') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.name') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.conditions') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.platforms') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.behavior') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.status') }}
-              </th>
-              <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
+              </ShTableHead>
+              <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ t('admin.errorPassthrough.columns.actions') }}
-              </th>
+              </ShTableHead>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-800">
+          </ShTableHeader>
+          <ShTableBody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-800">
             <tr v-for="rule in rules" :key="rule.id" class="hover:bg-gray-50 dark:hover:bg-dark-700">
-              <td class="whitespace-nowrap px-3 py-2">
+              <ShTableCell class="whitespace-nowrap px-3 py-2">
                 <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-gray-100 text-xs font-medium text-gray-700 dark:bg-dark-600 dark:text-gray-300">
                   {{ rule.priority }}
                 </span>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <div class="font-medium text-gray-900 dark:text-white text-sm">{{ rule.name }}</div>
                 <div v-if="rule.description" class="mt-0.5 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">
                   {{ rule.description }}
                 </div>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <div class="flex flex-wrap gap-1 max-w-48">
                   <span
                     v-for="code in rule.error_codes.slice(0, 3)"
@@ -106,8 +106,8 @@
                 <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {{ t('admin.errorPassthrough.matchMode.' + rule.match_mode) }}
                 </div>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <div v-if="rule.platforms.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
                   {{ t('admin.errorPassthrough.allPlatforms') }}
                 </div>
@@ -123,8 +123,8 @@
                     +{{ rule.platforms.length - 2 }}
                   </span>
                 </div>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <div class="text-xs space-y-0.5">
                   <div class="flex items-center gap-1">
                     <Icon
@@ -159,8 +159,8 @@
                     </span>
                   </div>
                 </div>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <button
                   @click="toggleEnabled(rule)"
                   :class="[
@@ -175,8 +175,8 @@
                     ]"
                   />
                 </button>
-              </td>
-              <td class="px-3 py-2">
+              </ShTableCell>
+              <ShTableCell class="px-3 py-2">
                 <div class="flex items-center gap-1">
                   <button
                     @click="handleEdit(rule)"
@@ -193,18 +193,18 @@
                     <Icon name="trash" size="sm" />
                   </button>
                 </div>
-              </td>
+              </ShTableCell>
             </tr>
-          </tbody>
+          </ShTableBody>
         </table>
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-end">
-        <button @click="$emit('close')" class="btn btn-secondary">
+        <ShButton variant="outline" @click="$emit('close')" class="btn btn-secondary">
           {{ t('common.close') }}
-        </button>
+        </ShButton>
       </div>
     </template>
 
@@ -220,7 +220,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="input-label">{{ t('admin.errorPassthrough.form.name') }}</label>
-            <input
+            <ShInput
               v-model="form.name"
               type="text"
               required
@@ -242,7 +242,7 @@
 
         <div>
           <label class="input-label">{{ t('admin.errorPassthrough.form.description') }}</label>
-          <input
+          <ShInput
             v-model="form.description"
             type="text"
             class="input"
@@ -259,7 +259,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.errorCodes') }}</label>
-              <input
+              <ShInput
                 v-model="errorCodesInput"
                 type="text"
                 class="input text-sm"
@@ -365,7 +365,7 @@
               </label>
               <div v-if="!form.passthrough_body" class="mt-2">
                 <label class="input-label text-xs">{{ t('admin.errorPassthrough.form.customMessage') }}</label>
-                <input
+                <ShInput
                   v-model="form.custom_message"
                   type="text"
                   class="input text-sm"
@@ -404,13 +404,13 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeFormModal" type="button" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeFormModal" type="button" class="btn btn-secondary">
             {{ t('common.cancel') }}
-          </button>
-          <button @click="handleSubmit" :disabled="submitting" class="btn btn-primary">
+          </ShButton>
+          <ShButton variant="default" @click="handleSubmit" :disabled="submitting" class="btn btn-primary">
             <Icon v-if="submitting" name="refresh" size="sm" class="mr-1 animate-spin" />
             {{ showEditModal ? t('common.update') : t('common.create') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -430,6 +430,12 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
+import { Input as ShInput } from "@/components/ui/input"
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

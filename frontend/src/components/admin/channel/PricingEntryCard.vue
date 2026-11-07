@@ -85,7 +85,7 @@
             <label class="text-xs font-medium text-gray-500 dark:text-gray-400">
               {{ t('admin.channels.form.billingMode') }}
             </label>
-            <Select
+            <component :is="hideTokenIntervals ? GroupSelect : Select"
               :modelValue="entry.billing_mode"
               @update:modelValue="emit('update', {
                 ...entry,
@@ -302,6 +302,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Select from '@/components/common/Select.vue'
+import GroupSelect from '@/components/admin/group/GroupSelect.vue'
 import Icon from '@/components/icons/Icon.vue'
 import IntervalRow from './IntervalRow.vue'
 import ModelTagInput from './ModelTagInput.vue'

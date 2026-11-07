@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { computed, ref, watch } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
@@ -177,20 +182,20 @@ function onNextPage() {
           <div class="w-24">
             <Select v-model="pageSize" :options="pageSizeOptions" />
           </div>
-          <button
+          <ShButton variant="outline" size="sm"
             class="btn btn-secondary btn-sm"
             :disabled="loading || page <= 1"
             @click="onPrevPage"
           >
             {{ t('admin.ops.openaiTokenStats.prevPage') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="outline" size="sm"
             class="btn btn-secondary btn-sm"
             :disabled="loading || page >= totalPages"
             @click="onNextPage"
           >
             {{ t('admin.ops.openaiTokenStats.nextPage') }}
-          </button>
+          </ShButton>
           <span class="text-xs text-gray-500 dark:text-gray-400">
             {{ t('admin.ops.openaiTokenStats.pageInfo', { page, total: totalPages }) }}
           </span>
@@ -247,32 +252,32 @@ function onNextPage() {
             </div>
           </div>
           <table v-else class="min-w-full text-left text-xs md:text-sm">
-            <thead class="sticky top-0 z-10 bg-white dark:bg-dark-800">
+            <ShTableHeader class="sticky top-0 z-10 bg-white dark:bg-dark-800">
               <tr class="border-b border-gray-200 text-gray-500 dark:border-dark-700 dark:text-gray-400">
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.model') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestCount') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgTokensPerSec') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgFirstTokenMs') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.totalOutputTokens') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgDurationMs') }}</th>
-                <th class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestsWithFirstToken') }}</th>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.model') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestCount') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgTokensPerSec') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgFirstTokenMs') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.totalOutputTokens') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.avgDurationMs') }}</ShTableHead>
+                <ShTableHead class="px-2 py-2 font-semibold">{{ t('admin.ops.openaiTokenStats.table.requestsWithFirstToken') }}</ShTableHead>
               </tr>
-            </thead>
-            <tbody>
+            </ShTableHeader>
+            <ShTableBody>
               <tr
                 v-for="row in items"
                 :key="row.model"
                 class="border-b border-gray-100 text-gray-700 last:border-b-0 dark:border-dark-800 dark:text-gray-200"
               >
-                <td class="px-2 py-2 font-medium">{{ row.model }}</td>
-                <td class="px-2 py-2">{{ formatInt(row.request_count) }}</td>
-                <td class="px-2 py-2">{{ formatRate(row.avg_tokens_per_sec) }}</td>
-                <td class="px-2 py-2">{{ formatRate(row.avg_first_token_ms) }}</td>
-                <td class="px-2 py-2">{{ formatInt(row.total_output_tokens) }}</td>
-                <td class="px-2 py-2">{{ formatInt(row.avg_duration_ms) }}</td>
-                <td class="px-2 py-2">{{ formatInt(row.requests_with_first_token) }}</td>
+                <ShTableCell class="px-2 py-2 font-medium">{{ row.model }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatInt(row.request_count) }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatRate(row.avg_tokens_per_sec) }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatRate(row.avg_first_token_ms) }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatInt(row.total_output_tokens) }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatInt(row.avg_duration_ms) }}</ShTableCell>
+                <ShTableCell class="px-2 py-2">{{ formatInt(row.requests_with_first_token) }}</ShTableCell>
               </tr>
-            </tbody>
+            </ShTableBody>
           </table>
         </div>
       </div>

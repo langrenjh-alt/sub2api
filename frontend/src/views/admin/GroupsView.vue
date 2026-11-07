@@ -1,129 +1,30 @@
 <template>
   <AppLayout>
-    <TablePageLayout>
-      <template #filters>
-        <div
-          class="flex flex-col justify-between gap-4 lg:flex-row lg:items-start"
-        >
-          <!-- Left: fuzzy search + filters (can wrap to multiple lines) -->
-          <div class="flex flex-1 flex-wrap items-center gap-3">
-            <div class="relative w-full sm:w-64">
-              <Icon
-                name="search"
-                size="md"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
-              />
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="t('admin.groups.searchGroups')"
-                class="input pl-10"
-                @input="handleSearch"
-              />
-            </div>
-            <Select
-              v-model="filters.platform"
-              :options="platformFilterOptions"
-              :placeholder="t('admin.groups.allPlatforms')"
-              class="w-44"
-              @change="loadGroups"
-            />
-            <Select
-              v-model="filters.status"
-              :options="statusOptions"
-              :placeholder="t('admin.groups.allStatus')"
-              class="w-40"
-              @change="loadGroups"
-            />
-            <Select
-              v-if="!authStore.isSimpleMode"
-              v-model="filters.is_exclusive"
-              :options="exclusiveOptions"
-              :placeholder="t('admin.groups.allGroups')"
-              class="w-44"
-              @change="loadGroups"
-            />
-          </div>
-
-          <!-- Right: actions -->
-          <div
-            class="flex w-full flex-shrink-0 flex-wrap items-center justify-end gap-3 lg:w-auto"
-          >
-            <button
-              @click="loadGroups"
-              :disabled="loading"
-              class="btn btn-secondary"
-              :title="t('common.refresh')"
-            >
-              <Icon
-                name="refresh"
-                size="md"
-                :class="loading ? 'animate-spin' : ''"
-              />
-            </button>
-            <div class="relative" ref="columnDropdownRef">
-              <button
-                @click="showColumnDropdown = !showColumnDropdown"
-                class="btn btn-secondary"
-                :title="t('admin.groups.columnSettings')"
-              >
-                <Icon name="grid" size="md" class="mr-2" />
-                <span class="hidden md:inline">{{
-                  t("admin.groups.columnSettings")
-                }}</span>
-              </button>
-              <div
-                v-if="showColumnDropdown"
-                class="absolute right-0 top-full z-50 mt-1 max-h-80 w-48 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-dark-600 dark:bg-dark-800"
-              >
-                <button
-                  v-for="col in toggleableColumns"
-                  :key="col.key"
-                  @click="toggleColumn(col.key)"
-                  class="flex w-full items-center justify-between px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-dark-700"
-                >
-                  <span>{{ col.label }}</span>
-                  <Icon
-                    v-if="isColumnVisible(col.key)"
-                    name="check"
-                    size="sm"
-                    class="text-primary-500"
-                    :stroke-width="2"
-                  />
-                </button>
-              </div>
-            </div>
-            <button
-              v-if="!authStore.isSimpleMode"
-              @click="openSortModal"
-              class="btn btn-secondary"
-              :title="t('admin.groups.sortOrder')"
-            >
-              <Icon name="arrowsUpDown" size="md" class="mr-2" />
-              {{ t("admin.groups.sortOrder") }}
-            </button>
-            <button
-              @click="openCreateModal"
-              class="btn btn-primary"
-              data-tour="groups-create-btn"
-            >
-              <Icon name="plus" size="md" class="mr-2" />
-              {{ t("admin.groups.createGroup") }}
-            </button>
-          </div>
+    <section class="min-w-0 space-y-4" data-testid="groups-management">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <div><h2 class="text-2xl font-semibold tracking-tight">{{ t('admin.groups.title') }}</h2>
+          <p class="mt-1 text-sm text-muted-foreground">{{ t('admin.groups.description') }}</p></div>
+        <Button @click="openCreateModal" data-tour="groups-create-btn"><Plus/>{{t('admin.groups.createGroup')}}</Button>
+      </header>
+      <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('admin.groups.searchGroups')">
+        <div class="relative w-full sm:w-56"><Search class="absolute left-3 top-2.5 size-4 text-muted-foreground"/>
+          <Input v-model="searchQuery" class="h-9 pl-9" type="search" :placeholder="t('admin.groups.searchGroups')" :aria-label="t('admin.groups.searchGroups')" @update:model-value="handleSearch"/>
         </div>
-      </template>
-
-      <template #table>
-        <DataTable
-          :columns="columns"
-          :data="groups"
-          :loading="loading"
-          :server-side-sort="true"
-          default-sort-key="sort_order"
-          default-sort-order="asc"
-          @sort="handleSort"
-        >
+        <Select v-model="filters.platform" :options="platformFilterOptions" :placeholder="t('admin.groups.allPlatforms')" class="w-auto min-w-28" @change="applyFilters"/>
+        <Select v-model="filters.status" :options="statusOptions" :placeholder="t('admin.groups.allStatus')" class="w-auto min-w-24" @change="applyFilters"/>
+        <Select v-if="!authStore.isSimpleMode" v-model="filters.is_exclusive" :options="exclusiveOptions" :placeholder="t('admin.groups.allGroups')" class="w-auto min-w-24" @change="applyFilters"/>
+        <Button v-if="hasFilters" variant="ghost" size="sm" @click="resetFilters"><X/>{{t('common.reset')}}</Button>
+        <div class="ml-auto flex items-center gap-2">
+          <Button size="icon" variant="ghost" :disabled="loading" :aria-label="t('common.refresh')" @click="loadGroups"><RefreshCw :class="loading && 'animate-spin'"/></Button>
+          <Button v-if="!authStore.isSimpleMode" variant="outline" size="sm" @click="openSortModal"><ArrowUpDown/>{{t('admin.groups.sortOrder')}}</Button>
+          <DropdownMenu><DropdownMenuTrigger as-child><Button variant="outline" size="sm" :title="t('admin.groups.columnSettings')"><Settings2/>{{t('admin.groups.columnSettings')}}</Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="max-h-[60dvh] overflow-auto"><DropdownMenuLabel>{{t('admin.groups.columnSettings')}}</DropdownMenuLabel><DropdownMenuSeparator/>
+              <DropdownMenuCheckboxItem v-for="c in toggleableColumns" :key="c.key" :model-value="isColumnVisible(c.key)" @select.prevent="toggleColumn(c.key)">{{c.label}}</DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <DataTable :columns="columns" :data="groups" :loading="loading" :sort-key="sortState.sort_by" :sort-order="sortState.sort_order" @sort="handleSort">
           <template #cell-name="{ value }">
             <span class="font-medium text-gray-900 dark:text-white">{{
               value
@@ -136,34 +37,8 @@
             >
           </template>
 
-          <template #cell-platform="{ value }">
-            <span
-              :class="[
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                value === 'anthropic'
-                  ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                  : value === 'openai'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : value === 'antigravity'
-                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                      : value === 'grok'
-                        ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
-                        : value === 'kimi'
-                          ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400'
-                          : value === 'zhipu'
-                            ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                            : value === 'deepseek'
-                              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400'
-                              : value === 'minimax'
-                                ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
-                              : value === 'opencode_go'
-                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
-                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-              ]"
-            >
-              <PlatformIcon :platform="value" size="xs" />
-              {{ t("admin.groups.platforms." + value, platformLabel(value)) }}
-            </span>
+          <template #cell-platform="{ row }">
+            <Badge variant="outline" class="gap-1.5 font-normal"><PlatformIcon :platform="row.platform" size="xs"/>{{ t("admin.groups.platforms."+row.platform,platformLabel(row.platform)) }}</Badge>
           </template>
 
           <template #cell-billing_type="{ row }">
@@ -369,91 +244,26 @@
           </template>
 
           <template #cell-status="{ value }">
-            <span
-              :class="[
-                'badge',
-                value === 'active' ? 'badge-success' : 'badge-danger',
-              ]"
-            >
-              {{ t("admin.accounts.status." + value) }}
-            </span>
+            <Badge variant="outline" class="gap-1.5 font-normal"><i class="size-1.5 rounded-full" :class="value==='active'?'bg-signal':'bg-muted-foreground'"/>{{t("admin.accounts.status."+value)}}</Badge>
           </template>
 
           <template #cell-actions="{ row }">
-            <div class="flex items-center gap-1">
-              <button
-                @click="handleEdit(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 dark:hover:bg-dark-700 dark:hover:text-primary-400"
-              >
-                <Icon name="edit" size="sm" />
-                <span class="text-xs">{{ t("common.edit") }}</span>
-              </button>
-              <button
-                v-if="!authStore.isSimpleMode"
-                data-testid="group-duplicate"
-                :title="
-                  duplicatingGroupIds.has(row.id)
-                    ? t('admin.groups.duplicating')
-                    : t('admin.groups.duplicate')
-                "
-                :disabled="duplicatingGroupIds.has(row.id)"
-                @click="handleDuplicate(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-dark-700 dark:hover:text-primary-400"
-              >
-                <Icon name="copy" size="sm" />
-                <span class="text-xs">
-                  {{
-                    duplicatingGroupIds.has(row.id)
-                      ? t("admin.groups.duplicating")
-                      : t("admin.groups.duplicate")
-                  }}
-                </span>
-              </button>
-              <button
-                v-if="!authStore.isSimpleMode && row.platform === 'composite'"
-                data-testid="group-composite-routes"
-                @click="handleCompositeRoutes(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-dark-700 dark:hover:text-white"
-              >
-                <Icon name="swap" size="sm" />
-                <span class="text-xs">{{
-                  t("admin.groups.compositeRoutes.action")
-                }}</span>
-              </button>
-              <button
-                v-if="!authStore.isSimpleMode"
-                data-testid="group-rate-multipliers"
-                @click="handleRateMultipliers(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-dark-700 dark:hover:text-purple-400"
-              >
-                <Icon name="dollar" size="sm" />
-                <span class="text-xs">{{
-                  t("admin.groups.rateMultipliers")
-                }}</span>
-              </button>
-              <button
-                v-if="!authStore.isSimpleMode"
-                data-testid="group-rpm-overrides"
-                @click="handleRPMOverrides(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-orange-600 dark:hover:bg-dark-700 dark:hover:text-orange-400"
-              >
-                <Icon name="bolt" size="sm" />
-                <span class="text-xs">{{
-                  t("admin.groups.rpmOverrides")
-                }}</span>
-              </button>
-              <button
-                @click="handleDelete(row)"
-                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-              >
-                <Icon name="trash" size="sm" />
-                <span class="text-xs">{{ t("common.delete") }}</span>
-              </button>
+            <div class="flex items-center justify-end gap-1">
+              <Button size="sm" variant="ghost" @click="handleEdit(row)">{{t('common.edit')}}</Button>
+              <DropdownMenu><DropdownMenuTrigger as-child><Button size="icon-sm" variant="ghost" :aria-label="t('admin.groups.columns.actions')+' · '+row.name"><MoreHorizontal/></Button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>{{row.name}}</DropdownMenuLabel><DropdownMenuSeparator/>
+                  <DropdownMenuItem v-if="!authStore.isSimpleMode" data-testid="group-duplicate" :title="duplicatingGroupIds.has(row.id)?t('admin.groups.duplicating'):t('admin.groups.duplicate')" :disabled="duplicatingGroupIds.has(row.id)" @select="handleDuplicate(row)"><Copy/>{{t('admin.groups.duplicate')}}</DropdownMenuItem>
+                  <DropdownMenuItem v-if="!authStore.isSimpleMode && row.platform==='composite'" data-testid="group-composite-routes" @select="handleCompositeRoutes(row)"><Waypoints/>{{t('admin.groups.compositeRoutes.action')}}</DropdownMenuItem>
+                  <DropdownMenuItem v-if="!authStore.isSimpleMode" data-testid="group-rate-multipliers" @select="handleRateMultipliers(row)"><Coins/>{{t('admin.groups.rateMultipliers')}}</DropdownMenuItem>
+                  <DropdownMenuItem v-if="!authStore.isSimpleMode" data-testid="group-rpm-overrides" @select="handleRPMOverrides(row)"><Zap/>{{t('admin.groups.rpmOverrides')}}</DropdownMenuItem>
+                  <DropdownMenuSeparator/><DropdownMenuItem class="text-destructive focus:text-destructive" @select="handleDelete(row)"><Trash2/>{{t('common.delete')}}</DropdownMenuItem>
+                </DropdownMenuContent></DropdownMenu>
             </div>
           </template>
-
           <template #empty>
-            <EmptyState
+            <div v-if="hasFilters" class="space-y-3 text-sm text-muted-foreground"><p>{{t('admin.groups.noMatches')}}</p><Button variant="outline" size="sm" @click="resetFilters">{{t('common.reset')}}</Button></div>
+            <EmptyState v-else
               :title="t('admin.groups.noGroupsYet')"
               :description="t('admin.groups.createFirstGroup')"
               :action-text="t('admin.groups.createGroup')"
@@ -461,9 +271,6 @@
             />
           </template>
         </DataTable>
-      </template>
-
-      <template #pagination>
         <Pagination
           v-if="pagination.total > 0"
           :page="pagination.page"
@@ -472,14 +279,14 @@
           @update:page="handlePageChange"
           @update:pageSize="handlePageSizeChange"
         />
-      </template>
-    </TablePageLayout>
+    </section>
 
     <!-- Create Group Modal -->
-    <BaseDialog
+    <GroupEditorDialog
+      :advanced="!authStore.isSimpleMode"
       :show="showCreateModal"
       :title="t('admin.groups.createGroup')"
-      width="wide"
+      :description="t('admin.groups.editorHint')"
       @close="closeCreateModal"
     >
       <form
@@ -487,6 +294,7 @@
         @submit.prevent="handleCreateGroup"
         class="space-y-5"
       >
+        <h3 class="editor-section" data-editor-section="details">{{t("admin.groups.editorSections.details")}}</h3>
         <div>
           <GroupI18nField
             v-model="createForm.name"
@@ -706,6 +514,7 @@
           </div>
         </div>
 
+        <h3 class="editor-section" data-editor-section="billing">{{t("admin.groups.editorSections.billing")}}</h3>
         <!-- Subscription Configuration -->
         <div class="mt-4 border-t pt-4">
           <div>
@@ -1283,6 +1092,7 @@
           </div>
         </div>
 
+        <h3 class="editor-section" data-editor-section="access">{{t("admin.groups.editorSections.access")}}</h3>
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="createForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -1496,9 +1306,9 @@
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t("admin.groups.modelPricing.title") }}</h4>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t("admin.groups.modelPricing.description") }}</p>
             </div>
-            <button type="button" class="btn btn-secondary shrink-0 whitespace-nowrap" @click="addGroupPricing(createForm.model_pricing)">
+            <ShButton variant="outline" type="button" class="btn btn-secondary shrink-0 whitespace-nowrap" @click="addGroupPricing(createForm.model_pricing)">
               <Icon name="plus" size="sm" class="mr-1" />{{ t("admin.groups.modelPricing.add") }}
-            </button>
+            </ShButton>
           </div>
           <label class="mt-3 flex items-start gap-2">
             <input v-model="createForm.long_context_pricing_enabled" type="checkbox" class="mt-0.5" />
@@ -1681,7 +1491,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.opusModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="createForm.opus_mapped_model"
                       type="text"
                       :placeholder="
@@ -1694,7 +1504,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.sonnetModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="createForm.sonnet_mapped_model"
                       type="text"
                       :placeholder="
@@ -1707,7 +1517,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.haikuModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="createForm.haiku_mapped_model"
                       type="text"
                       :placeholder="
@@ -1778,7 +1588,7 @@
                           <label class="input-label">{{
                             t("admin.groups.openaiMessages.claudeModel")
                           }}</label>
-                          <input
+                          <ShInput
                             v-model="row.claude_model"
                             type="text"
                             :placeholder="
@@ -1802,7 +1612,7 @@
                           <label class="input-label">{{
                             t("admin.groups.openaiMessages.targetModel")
                           }}</label>
-                          <input
+                          <ShInput
                             v-model="row.target_model"
                             type="text"
                             :placeholder="
@@ -1973,7 +1783,7 @@
                     <label class="input-label text-xs">{{
                       t("admin.groups.modelRouting.modelPattern")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="rule.pattern"
                       type="text"
                       class="input text-sm"
@@ -2008,7 +1818,7 @@
                     </div>
                     <!-- 账号搜索输入框 -->
                     <div class="relative account-search-container">
-                      <input
+                      <ShInput
                         v-model="
                           accountSearchKeyword[getCreateRuleSearchKey(rule)]
                         "
@@ -2086,19 +1896,19 @@
       </form>
 
       <template #footer>
-        <div class="flex justify-end gap-3 pt-4">
-          <button
+        <div class="flex justify-end gap-2">
+          <Button
             @click="closeCreateModal"
             type="button"
-            class="btn btn-secondary"
+            variant="outline"
           >
             {{ t("common.cancel") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="create-group-form"
             :disabled="submitting"
-            class="btn btn-primary"
+            
             data-tour="group-form-submit"
           >
             <svg
@@ -2122,16 +1932,17 @@
               ></path>
             </svg>
             {{ submitting ? t("admin.groups.creating") : t("common.create") }}
-          </button>
+          </Button>
         </div>
       </template>
-    </BaseDialog>
+    </GroupEditorDialog>
 
     <!-- Edit Group Modal -->
-    <BaseDialog
+    <GroupEditorDialog
+      :advanced="!authStore.isSimpleMode"
       :show="showEditModal"
       :title="t('admin.groups.editGroup')"
-      width="wide"
+      :description="t('admin.groups.editorHint')"
       @close="closeEditModal"
     >
       <form
@@ -2140,6 +1951,7 @@
         @submit.prevent="handleUpdateGroup"
         class="space-y-5"
       >
+        <h3 class="editor-section" data-editor-section="details">{{t("admin.groups.editorSections.details")}}</h3>
         <div>
           <GroupI18nField
             v-model="editForm.name"
@@ -2359,6 +2171,7 @@
           <Select v-model="editForm.status" :options="editStatusOptions" />
         </div>
 
+        <h3 class="editor-section" data-editor-section="billing">{{t("admin.groups.editorSections.billing")}}</h3>
         <!-- Subscription Configuration -->
         <div class="mt-4 border-t pt-4">
           <div>
@@ -2937,6 +2750,7 @@
           </div>
         </div>
 
+        <h3 class="editor-section" data-editor-section="access">{{t("admin.groups.editorSections.access")}}</h3>
         <!-- 支持的模型系列（仅 antigravity 平台） -->
         <div v-if="editForm.platform === 'antigravity'" class="border-t pt-4">
           <div class="mb-1.5 flex items-center gap-1">
@@ -3160,9 +2974,9 @@
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t("admin.groups.modelPricing.title") }}</h4>
               <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t("admin.groups.modelPricing.description") }}</p>
             </div>
-            <button type="button" class="btn btn-secondary shrink-0 whitespace-nowrap" @click="addGroupPricing(editForm.model_pricing)">
+            <ShButton variant="outline" type="button" class="btn btn-secondary shrink-0 whitespace-nowrap" @click="addGroupPricing(editForm.model_pricing)">
               <Icon name="plus" size="sm" class="mr-1" />{{ t("admin.groups.modelPricing.add") }}
-            </button>
+            </ShButton>
           </div>
           <label class="mt-3 flex items-start gap-2">
             <input v-model="editForm.long_context_pricing_enabled" type="checkbox" class="mt-0.5" />
@@ -3344,7 +3158,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.opusModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="editForm.opus_mapped_model"
                       type="text"
                       :placeholder="
@@ -3357,7 +3171,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.sonnetModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="editForm.sonnet_mapped_model"
                       type="text"
                       :placeholder="
@@ -3370,7 +3184,7 @@
                     <label class="input-label">{{
                       t("admin.groups.openaiMessages.haikuModel")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="editForm.haiku_mapped_model"
                       type="text"
                       :placeholder="
@@ -3441,7 +3255,7 @@
                           <label class="input-label">{{
                             t("admin.groups.openaiMessages.claudeModel")
                           }}</label>
-                          <input
+                          <ShInput
                             v-model="row.claude_model"
                             type="text"
                             :placeholder="
@@ -3465,7 +3279,7 @@
                           <label class="input-label">{{
                             t("admin.groups.openaiMessages.targetModel")
                           }}</label>
-                          <input
+                          <ShInput
                             v-model="row.target_model"
                             type="text"
                             :placeholder="
@@ -3636,7 +3450,7 @@
                     <label class="input-label text-xs">{{
                       t("admin.groups.modelRouting.modelPattern")
                     }}</label>
-                    <input
+                    <ShInput
                       v-model="rule.pattern"
                       type="text"
                       class="input text-sm"
@@ -3671,7 +3485,7 @@
                     </div>
                     <!-- 账号搜索输入框 -->
                     <div class="relative account-search-container">
-                      <input
+                      <ShInput
                         v-model="
                           accountSearchKeyword[getEditRuleSearchKey(rule)]
                         "
@@ -3749,19 +3563,19 @@
       </form>
 
       <template #footer>
-        <div class="flex justify-end gap-3 pt-4">
-          <button
+        <div class="flex justify-end gap-2">
+          <Button
             @click="closeEditModal"
             type="button"
-            class="btn btn-secondary"
+            variant="outline"
           >
             {{ t("common.cancel") }}
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="edit-group-form"
             :disabled="submitting"
-            class="btn btn-primary"
+            
             data-tour="group-form-submit"
           >
             <svg
@@ -3785,10 +3599,10 @@
               ></path>
             </svg>
             {{ submitting ? t("admin.groups.updating") : t("common.update") }}
-          </button>
+          </Button>
         </div>
       </template>
-    </BaseDialog>
+    </GroupEditorDialog>
 
     <!-- Delete Confirmation Dialog -->
     <ConfirmDialog
@@ -3877,14 +3691,14 @@
 
       <template #footer>
         <div class="flex justify-end gap-3 pt-4">
-          <button
+          <ShButton variant="outline"
             @click="closeSortModal"
             type="button"
             class="btn btn-secondary"
           >
             {{ t("common.cancel") }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             @click="saveSortOrder"
             :disabled="sortSubmitting"
             class="btn btn-primary"
@@ -3910,7 +3724,7 @@
               ></path>
             </svg>
             {{ sortSubmitting ? t("common.saving") : t("common.save") }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -3934,7 +3748,7 @@
             <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ t("admin.groups.compositeRoutes.routes") }}
             </h3>
-            <button
+            <ShButton variant="outline" size="sm"
               type="button"
               class="btn btn-secondary btn-sm"
               :disabled="compositeRoutesLoading"
@@ -3945,7 +3759,7 @@
                 size="sm"
                 :class="compositeRoutesLoading ? 'animate-spin' : ''"
               />
-            </button>
+            </ShButton>
           </div>
 
           <div
@@ -3965,29 +3779,29 @@
             </div>
             <div v-else class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-600">
-                <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:bg-dark-800 dark:text-gray-400">
+                <ShTableHeader class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:bg-dark-800 dark:text-gray-400">
                   <tr>
-                    <th class="px-3 py-2">
+                    <ShTableHead class="px-3 py-2">
                       {{ t("admin.groups.compositeRoutes.publicModel") }}
-                    </th>
-                    <th class="px-3 py-2">
+                    </ShTableHead>
+                    <ShTableHead class="px-3 py-2">
                       {{ t("admin.groups.compositeRoutes.target") }}
-                    </th>
-                    <th class="px-3 py-2">
+                    </ShTableHead>
+                    <ShTableHead class="px-3 py-2">
                       {{ t("admin.groups.compositeRoutes.scope") }}
-                    </th>
-                    <th class="px-3 py-2 text-right">
+                    </ShTableHead>
+                    <ShTableHead class="px-3 py-2 text-right">
                       {{ t("admin.groups.columns.actions") }}
-                    </th>
+                    </ShTableHead>
                   </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-dark-900">
+                </ShTableHeader>
+                <ShTableBody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-dark-900">
                   <tr
                     v-for="route in compositeRoutes"
                     :key="route.id"
                     :class="!route.enabled && 'opacity-60'"
                   >
-                    <td class="max-w-[15rem] px-3 py-2">
+                    <ShTableCell class="max-w-[15rem] px-3 py-2">
                       <div class="break-all font-medium text-gray-900 dark:text-white">
                         {{ route.public_model }}
                       </div>
@@ -4002,8 +3816,8 @@
                           {{ t("admin.accounts.status.inactive") }}
                         </span>
                       </div>
-                    </td>
-                    <td class="px-3 py-2">
+                    </ShTableCell>
+                    <ShTableCell class="px-3 py-2">
                       <div class="flex items-center gap-1.5 text-gray-900 dark:text-white">
                         <PlatformIcon :platform="route.target_platform" size="xs" />
                         <span>{{ formatCompositePlatform(route.target_platform) }}</span>
@@ -4011,8 +3825,8 @@
                       <div class="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">
                         {{ route.upstream_model || route.public_model }}
                       </div>
-                    </td>
-                    <td class="px-3 py-2">
+                    </ShTableCell>
+                    <ShTableCell class="px-3 py-2">
                       <div class="text-gray-700 dark:text-gray-300">
                         {{ formatCompositeEndpoint(route.endpoint) }}
                       </div>
@@ -4020,8 +3834,8 @@
                         {{ t("admin.groups.compositeRoutes.priority") }}:
                         {{ route.priority }}
                       </div>
-                    </td>
-                    <td class="px-3 py-2">
+                    </ShTableCell>
+                    <ShTableCell class="px-3 py-2">
                       <div class="flex justify-end gap-1">
                         <button
                           type="button"
@@ -4040,9 +3854,9 @@
                           <Icon name="trash" size="sm" />
                         </button>
                       </div>
-                    </td>
+                    </ShTableCell>
                   </tr>
-                </tbody>
+                </ShTableBody>
               </table>
             </div>
           </div>
@@ -4161,7 +3975,7 @@
                 />
                 {{ t("admin.groups.compositeRoutes.enabled") }}
               </label>
-              <button
+              <ShButton variant="default"
                 type="submit"
                 class="btn btn-primary"
                 :disabled="compositeRouteSaving"
@@ -4173,7 +3987,7 @@
                   class="mr-2"
                 />
                 {{ compositeRouteEditingId ? t("common.update") : t("common.create") }}
-              </button>
+              </ShButton>
             </div>
           </form>
 
@@ -4195,14 +4009,14 @@
                   :options="compositeRouteEndpointOptions"
                   class="min-w-0 flex-1"
                 />
-                <button
+                <ShButton variant="outline"
                   type="button"
                   class="btn btn-secondary"
                   :disabled="compositePreviewLoading || !compositePreviewModel"
                   @click="previewCompositeRoute"
                 >
                   <Icon name="play" size="sm" />
-                </button>
+                </ShButton>
               </div>
 
               <div
@@ -4263,13 +4077,13 @@
 
       <template #footer>
         <div class="flex justify-end pt-4">
-          <button
+          <ShButton variant="outline"
             type="button"
             class="btn btn-secondary"
             @click="closeCompositeRoutesModal"
           >
             {{ t("common.close") }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -4293,6 +4107,12 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useAppStore } from "@/stores/app";
@@ -4317,14 +4137,19 @@ import {
 } from "@/constants/platforms";
 import type { Column } from "@/components/common/types";
 import AppLayout from "@/components/layout/AppLayout.vue";
-import TablePageLayout from "@/components/layout/TablePageLayout.vue";
-import DataTable from "@/components/common/DataTable.vue";
-import Pagination from "@/components/common/Pagination.vue";
+import GroupEditorDialog from "@/components/admin/group/GroupEditorDialog.vue";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { Search, Plus, Settings2, RefreshCw, X, ArrowUpDown, MoreHorizontal, Copy, Waypoints, Coins, Zap, Trash2 } from "lucide-vue-next";
+import DataTable from "@/components/admin/group/GroupsDataTable.vue";
+import Pagination from "@/components/admin/group/GroupPagination.vue";
 import Toggle from "@/components/common/Toggle.vue";
 import BaseDialog from "@/components/common/BaseDialog.vue";
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import EmptyState from "@/components/common/EmptyState.vue";
-import Select from "@/components/common/Select.vue";
+import Select from "@/components/admin/group/GroupSelect.vue";
 import PlatformIcon from "@/components/common/PlatformIcon.vue";
 import { platformLabel } from "@/utils/platformColors";
 import Icon from "@/components/icons/Icon.vue";
@@ -4522,8 +4347,6 @@ const toggleableColumns = computed(() =>
   allColumns.value.filter((col) => !ALWAYS_VISIBLE_COLUMNS.has(col.key)),
 );
 const hiddenColumns = reactive<Set<string>>(new Set());
-const showColumnDropdown = ref(false);
-const columnDropdownRef = ref<HTMLElement | null>(null);
 
 const getValidHiddenColumnKeys = () =>
   new Set(toggleableColumns.value.map((col) => col.key));
@@ -5784,6 +5607,10 @@ const handleSearch = () => {
   }, 300);
 };
 
+const hasFilters = computed(() => Boolean(searchQuery.value || filters.platform || filters.status || filters.is_exclusive));
+function applyFilters() { clearTimeout(searchTimeout); pagination.page = 1; void loadGroups(); }
+function resetFilters() { searchQuery.value = ""; Object.assign(filters, {platform:"", status:"", is_exclusive:""}); applyFilters(); }
+
 const handlePageChange = (page: number) => {
   pagination.page = page;
   loadGroups();
@@ -6876,9 +6703,6 @@ const handleClickOutside = (event: MouseEvent) => {
       showAccountDropdown.value[key] = false;
     });
   }
-  if (columnDropdownRef.value && !columnDropdownRef.value.contains(target)) {
-    showColumnDropdown.value = false;
-  }
 };
 
 // 打开排序弹窗
@@ -6936,6 +6760,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
+  clearTimeout(searchTimeout);
+  abortController?.abort();
   accountSearchRunner.clearAll();
   clearAllAccountSearchState();
 });

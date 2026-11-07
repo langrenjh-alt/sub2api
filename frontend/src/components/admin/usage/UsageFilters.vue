@@ -7,7 +7,7 @@
         <!-- User Search -->
         <div ref="userSearchRef" class="usage-filter-dropdown relative w-full sm:w-auto sm:min-w-[240px]">
           <label class="input-label">{{ t('admin.usage.userFilter') }}</label>
-          <input
+          <ShInput
             v-model="userKeyword"
             type="text"
             class="input pr-8"
@@ -44,7 +44,7 @@
         <!-- API Key Search -->
         <div ref="apiKeySearchRef" class="usage-filter-dropdown relative w-full sm:w-auto sm:min-w-[240px]">
           <label class="input-label">{{ t('usage.apiKeyFilter') }}</label>
-          <input
+          <ShInput
             v-model="apiKeyKeyword"
             type="text"
             class="input pr-8"
@@ -87,7 +87,7 @@
         <!-- Account Filter -->
         <div ref="accountSearchRef" class="usage-filter-dropdown relative w-full sm:w-auto sm:min-w-[220px]">
           <label class="input-label">{{ t('admin.usage.account') }}</label>
-          <input
+          <ShInput
             v-model="accountKeyword"
             type="text"
             class="input pr-8"
@@ -178,20 +178,20 @@
 
       <!-- Right: actions -->
       <div v-if="showActions" class="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-        <button type="button" @click="$emit('refresh')" class="btn btn-secondary">
+        <ShButton variant="outline" type="button" @click="$emit('refresh')" class="btn btn-secondary">
           {{ t('common.refresh') }}
-        </button>
-        <button type="button" @click="$emit('reset')" class="btn btn-secondary">
+        </ShButton>
+        <ShButton variant="outline" type="button" @click="$emit('reset')" class="btn btn-secondary">
           {{ t('common.reset') }}
-        </button>
+        </ShButton>
         <slot name="after-reset" />
         <template v-if="mode === 'usage'">
-          <button type="button" @click="$emit('cleanup')" class="btn btn-danger">
+          <ShButton variant="destructive" type="button" @click="$emit('cleanup')" class="btn btn-danger">
             {{ t('admin.usage.cleanup.button') }}
-          </button>
-          <button type="button" @click="$emit('export')" :disabled="exporting" class="btn btn-primary">
+          </ShButton>
+          <ShButton variant="default" type="button" @click="$emit('export')" :disabled="exporting" class="btn btn-primary">
             {{ t('usage.exportExcel') }}
-          </button>
+          </ShButton>
         </template>
       </div>
     </div>
@@ -199,6 +199,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, onMounted, onUnmounted, toRef, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'

@@ -5,13 +5,13 @@
       :key="getHeaderOverrideRowKey(row)"
       class="flex items-center gap-2"
     >
-      <input
+      <ShInput
         v-model="row.name"
         type="text"
         class="input flex-1"
         :placeholder="t('admin.accounts.headerOverride.namePlaceholder')"
       />
-      <input
+      <ShInput
         v-model="row.value"
         type="text"
         class="input flex-1"
@@ -55,6 +55,7 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
 import { useI18n } from 'vue-i18n'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
 import HeaderOverrideJsonTools from './HeaderOverrideJsonTools.vue'

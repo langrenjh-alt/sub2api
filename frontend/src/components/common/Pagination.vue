@@ -4,23 +4,23 @@
   >
     <div class="flex flex-1 items-center justify-between sm:hidden">
       <!-- Mobile pagination -->
-      <button
+      <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}"
         @click="goToPage(page - 1)"
         :disabled="page === 1"
         class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
       >
         {{ t('pagination.previous') }}
-      </button>
+      </component>
       <span class="text-sm text-gray-700 dark:text-gray-300">
         {{ t('pagination.pageOf', { page, total: totalPages }) }}
       </span>
-      <button
+      <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}"
         @click="goToPage(page + 1)"
         :disabled="page === totalPages"
         class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
       >
         {{ t('pagination.next') }}
-      </button>
+      </component>
     </div>
 
     <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
@@ -61,9 +61,9 @@
             :placeholder="t('pagination.jumpPlaceholder')"
             @keyup.enter="submitJump"
           />
-          <button type="button" class="btn btn-ghost btn-sm" @click="submitJump">
+          <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}" type="button" class="btn btn-ghost btn-sm" @click="submitJump">
             {{ t('pagination.jumpAction') }}
-          </button>
+          </component>
         </div>
       </div>
 
@@ -73,17 +73,17 @@
         aria-label="Pagination"
       >
         <!-- Previous button -->
-        <button
+        <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}"
           @click="goToPage(page - 1)"
           :disabled="page === 1"
           class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
           :aria-label="t('pagination.previous')"
         >
           <Icon name="chevronLeft" size="md" />
-        </button>
+        </component>
 
         <!-- Page numbers -->
-        <button
+        <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}"
           v-for="(pageNum, index) in visiblePages"
           :key="`${pageNum}-${index}`"
           @click="typeof pageNum === 'number' && goToPage(pageNum)"
@@ -101,30 +101,32 @@
           :aria-current="pageNum === page ? 'page' : undefined"
         >
           {{ pageNum }}
-        </button>
+        </component>
 
         <!-- Next button -->
-        <button
+        <component :is="adminSurface ? Button : 'button'" v-bind="adminSurface ? {variant:'outline',size:'sm'} : {}"
           @click="goToPage(page + 1)"
           :disabled="page === totalPages"
           class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
           :aria-label="t('pagination.next')"
         >
           <Icon name="chevronRight" size="md" />
-        </button>
+        </component>
       </nav>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { Button } from '@/components/ui/button'
+import { computed, inject, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import Select from './Select.vue'
 import { getConfiguredTablePageSizeOptions, normalizeTablePageSize } from '@/utils/tablePreferences'
 import { setPersistedPageSize } from '@/composables/usePersistedPageSize'
 
+const adminSurface = inject('adminSurface', ref(false))
 const { t } = useI18n()
 
 interface Props {

@@ -58,8 +58,8 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button @click="$emit('close')" class="btn btn-secondary px-5">{{ t('common.cancel') }}</button>
-        <button
+        <ShButton variant="outline" @click="$emit('close')" class="btn btn-secondary px-5">{{ t('common.cancel') }}</ShButton>
+        <ShButton variant="default"
           @click="handleReplace"
           :disabled="!selectedGroupId || submitting"
           class="btn btn-primary px-6"
@@ -69,13 +69,14 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           {{ submitting ? t('common.saving') : t('admin.users.replaceGroupConfirm') }}
-        </button>
+        </ShButton>
       </div>
     </template>
   </BaseDialog>
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

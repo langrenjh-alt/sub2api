@@ -6,12 +6,12 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-dark-300">{{ t('admin.promptAudit.events.description') }}</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button type="button" class="btn btn-secondary btn-sm" :disabled="selectedIds.length === 0" @click="$emit('batch-delete')">
+        <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" :disabled="selectedIds.length === 0" @click="$emit('batch-delete')">
           {{ t('admin.promptAudit.events.deleteSelected', { count: selectedIds.length }) }}
-        </button>
-        <button type="button" class="btn btn-danger btn-sm" data-test="filter-delete" @click="$emit('preview-delete')">
+        </ShButton>
+        <ShButton variant="destructive" size="sm" type="button" class="btn btn-danger btn-sm" data-test="filter-delete" @click="$emit('preview-delete')">
           {{ t('admin.promptAudit.events.deleteByFilter') }}
-        </button>
+        </ShButton>
       </div>
     </div>
 
@@ -51,52 +51,52 @@
         <input v-model="localFilters.end_at" type="datetime-local" class="input mt-1 w-full" :aria-label="t('admin.promptAudit.events.endAt')" @change="filtersChanged" />
       </label>
       <div class="flex items-end gap-2 sm:col-span-2">
-        <button type="submit" class="btn btn-primary btn-sm">{{ t('common.search') }}</button>
-        <button type="button" class="btn btn-ghost btn-sm" @click="resetFilters">{{ t('common.reset') }}</button>
+        <ShButton variant="default" size="sm" type="submit" class="btn btn-primary btn-sm">{{ t('common.search') }}</ShButton>
+        <ShButton variant="ghost" size="sm" type="button" class="btn btn-ghost btn-sm" @click="resetFilters">{{ t('common.reset') }}</ShButton>
       </div>
     </form>
     <div v-if="error" role="alert" class="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{{ error }}</div>
     <div class="mt-5 overflow-x-auto rounded-xl border border-gray-200 dark:border-dark-700/60">
       <table class="min-w-[1120px] w-full text-left text-sm">
-        <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-dark-900/70 dark:text-dark-400">
+        <ShTableHeader class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500 dark:bg-dark-900/70 dark:text-dark-400">
           <tr>
-            <th class="w-10 px-3 py-3"><input type="checkbox" :checked="allSelected" :aria-label="t('admin.promptAudit.events.selectAll')" @change="toggleAll" /></th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.time') }}</th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.identity') }}</th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.group') }}</th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.route') }}</th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.result') }}</th>
-            <th class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.preview') }}</th>
-            <th class="px-3 py-3 text-right font-medium">{{ t('admin.promptAudit.common.actions') }}</th>
+            <ShTableHead class="w-10 px-3 py-3"><input type="checkbox" :checked="allSelected" :aria-label="t('admin.promptAudit.events.selectAll')" @change="toggleAll" /></ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.time') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.identity') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.group') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.route') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.result') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 font-medium">{{ t('admin.promptAudit.events.preview') }}</ShTableHead>
+            <ShTableHead class="px-3 py-3 text-right font-medium">{{ t('admin.promptAudit.common.actions') }}</ShTableHead>
           </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-transparent">
-          <tr v-if="loading"><td colspan="8" class="px-4 py-12 text-center text-gray-500" aria-busy="true">{{ t('common.loading') }}</td></tr>
-          <tr v-else-if="events.length === 0"><td colspan="8" class="px-4 py-12 text-center text-gray-500">{{ t('admin.promptAudit.events.empty') }}</td></tr>
+        </ShTableHeader>
+        <ShTableBody class="divide-y divide-gray-100 bg-white dark:divide-dark-700 dark:bg-transparent">
+          <tr v-if="loading"><ShTableCell colspan="8" class="px-4 py-12 text-center text-gray-500" aria-busy="true">{{ t('common.loading') }}</ShTableCell></tr>
+          <tr v-else-if="events.length === 0"><ShTableCell colspan="8" class="px-4 py-12 text-center text-gray-500">{{ t('admin.promptAudit.events.empty') }}</ShTableCell></tr>
           <tr v-for="event in events" v-else :key="event.id" :data-test="`event-${event.id}`" class="align-top hover:bg-gray-50/70 dark:hover:bg-dark-800/70">
-            <td class="px-3 py-3"><input type="checkbox" :checked="selectedIds.includes(event.id)" :aria-label="t('admin.promptAudit.events.selectEvent', { id: event.id })" @change="toggleOne(event.id)" /></td>
-            <td class="whitespace-nowrap px-3 py-3 text-xs text-gray-600 dark:text-dark-300">{{ formatDate(event.created_at) }}</td>
-            <td class="px-3 py-3">
+            <ShTableCell class="px-3 py-3"><input type="checkbox" :checked="selectedIds.includes(event.id)" :aria-label="t('admin.promptAudit.events.selectEvent', { id: event.id })" @change="toggleOne(event.id)" /></ShTableCell>
+            <ShTableCell class="whitespace-nowrap px-3 py-3 text-xs text-gray-600 dark:text-dark-300">{{ formatDate(event.created_at) }}</ShTableCell>
+            <ShTableCell class="px-3 py-3">
               <CopyLine :label="t('admin.promptAudit.events.user')" :value="event.snapshot.username" />
               <CopyLine :label="t('admin.promptAudit.events.email')" :value="event.snapshot.user_email" />
               <CopyLine :label="t('admin.promptAudit.events.apiKey')" :value="event.snapshot.api_key_name" />
-            </td>
-            <td class="px-3 py-3 text-gray-700 dark:text-dark-200">{{ event.snapshot.group_name || '—' }}</td>
-            <td class="px-3 py-3">
+            </ShTableCell>
+            <ShTableCell class="px-3 py-3 text-gray-700 dark:text-dark-200">{{ event.snapshot.group_name || '—' }}</ShTableCell>
+            <ShTableCell class="px-3 py-3">
               <p class="font-medium text-gray-900 dark:text-white">{{ event.snapshot.endpoint }}</p>
               <p class="mt-1 text-xs text-gray-500">{{ event.snapshot.model }} · {{ event.snapshot.protocol }} · {{ event.snapshot.stage || 'http' }}</p>
-            </td>
-            <td class="px-3 py-3">
+            </ShTableCell>
+            <ShTableCell class="px-3 py-3">
               <span class="rounded-full px-2 py-0.5 text-xs font-medium" :class="decisionClass(event.decision)">{{ formatDecisionRisk(event.decision, event.risk_level) }}</span>
               <p class="mt-2 max-w-48 truncate text-xs text-gray-500" :title="formatCategories(event.categories)">{{ formatCategories(event.categories) }}</p>
-            </td>
-            <td class="max-w-xs px-3 py-3"><p class="line-clamp-2 break-words text-gray-600 dark:text-dark-300">{{ event.snapshot.redacted_preview || '—' }}</p></td>
-            <td class="whitespace-nowrap px-3 py-3 text-right">
-              <button type="button" class="btn btn-ghost btn-sm" @click="$emit('view', event.id)">{{ t('common.view') }}</button>
-              <button type="button" class="btn btn-ghost btn-sm text-red-600" @click="$emit('delete', event.id)">{{ t('common.delete') }}</button>
-            </td>
+            </ShTableCell>
+            <ShTableCell class="max-w-xs px-3 py-3"><p class="line-clamp-2 break-words text-gray-600 dark:text-dark-300">{{ event.snapshot.redacted_preview || '—' }}</p></ShTableCell>
+            <ShTableCell class="whitespace-nowrap px-3 py-3 text-right">
+              <ShButton variant="ghost" size="sm" type="button" class="btn btn-ghost btn-sm" @click="$emit('view', event.id)">{{ t('common.view') }}</ShButton>
+              <ShButton variant="ghost" size="sm" type="button" class="btn btn-ghost btn-sm text-red-600" @click="$emit('delete', event.id)">{{ t('common.delete') }}</ShButton>
+            </ShTableCell>
           </tr>
-        </tbody>
+        </ShTableBody>
       </table>
       <Pagination :total="total" :page="page" :page-size="pageSize" @update:page="$emit('page', $event)" @update:page-size="$emit('page-size', $event)" />
     </div>
@@ -104,6 +104,11 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { computed, defineComponent, h, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Pagination from '@/components/common/Pagination.vue'

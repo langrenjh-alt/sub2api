@@ -104,7 +104,7 @@
                     </code>
                   </div>
                   <div class="flex gap-2">
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       @click="regenerateAdminApiKey"
                       :disabled="adminApiKeyOperating"
@@ -115,15 +115,15 @@
                           ? t("admin.settings.adminApiKey.regenerating")
                           : t("admin.settings.adminApiKey.regenerate")
                       }}
-                    </button>
-                    <button
+                    </ShButton>
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       @click="deleteAdminApiKey"
                       :disabled="adminApiKeyOperating"
                       class="btn btn-secondary btn-sm text-red-600 hover:text-red-700 dark:text-red-400"
                     >
                       {{ t("admin.settings.adminApiKey.delete") }}
-                    </button>
+                    </ShButton>
                   </div>
                 </div>
 
@@ -143,13 +143,13 @@
                     >
                       {{ newAdminApiKey }}
                     </code>
-                    <button
+                    <ShButton variant="default" size="sm"
                       type="button"
                       @click="copyNewKey"
                       class="btn btn-primary btn-sm flex-shrink-0"
                     >
                       {{ t("admin.settings.adminApiKey.copyKey") }}
-                    </button>
+                    </ShButton>
                   </div>
                   <p class="text-xs text-green-600 dark:text-green-400">
                     {{ t("admin.settings.adminApiKey.usage") }}
@@ -164,7 +164,7 @@
         <!-- Tab: Gateway -->
         <div v-show="activeTab === 'gateway'" class="space-y-6">
           <!-- Overload Cooldown (529) Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -227,7 +227,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     @click="saveOverloadCooldownSettings"
                     :disabled="overloadCooldownSaving"
@@ -258,14 +258,14 @@
                         ? t("common.saving")
                         : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Rate Limit Cooldown (429) Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -334,7 +334,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     @click="saveRateLimit429CooldownSettings"
                     :disabled="rateLimit429CooldownSaving"
@@ -365,14 +365,14 @@
                         ? t("common.saving")
                         : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Stream Timeout Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -514,7 +514,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     @click="saveStreamTimeoutSettings"
                     :disabled="streamTimeoutSaving"
@@ -545,14 +545,14 @@
                         ? t("common.saving")
                         : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Request Rectifier Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -669,7 +669,7 @@
                       :key="index"
                       class="flex items-center gap-2"
                     >
-                      <input
+                      <ShInput
                         v-model="rectifierForm.apikey_signature_patterns[index]"
                         type="text"
                         class="input input-sm flex-1"
@@ -677,7 +677,7 @@
                           t('admin.settings.rectifier.apikeyPatternPlaceholder')
                         "
                       />
-                      <button
+                      <ShButton variant="ghost"
                         type="button"
                         @click="
                           rectifierForm.apikey_signature_patterns.splice(
@@ -700,15 +700,15 @@
                             d="M6 18L18 6M6 6l12 12"
                           />
                         </svg>
-                      </button>
+                      </ShButton>
                     </div>
-                    <button
+                    <ShButton variant="ghost"
                       type="button"
                       @click="rectifierForm.apikey_signature_patterns.push('')"
                       class="btn btn-ghost btn-xs text-primary-600 dark:text-primary-400"
                     >
                       + {{ t("admin.settings.rectifier.addPattern") }}
-                    </button>
+                    </ShButton>
                   </div>
                 </div>
 
@@ -716,7 +716,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     @click="saveRectifierSettings"
                     :disabled="rectifierSaving"
@@ -745,13 +745,13 @@
                     {{
                       rectifierSaving ? t("common.saving") : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
           <!-- Beta Policy Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -831,7 +831,7 @@
                     >
                       {{ t("admin.settings.betaPolicy.errorMessage") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="rule.error_message"
                       type="text"
                       class="input"
@@ -881,7 +881,7 @@
                       :key="index"
                       class="mb-1.5 flex items-center gap-2"
                     >
-                      <input
+                      <ShInput
                         v-model="rule.model_whitelist![index]"
                         type="text"
                         class="input input-sm flex-1"
@@ -974,7 +974,7 @@
                     </p>
                     <!-- Fallback Error Message (only when fallback_action=block) -->
                     <div v-if="rule.fallback_action === 'block'" class="mt-2">
-                      <input
+                      <ShInput
                         v-model="rule.fallback_error_message"
                         type="text"
                         class="input"
@@ -995,7 +995,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     @click="saveBetaPolicySettings"
                     :disabled="betaPolicySaving"
@@ -1024,13 +1024,13 @@
                     {{
                       betaPolicySaving ? t("common.saving") : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
           <!-- OpenAI Fast/Flex Policy Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -1214,7 +1214,7 @@
                   >
                     {{ t("admin.settings.openaiFastPolicy.errorMessage") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="rule.error_message"
                     type="text"
                     class="input"
@@ -1255,7 +1255,7 @@
                     :key="patternIdx"
                     class="mb-1.5 flex items-center gap-2"
                   >
-                    <input
+                    <ShInput
                       v-model="rule.model_whitelist![patternIdx]"
                       type="text"
                       class="input input-sm flex-1"
@@ -1336,7 +1336,7 @@
                     }}
                   </p>
                   <div v-if="rule.fallback_action === 'block'" class="mt-2">
-                    <input
+                    <ShInput
                       v-model="rule.fallback_error_message"
                       type="text"
                       class="input"
@@ -1352,7 +1352,7 @@
 
               <!-- Add Rule Button -->
               <div>
-                <button
+                <ShButton variant="outline" size="sm"
                   type="button"
                   @click="addOpenAIFastPolicyRule"
                   class="btn btn-secondary btn-sm inline-flex items-center gap-1"
@@ -1371,20 +1371,20 @@
                     />
                   </svg>
                   {{ t("admin.settings.openaiFastPolicy.addRule") }}
-                </button>
+                </ShButton>
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">
                   {{ t("admin.settings.openaiFastPolicy.saveHint") }}
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
         <!-- /Tab: Gateway -->
 
         <!-- Tab: Security — Registration, Turnstile, LinuxDo -->
         <div v-show="activeTab === 'security'" class="space-y-6">
           <!-- Registration Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -1569,7 +1569,7 @@
                 >
                   {{ t("admin.settings.registration.frontendUrl") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.frontend_url"
                   type="url"
                   class="input"
@@ -1716,10 +1716,10 @@
                 />
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- API Key IP ACL Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -1803,10 +1803,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Panel API Rate Limit Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -1958,7 +1958,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     data-testid="panel-rate-limit-save"
                     @click="savePanelRateLimitSettings"
@@ -1990,14 +1990,14 @@
                         ? t("common.saving")
                         : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- 人机验证 Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -2106,7 +2106,7 @@
                     >
                       {{ t("admin.settings.turnstile.siteKey") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.turnstile_site_key"
                       type="text"
                       class="input font-mono text-sm"
@@ -2130,7 +2130,7 @@
                     >
                       {{ t("admin.settings.turnstile.secretKey") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.turnstile_secret_key"
                       type="password"
                       class="input font-mono text-sm"
@@ -2156,7 +2156,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       {{ t("admin.settings.geetest.captchaId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.geetest_captcha_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -2167,7 +2167,7 @@
                     <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       {{ t("admin.settings.geetest.captchaKey") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.geetest_captcha_key"
                       type="password"
                       autocomplete="new-password"
@@ -2235,7 +2235,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ t("admin.settings.tencentCaptcha.appId") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.tencent_captcha_app_id"
                         type="text"
                         inputmode="numeric"
@@ -2247,7 +2247,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ t("admin.settings.tencentCaptcha.appSecretKey") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.tencent_captcha_app_secret_key"
                         type="password"
                         autocomplete="new-password"
@@ -2270,7 +2270,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ t("admin.settings.tencentCaptcha.cloudSecretId") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.tencent_captcha_cloud_secret_id"
                         type="password"
                         autocomplete="new-password"
@@ -2285,7 +2285,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ t("admin.settings.tencentCaptcha.cloudSecretKey") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.tencent_captcha_cloud_secret_key"
                         type="password"
                         autocomplete="new-password"
@@ -2378,7 +2378,7 @@
                       >
                         {{ t("admin.settings.aliyunCaptcha.prefix") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.aliyun_captcha_prefix"
                         type="text"
                         class="input font-mono text-sm"
@@ -2395,7 +2395,7 @@
                     >
                       {{ t("admin.settings.aliyunCaptcha.sceneId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.aliyun_captcha_scene_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -2411,7 +2411,7 @@
                     >
                       {{ t("admin.settings.aliyunCaptcha.accessKeyId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.aliyun_captcha_access_key_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -2427,7 +2427,7 @@
                     >
                       {{ t("admin.settings.aliyunCaptcha.accessKeySecret") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.aliyun_captcha_access_key_secret"
                       type="password"
                       autocomplete="new-password"
@@ -2447,10 +2447,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- LinuxDo Connect OAuth 登录 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -2485,7 +2485,7 @@
                     >
                       {{ t("admin.settings.linuxdo.clientId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.linuxdo_connect_client_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -2504,7 +2504,7 @@
                     >
                       {{ t("admin.settings.linuxdo.clientSecret") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.linuxdo_connect_client_secret"
                       type="password"
                       class="input font-mono text-sm"
@@ -2533,7 +2533,7 @@
                     >
                       {{ t("admin.settings.linuxdo.redirectUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.linuxdo_connect_redirect_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -2544,13 +2544,13 @@
                     <div
                       class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
                     >
-                      <button
+                      <ShButton variant="outline" size="sm"
                         type="button"
                         class="btn btn-secondary btn-sm w-fit"
                         @click="setAndCopyLinuxdoRedirectUrl"
                       >
                         {{ t("admin.settings.linuxdo.quickSetCopy") }}
-                      </button>
+                      </ShButton>
                       <code
                         v-if="linuxdoRedirectUrlSuggestion"
                         class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
@@ -2565,10 +2565,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- GitHub / Google 邮箱快捷登录 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -2633,7 +2633,7 @@
                     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Client ID</label>
-                        <input
+                        <ShInput
                           v-model="form.github_oauth_client_id"
                           type="text"
                           class="input font-mono text-sm"
@@ -2642,7 +2642,7 @@
                       </div>
                       <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Client Secret</label>
-                        <input
+                        <ShInput
                           v-model="form.github_oauth_client_secret"
                           type="password"
                           class="input font-mono text-sm"
@@ -2659,20 +2659,20 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ localText("后端回调地址", "Backend Callback URL") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.github_oauth_redirect_url"
                         type="url"
                         class="input font-mono text-sm"
                         placeholder="https://your-domain.com/api/v1/auth/oauth/github/callback"
                       />
                       <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                        <button
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm w-fit"
                           @click="setAndCopyEmailOAuthRedirectUrl('github')"
                         >
                           {{ localText("生成并复制", "Generate and copy") }}
-                        </button>
+                        </ShButton>
                         <code
                           v-if="githubOAuthRedirectUrlSuggestion"
                           class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
@@ -2686,7 +2686,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ localText("前端回跳地址", "Frontend Callback URL") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.github_oauth_frontend_redirect_url"
                         type="text"
                         class="input font-mono text-sm"
@@ -2727,7 +2727,7 @@
                     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                       <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Client ID</label>
-                        <input
+                        <ShInput
                           v-model="form.google_oauth_client_id"
                           type="text"
                           class="input font-mono text-sm"
@@ -2736,7 +2736,7 @@
                       </div>
                       <div>
                         <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Client Secret</label>
-                        <input
+                        <ShInput
                           v-model="form.google_oauth_client_secret"
                           type="password"
                           class="input font-mono text-sm"
@@ -2753,20 +2753,20 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ localText("后端回调地址", "Backend Callback URL") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.google_oauth_redirect_url"
                         type="url"
                         class="input font-mono text-sm"
                         placeholder="https://your-domain.com/api/v1/auth/oauth/google/callback"
                       />
                       <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                        <button
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm w-fit"
                           @click="setAndCopyEmailOAuthRedirectUrl('google')"
                         >
                           {{ localText("生成并复制", "Generate and copy") }}
-                        </button>
+                        </ShButton>
                         <code
                           v-if="googleOAuthRedirectUrlSuggestion"
                           class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
@@ -2780,7 +2780,7 @@
                       <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         {{ localText("前端回跳地址", "Frontend Callback URL") }}
                       </label>
-                      <input
+                      <ShInput
                         v-model="form.google_oauth_frontend_redirect_url"
                         type="text"
                         class="input font-mono text-sm"
@@ -2791,10 +2791,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- WeChat Connect OAuth 登录 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -2859,7 +2859,7 @@
                         >
                           {{ localText("PC AppID", "PC App ID") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_open_app_id"
                           data-testid="wechat-connect-open-app-id"
                           type="text"
@@ -2878,7 +2878,7 @@
                         >
                           {{ localText("PC AppSecret", "PC App Secret") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_open_app_secret"
                           data-testid="wechat-connect-open-app-secret"
                           type="password"
@@ -2932,7 +2932,7 @@
                         >
                           {{ localText("公众号 AppID", "Official Account App ID") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_mp_app_id"
                           data-testid="wechat-connect-mp-app-id"
                           type="text"
@@ -2956,7 +2956,7 @@
                             )
                           }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_mp_app_secret"
                           data-testid="wechat-connect-mp-app-secret"
                           type="password"
@@ -3010,7 +3010,7 @@
                         >
                           {{ localText("移动应用 AppID", "Mobile App ID") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_mobile_app_id"
                           data-testid="wechat-connect-mobile-app-id"
                           type="text"
@@ -3029,7 +3029,7 @@
                         >
                           {{ localText("移动应用 AppSecret", "Mobile App Secret") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.wechat_connect_mobile_app_secret"
                           data-testid="wechat-connect-mobile-app-secret"
                           type="password"
@@ -3079,7 +3079,7 @@
                         )
                       }}
                     </label>
-                    <input
+                    <ShInput
                       data-testid="wechat-connect-redirect-url"
                       v-model="form.wechat_connect_redirect_url"
                       type="url"
@@ -3097,13 +3097,13 @@
                     <div
                       class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
                     >
-                      <button
+                      <ShButton variant="outline" size="sm"
                         type="button"
                         class="btn btn-secondary btn-sm w-fit"
                         @click="setAndCopyWeChatRedirectUrl"
                       >
                         {{ t("admin.settings.wechatConnect.generateAndCopy") }}
-                      </button>
+                      </ShButton>
                       <code
                         v-if="wechatRedirectUrlSuggestion"
                         class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
@@ -3120,7 +3120,7 @@
                   >
                     {{ t("admin.settings.wechatConnect.frontendRedirectUrlLabel") }}
                   </label>
-                  <input
+                  <ShInput
                     data-testid="wechat-connect-frontend-redirect-url"
                     v-model="form.wechat_connect_frontend_redirect_url"
                     type="text"
@@ -3133,10 +3133,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- DingTalk Connect OAuth 登录 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -3171,7 +3171,7 @@
                     >
                       {{ t("admin.settings.dingtalk.clientId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.dingtalk_connect_client_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -3190,7 +3190,7 @@
                     >
                       {{ t("admin.settings.dingtalk.clientSecret") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.dingtalk_connect_client_secret"
                       type="password"
                       class="input font-mono text-sm"
@@ -3219,7 +3219,7 @@
                     >
                       {{ t("admin.settings.dingtalk.redirectUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.dingtalk_connect_redirect_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3303,7 +3303,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncDisplayNameTarget") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_display_name_attr_key"
                           type="text"
                           placeholder="dingtalk_name"
@@ -3314,7 +3314,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncAttrDisplayName") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_display_name_attr_name"
                           type="text"
                           :placeholder="localText('钉钉姓名', 'DingTalk Name')"
@@ -3349,7 +3349,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncCorpEmailTarget") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_corp_email_attr_key"
                           type="text"
                           placeholder="dingtalk_email"
@@ -3360,7 +3360,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncAttrDisplayName") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_corp_email_attr_name"
                           type="text"
                           :placeholder="localText('钉钉企业邮箱', 'DingTalk Corporate Email')"
@@ -3395,7 +3395,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncDeptTarget") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_dept_attr_key"
                           type="text"
                           placeholder="dingtalk_department"
@@ -3406,7 +3406,7 @@
                         <label class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap min-w-[5rem]">
                           {{ t("admin.settings.dingtalk.syncAttrDisplayName") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="form.dingtalk_connect_sync_dept_attr_name"
                           type="text"
                           :placeholder="localText('钉钉部门', 'DingTalk Department')"
@@ -3421,10 +3421,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Generic OIDC OAuth 登录 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -3459,7 +3459,7 @@
                     >
                       {{ t("admin.settings.oidc.providerName") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_provider_name"
                       type="text"
                       class="input"
@@ -3475,7 +3475,7 @@
                     >
                       {{ t("admin.settings.oidc.clientId") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_client_id"
                       type="text"
                       class="input font-mono text-sm"
@@ -3491,7 +3491,7 @@
                     >
                       {{ t("admin.settings.oidc.clientSecret") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_client_secret"
                       type="password"
                       class="input font-mono text-sm"
@@ -3520,7 +3520,7 @@
                     >
                       {{ t("admin.settings.oidc.issuerUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_issuer_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3536,7 +3536,7 @@
                     >
                       {{ t("admin.settings.oidc.discoveryUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_discovery_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3552,7 +3552,7 @@
                     >
                       {{ t("admin.settings.oidc.authorizeUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_authorize_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3568,7 +3568,7 @@
                     >
                       {{ t("admin.settings.oidc.tokenUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_token_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3584,7 +3584,7 @@
                     >
                       {{ t("admin.settings.oidc.userinfoUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_userinfo_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3600,7 +3600,7 @@
                     >
                       {{ t("admin.settings.oidc.jwksUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_jwks_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3616,7 +3616,7 @@
                     >
                       {{ t("admin.settings.oidc.scopes") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_scopes"
                       type="text"
                       class="input font-mono text-sm"
@@ -3633,7 +3633,7 @@
                     >
                       {{ t("admin.settings.oidc.redirectUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_redirect_url"
                       type="url"
                       class="input font-mono text-sm"
@@ -3644,13 +3644,13 @@
                     <div
                       class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
                     >
-                      <button
+                      <ShButton variant="outline" size="sm"
                         type="button"
                         class="btn btn-secondary btn-sm w-fit"
                         @click="setAndCopyOIDCRedirectUrl"
                       >
                         {{ t("admin.settings.oidc.quickSetCopy") }}
-                      </button>
+                      </ShButton>
                       <code
                         v-if="oidcRedirectUrlSuggestion"
                         class="select-all break-all rounded bg-gray-50 px-2 py-1 font-mono text-xs text-gray-600 dark:bg-dark-800 dark:text-gray-300"
@@ -3669,7 +3669,7 @@
                     >
                       {{ t("admin.settings.oidc.frontendRedirectUrl") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_frontend_redirect_url"
                       type="text"
                       class="input font-mono text-sm"
@@ -3725,7 +3725,7 @@
                     >
                       {{ t("admin.settings.oidc.allowedSigningAlgs") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_allowed_signing_algs"
                       type="text"
                       class="input font-mono text-sm"
@@ -3786,7 +3786,7 @@
                     >
                       {{ t("admin.settings.oidc.userinfoEmailPath") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_userinfo_email_path"
                       type="text"
                       class="input font-mono text-sm"
@@ -3802,7 +3802,7 @@
                     >
                       {{ t("admin.settings.oidc.userinfoIdPath") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_userinfo_id_path"
                       type="text"
                       class="input font-mono text-sm"
@@ -3818,7 +3818,7 @@
                     >
                       {{ t("admin.settings.oidc.userinfoUsernamePath") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.oidc_connect_userinfo_username_path"
                       type="text"
                       class="input font-mono text-sm"
@@ -3830,14 +3830,14 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
         <!-- /Tab: Security — Registration, Turnstile, LinuxDo, OIDC -->
 
         <!-- Tab: Users -->
         <div v-show="activeTab === 'users'" class="space-y-6">
           <!-- Default Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -3917,14 +3917,14 @@
                       }}
                     </p>
                   </div>
-                  <button
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="addDefaultSubscription"
                     :disabled="subscriptionGroups.length === 0"
                   >
                     {{ t("admin.settings.defaults.addDefaultSubscription") }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div
@@ -4031,13 +4031,13 @@
                       />
                     </div>
                     <div class="flex items-end">
-                      <button
+                      <ShButton variant="outline"
                         type="button"
                         class="btn btn-secondary default-sub-delete-btn w-full text-red-600 hover:text-red-700 dark:text-red-400"
                         @click="removeDefaultSubscription(index)"
                       >
                         {{ t("common.delete") }}
-                      </button>
+                      </ShButton>
                     </div>
                   </div>
                 </div>
@@ -4058,20 +4058,20 @@
                 </div>
                 <div class="overflow-x-auto">
                   <table class="min-w-full text-sm">
-                    <thead>
+                    <ShTableHeader>
                       <tr class="text-left text-xs text-gray-500 dark:text-gray-400">
-                        <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.platform") }}</th>
-                        <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.daily") }}</th>
-                        <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.weekly") }}</th>
-                        <th class="pb-2 font-medium">{{ t("admin.settings.platformQuota.monthly") }}</th>
+                        <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.platform") }}</ShTableHead>
+                        <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.daily") }}</ShTableHead>
+                        <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.weekly") }}</ShTableHead>
+                        <ShTableHead class="pb-2 font-medium">{{ t("admin.settings.platformQuota.monthly") }}</ShTableHead>
                       </tr>
-                    </thead>
-                    <tbody class="space-y-2">
+                    </ShTableHeader>
+                    <ShTableBody class="space-y-2">
                       <tr v-for="p in platformQuotaRows(form.default_platform_quotas)" :key="p" class="align-top">
-                        <td class="pr-4 py-1">
+                        <ShTableCell class="pr-4 py-1">
                           <span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ p }}</span>
-                        </td>
-                        <td class="pr-4 py-1">
+                        </ShTableCell>
+                        <ShTableCell class="pr-4 py-1">
                           <input
                             v-model.number="form.default_platform_quotas[p]!.daily"
                             type="number"
@@ -4080,8 +4080,8 @@
                             class="input h-8 w-28 text-sm"
                             :placeholder="t('admin.settings.platformQuota.placeholder')"
                           />
-                        </td>
-                        <td class="pr-4 py-1">
+                        </ShTableCell>
+                        <ShTableCell class="pr-4 py-1">
                           <input
                             v-model.number="form.default_platform_quotas[p]!.weekly"
                             type="number"
@@ -4090,8 +4090,8 @@
                             class="input h-8 w-28 text-sm"
                             :placeholder="t('admin.settings.platformQuota.placeholder')"
                           />
-                        </td>
-                        <td class="py-1">
+                        </ShTableCell>
+                        <ShTableCell class="py-1">
                           <input
                             v-model.number="form.default_platform_quotas[p]!.monthly"
                             type="number"
@@ -4100,17 +4100,17 @@
                             class="input h-8 w-28 text-sm"
                             :placeholder="t('admin.settings.platformQuota.placeholder')"
                           />
-                        </td>
+                        </ShTableCell>
                       </tr>
-                    </tbody>
+                    </ShTableBody>
                   </table>
                 </div>
               </div>
               <!-- /全局平台限额矩阵 -->
             </div>
-          </div>
+          </ShCard>
 
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -4238,7 +4238,7 @@
                           {{ t("admin.settings.authSourceDefaults.defaultSubscriptionsHint") }}
                         </p>
                       </div>
-                      <button
+                      <ShButton variant="outline" size="sm"
                         type="button"
                         class="btn btn-secondary btn-sm"
                         @click="
@@ -4249,7 +4249,7 @@
                         {{
                           t("admin.settings.defaults.addDefaultSubscription")
                         }}
-                      </button>
+                      </ShButton>
                     </div>
 
                     <div
@@ -4365,7 +4365,7 @@
                           />
                         </div>
                         <div class="flex items-end">
-                          <button
+                          <ShButton variant="outline"
                             type="button"
                             class="btn btn-secondary w-full text-red-600 hover:text-red-700 dark:text-red-400"
                             @click="
@@ -4376,7 +4376,7 @@
                             "
                           >
                             {{ t("common.delete") }}
-                          </button>
+                          </ShButton>
                         </div>
                       </div>
                     </div>
@@ -4393,20 +4393,20 @@
                       </div>
                       <div class="overflow-x-auto">
                         <table class="min-w-full text-sm">
-                          <thead>
+                          <ShTableHeader>
                             <tr class="text-left text-xs text-gray-500 dark:text-gray-400">
-                              <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.platform") }}</th>
-                              <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.daily") }}</th>
-                              <th class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.weekly") }}</th>
-                              <th class="pb-2 font-medium">{{ t("admin.settings.platformQuota.monthly") }}</th>
+                              <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.platform") }}</ShTableHead>
+                              <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.daily") }}</ShTableHead>
+                              <ShTableHead class="pb-2 pr-4 font-medium">{{ t("admin.settings.platformQuota.weekly") }}</ShTableHead>
+                              <ShTableHead class="pb-2 font-medium">{{ t("admin.settings.platformQuota.monthly") }}</ShTableHead>
                             </tr>
-                          </thead>
-                          <tbody>
+                          </ShTableHeader>
+                          <ShTableBody>
                             <tr v-for="p in platformQuotaRows(authSourceDefaults[authSource.source].platform_quotas)" :key="`${authSource.source}-pq-${p}`" class="align-top">
-                              <td class="pr-4 py-1">
+                              <ShTableCell class="pr-4 py-1">
                                 <span class="font-mono text-xs text-gray-700 dark:text-gray-300">{{ p }}</span>
-                              </td>
-                              <td class="pr-4 py-1">
+                              </ShTableCell>
+                              <ShTableCell class="pr-4 py-1">
                                 <input
                                   v-model.number="authSourceDefaults[authSource.source].platform_quotas[p]!.daily"
                                   type="number"
@@ -4415,8 +4415,8 @@
                                   class="input h-8 w-28 text-sm"
                                   :placeholder="t('admin.settings.platformQuota.placeholder')"
                                 />
-                              </td>
-                              <td class="pr-4 py-1">
+                              </ShTableCell>
+                              <ShTableCell class="pr-4 py-1">
                                 <input
                                   v-model.number="authSourceDefaults[authSource.source].platform_quotas[p]!.weekly"
                                   type="number"
@@ -4425,8 +4425,8 @@
                                   class="input h-8 w-28 text-sm"
                                   :placeholder="t('admin.settings.platformQuota.placeholder')"
                                 />
-                              </td>
-                              <td class="py-1">
+                              </ShTableCell>
+                              <ShTableCell class="py-1">
                                 <input
                                   v-model.number="authSourceDefaults[authSource.source].platform_quotas[p]!.monthly"
                                   type="number"
@@ -4435,9 +4435,9 @@
                                   class="input h-8 w-28 text-sm"
                                   :placeholder="t('admin.settings.platformQuota.placeholder')"
                                 />
-                              </td>
+                              </ShTableCell>
                             </tr>
-                          </tbody>
+                          </ShTableBody>
                         </table>
                       </div>
                     </div>
@@ -4446,14 +4446,14 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
         <!-- /Tab: Users -->
 
         <!-- Tab: Gateway — Claude Code, Scheduling -->
         <div v-show="activeTab === 'gateway'" class="space-y-6">
           <!-- Claude Code Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -4471,7 +4471,7 @@
                 >
                   {{ t("admin.settings.claudeCode.minVersion") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.min_claude_code_version"
                   type="text"
                   class="input max-w-xs font-mono text-sm"
@@ -4489,7 +4489,7 @@
                 >
                   {{ t("admin.settings.claudeCode.maxVersion") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.max_claude_code_version"
                   type="text"
                   class="input max-w-xs font-mono text-sm"
@@ -4502,10 +4502,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Codex Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -4529,7 +4529,7 @@
                     >
                       {{ t("admin.settings.gatewayForwarding.minCodexVersion") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.min_codex_version"
                       type="text"
                       class="input w-full font-mono text-sm"
@@ -4546,7 +4546,7 @@
                     >
                       {{ t("admin.settings.gatewayForwarding.maxCodexVersion") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="form.max_codex_version"
                       type="text"
                       class="input w-full font-mono text-sm"
@@ -4579,7 +4579,7 @@
                       <option value="header_prefix">{{ t("admin.settings.gatewayForwarding.codexFpTypeHeaderPrefix") }}</option>
                       <option value="body_path">{{ t("admin.settings.gatewayForwarding.codexFpTypeBodyPath") }}</option>
                     </select>
-                    <input
+                    <ShInput
                       v-model="row.match"
                       type="text"
                       class="input flex-1 font-mono text-sm"
@@ -4589,17 +4589,17 @@
                       <input v-model="row.required" type="checkbox" />
                       {{ t("admin.settings.gatewayForwarding.codexFpRequired") }}
                     </label>
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       class="btn btn-secondary btn-sm shrink-0 text-red-600 hover:text-red-700 dark:text-red-400"
                       @click="removeCodexFingerprintRow(i)"
                     >
                       {{ t("admin.settings.gatewayForwarding.codexRemoveRow") }}
-                    </button>
+                    </ShButton>
                   </div>
-                  <button type="button" class="btn btn-secondary btn-sm" @click="addCodexFingerprintRow">
+                  <ShButton variant="outline" size="sm" type="button" class="btn btn-secondary btn-sm" @click="addCodexFingerprintRow">
                     {{ t("admin.settings.gatewayForwarding.codexAddRow") }}
-                  </button>
+                  </ShButton>
                   <p
                     v-if="codexFingerprintNoRequired"
                     class="mt-2 text-xs text-amber-600 dark:text-amber-500"
@@ -4644,7 +4644,7 @@
                     :key="`codex-bl-${i}`"
                     class="mb-2 flex gap-2"
                   >
-                    <input
+                    <ShInput
                       v-model="row.originator"
                       type="text"
                       class="input w-1/3 font-mono text-sm"
@@ -4654,7 +4654,7 @@
                         )
                       "
                     />
-                    <input
+                    <ShInput
                       v-model="row.uaContains"
                       type="text"
                       class="input flex-1 font-mono text-sm"
@@ -4664,21 +4664,21 @@
                         )
                       "
                     />
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       class="btn btn-secondary btn-sm shrink-0 text-red-600 hover:text-red-700 dark:text-red-400"
                       @click="removeCodexBlacklistRow(i)"
                     >
                       {{ t("admin.settings.gatewayForwarding.codexRemoveRow") }}
-                    </button>
+                    </ShButton>
                   </div>
-                  <button
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="addCodexBlacklistRow"
                   >
                     {{ t("admin.settings.gatewayForwarding.codexAddRow") }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div>
@@ -4695,7 +4695,7 @@
                     :key="`codex-wl-${i}`"
                     class="mb-2 flex gap-2"
                   >
-                    <input
+                    <ShInput
                       v-model="row.originator"
                       type="text"
                       class="input w-1/3 font-mono text-sm"
@@ -4705,7 +4705,7 @@
                         )
                       "
                     />
-                    <input
+                    <ShInput
                       v-model="row.uaContains"
                       type="text"
                       class="input flex-1 font-mono text-sm"
@@ -4733,27 +4733,27 @@
                         )
                       }}
                     </label>
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       class="btn btn-secondary btn-sm shrink-0 text-red-600 hover:text-red-700 dark:text-red-400"
                       @click="removeCodexWhitelistRow(i)"
                     >
                       {{ t("admin.settings.gatewayForwarding.codexRemoveRow") }}
-                    </button>
+                    </ShButton>
                   </div>
-                  <button
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="addCodexWhitelistRow"
                   >
                     {{ t("admin.settings.gatewayForwarding.codexAddRow") }}
-                  </button>
+                  </ShButton>
                 </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Upstream Billing Probe Settings -->
-          <div class="card" data-testid="upstream-billing-probe-settings">
+          <ShCard class="card" data-testid="upstream-billing-probe-settings">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -4820,7 +4820,7 @@
                 <div
                   class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700"
                 >
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     class="btn btn-primary btn-sm"
                     :disabled="upstreamBillingProbeSaving"
@@ -4832,14 +4832,14 @@
                         ? t("common.saving")
                         : t("common.save")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Ollama Cloud Usage Settings -->
-          <div class="card" data-testid="ollama-cloud-usage-global-settings">
+          <ShCard class="card" data-testid="ollama-cloud-usage-global-settings">
             <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                 {{ t("admin.settings.ollamaCloudUsage.title") }}
@@ -4908,7 +4908,7 @@
                   </div>
                 </div>
                 <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     class="btn btn-primary btn-sm"
                     :disabled="ollamaCloudUsageSaving"
@@ -4916,14 +4916,14 @@
                     @click="saveOllamaCloudUsageSettings"
                   >
                     {{ ollamaCloudUsageSaving ? t("common.saving") : t("common.save") }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- OpenCode Go Usage Settings -->
-          <div class="card" data-testid="opencode-go-usage-global-settings">
+          <ShCard class="card" data-testid="opencode-go-usage-global-settings">
             <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
               <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
                 {{ t("admin.settings.opencodeGoUsage.title") }}
@@ -4992,7 +4992,7 @@
                   </div>
                 </div>
                 <div class="flex justify-end border-t border-gray-100 pt-4 dark:border-dark-700">
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     class="btn btn-primary btn-sm"
                     :disabled="opencodeGoUsageSaving"
@@ -5000,14 +5000,14 @@
                     @click="saveOpenCodeGoUsageSettings"
                   >
                     {{ opencodeGoUsageSaving ? t("common.saving") : t("common.save") }}
-                  </button>
+                  </ShButton>
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Gateway Scheduling Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -5272,7 +5272,7 @@
                     <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
                       {{ field.label }}
                     </span>
-                    <input
+                    <ShInput
                       v-model="form[field.key]"
                       class="input mt-1"
                       inputmode="decimal"
@@ -5283,10 +5283,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Gateway Forwarding Behavior -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -5513,7 +5513,7 @@
                         </div>
                       </div>
                       <div class="flex items-center gap-2">
-                        <button
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm px-2"
                           :title="
@@ -5540,16 +5540,16 @@
                             :name="block.expanded ? 'eyeOff' : 'eye'"
                             size="xs"
                           />
-                        </button>
-                        <button
+                        </ShButton>
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm px-2"
                           :disabled="index === 0"
                           @click="moveClaudeOAuthSystemPromptBlock(index, -1)"
                         >
                           <Icon name="arrowUp" size="xs" />
-                        </button>
-                        <button
+                        </ShButton>
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm px-2"
                           :disabled="
@@ -5558,15 +5558,15 @@
                           @click="moveClaudeOAuthSystemPromptBlock(index, 1)"
                         >
                           <Icon name="arrowDown" size="xs" />
-                        </button>
+                        </ShButton>
                         <Toggle v-model="block.enabled" />
-                        <button
+                        <ShButton variant="outline" size="sm"
                           type="button"
                           class="btn btn-secondary btn-sm px-2 text-red-600 hover:text-red-700 dark:text-red-400"
                           @click="removeClaudeOAuthSystemPromptBlock(index)"
                         >
                           <Icon name="trash" size="xs" />
-                        </button>
+                        </ShButton>
                       </div>
                     </div>
 
@@ -5651,15 +5651,15 @@
                 </div>
 
                 <div class="mt-3 flex flex-wrap gap-2">
-                  <button
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="addClaudeOAuthSystemPromptBlock"
                   >
                     <Icon name="plus" size="xs" />
                     {{ t("admin.settings.gatewayForwarding.addSystemBlock") }}
-                  </button>
-                  <button
+                  </ShButton>
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="resetClaudeOAuthSystemPromptBlocks"
@@ -5668,7 +5668,7 @@
                     {{
                       t("admin.settings.gatewayForwarding.resetSystemBlocks")
                     }}
-                  </button>
+                  </ShButton>
                 </div>
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
                   {{
@@ -5763,7 +5763,7 @@
                     )
                   }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.antigravity_user_agent_version"
                   type="text"
                   class="input max-w-xs font-mono text-sm"
@@ -5793,7 +5793,7 @@
                     )
                   }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.openai_codex_user_agent"
                   type="text"
                   class="input w-full font-mono text-sm"
@@ -5823,7 +5823,7 @@
                     )
                   }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.openai_codex_client_version"
                   type="text"
                   class="input w-full font-mono text-sm"
@@ -5882,7 +5882,7 @@
                     )
                   }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.claude_code_client_version"
                   type="text"
                   class="input w-full font-mono text-sm"
@@ -5927,10 +5927,10 @@
               </div>
 
             </div>
-          </div>
+          </ShCard>
 
           <!-- Web Search Emulation -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -5965,13 +5965,13 @@
                   >
                     {{ t("admin.settings.webSearchEmulation.providers") }}
                   </label>
-                  <button
+                  <ShButton variant="outline" size="sm"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="addWebSearchProvider"
                   >
                     {{ t("admin.settings.webSearchEmulation.addProvider") }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div
@@ -6268,19 +6268,19 @@
                           :proxies="webSearchProxies"
                         />
                       </div>
-                      <button
+                      <ShButton variant="outline" size="sm"
                         type="button"
                         class="btn btn-secondary btn-sm whitespace-nowrap"
                         @click="openTestDialog()"
                       >
                         {{ t("admin.settings.webSearchEmulation.test") }}
-                      </button>
+                      </ShButton>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Web Search Test Dialog -->
           <div
@@ -6297,7 +6297,7 @@
                 {{ t("admin.settings.webSearchEmulation.testResultTitle") }}
               </h3>
               <div class="flex items-center gap-2">
-                <input
+                <ShInput
                   v-model="wsTestQuery"
                   type="text"
                   class="input flex-1 text-sm"
@@ -6306,7 +6306,7 @@
                   "
                   @keyup.enter="testWebSearchProvider()"
                 />
-                <button
+                <ShButton variant="default" size="sm"
                   type="button"
                   class="btn btn-primary btn-sm"
                   :disabled="wsTestLoading"
@@ -6317,7 +6317,7 @@
                       ? t("admin.settings.webSearchEmulation.testing")
                       : t("admin.settings.webSearchEmulation.test")
                   }}
-                </button>
+                </ShButton>
               </div>
               <!-- Test results -->
               <div
@@ -6354,19 +6354,19 @@
                 </div>
               </div>
               <div class="mt-4 flex justify-end">
-                <button
+                <ShButton variant="outline" size="sm"
                   type="button"
                   class="btn btn-secondary btn-sm"
                   @click="wsTestDialogOpen = false"
                 >
                   {{ t("common.close") }}
-                </button>
+                </ShButton>
               </div>
             </div>
           </div>
 
         <!-- Usage Records Settings -->
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.usageRecords.title') }}
@@ -6392,14 +6392,14 @@
               </label>
             </div>
           </div>
-        </div>
+        </ShCard>
         </div>
         <!-- /Tab: Gateway — Claude Code, Scheduling -->
 
         <!-- Tab: General -->
         <div v-show="activeTab === 'general'" class="space-y-6">
           <!-- Site Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -6433,7 +6433,7 @@
                   >
                     {{ t("admin.settings.site.siteName") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.site_name"
                     type="text"
                     class="input"
@@ -6449,7 +6449,7 @@
                   >
                     {{ t("admin.settings.site.siteSubtitle") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.site_subtitle"
                     type="text"
                     class="input"
@@ -6470,7 +6470,7 @@
                 >
                   {{ t("admin.settings.site.apiBaseUrl") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.api_base_url"
                   type="text"
                   class="input font-mono text-sm"
@@ -6514,7 +6514,7 @@
                     >
                       {{ t("admin.settings.site.tablePageSizeOptions") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="tablePageSizeOptionsInput"
                       type="text"
                       class="input font-mono text-sm"
@@ -6583,7 +6583,7 @@
                         >
                           {{ t("admin.settings.site.customEndpoints.name") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="ep.name"
                           type="text"
                           class="input text-sm"
@@ -6602,7 +6602,7 @@
                             t("admin.settings.site.customEndpoints.endpointUrl")
                           }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="ep.endpoint"
                           type="url"
                           class="input font-mono text-sm"
@@ -6623,7 +6623,7 @@
                             )
                           }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="ep.description"
                           type="text"
                           class="input text-sm"
@@ -6667,7 +6667,7 @@
                 >
                   {{ t("admin.settings.site.contactInfo") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.contact_info"
                   type="text"
                   class="input"
@@ -6685,7 +6685,7 @@
                 >
                   {{ t("admin.settings.site.docUrl") }}
                 </label>
-                <input
+                <ShInput
                   v-model="form.doc_url"
                   type="url"
                   class="input font-mono text-sm"
@@ -6763,10 +6763,10 @@
                 <Toggle v-model="form.hide_ccs_import_button" />
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Custom Menu Items -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -6869,7 +6869,7 @@
                     >
                       {{ t("admin.settings.customMenu.name") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="item.label"
                       type="text"
                       class="input text-sm"
@@ -6903,7 +6903,7 @@
                     >
                       {{ t("admin.settings.customMenu.url") }}
                     </label>
-                    <input
+                    <ShInput
                       v-model="item.url"
                       type="url"
                       class="input font-mono text-sm"
@@ -6965,13 +6965,13 @@
                 {{ t("admin.settings.customMenu.add") }}
               </button>
             </div>
-          </div>
+          </ShCard>
 	        </div>
 	        <!-- /Tab: General -->
 
 	        <!-- Tab: Login Agreement -->
 	        <div v-show="activeTab === 'agreement'" class="space-y-6">
-	          <div class="card">
+	          <ShCard class="card">
 	            <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
 	              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 	                <div>
@@ -7069,14 +7069,14 @@
                       }}
                     </p>
                   </div>
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     class="btn btn-primary btn-sm inline-flex items-center gap-1.5"
                     @click="addLoginAgreementDocument"
                   >
                     <Icon name="plus" size="sm" />
                     {{ localText("添加文档", "Add document") }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div class="mt-4 space-y-3">
@@ -7128,7 +7128,7 @@
                         <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
                           {{ localText("文档名称", "Document title") }}
                         </label>
-                        <input
+                        <ShInput
                           v-model="doc.title"
                           type="text"
                           class="input text-sm"
@@ -7167,14 +7167,14 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
         <!-- /Tab: Login Agreement -->
 
 	        <!-- Tab: Features (功能开关) -->
         <div v-show="activeTab === 'features'" class="space-y-6">
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.channelMonitor.title') }}
@@ -7303,9 +7303,9 @@
               </div>
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card" data-testid="homepage-status-card">
+        <ShCard class="card" data-testid="homepage-status-card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.homepageStatus.title') }}
@@ -7378,7 +7378,7 @@
                 data-testid="homepage-status-groups-error"
               >
                 <span>{{ t('admin.settings.features.homepageStatus.groupsLoadError') }}</span>
-                <button
+                <ShButton variant="outline" size="sm"
                   type="button"
                   class="btn btn-secondary btn-sm inline-flex items-center gap-1.5"
                   data-testid="homepage-status-groups-retry"
@@ -7386,7 +7386,7 @@
                 >
                   <Icon name="refresh" size="sm" />
                   {{ t('admin.settings.features.homepageStatus.retryGroups') }}
-                </button>
+                </ShButton>
               </div>
 
               <div
@@ -7448,9 +7448,9 @@
               </p>
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.availableChannels.title') }}
@@ -7481,9 +7481,9 @@
               <Toggle v-model="form.available_channels_enabled" />
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.modelPlaza.title') }}
@@ -7531,9 +7531,9 @@
               ></textarea>
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.siteBillingMode.title') }}
@@ -7561,9 +7561,9 @@
               </div>
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.pluginManagement.title') }}
@@ -7585,9 +7585,9 @@
               <Toggle v-model="form.plugin_management_enabled" />
             </div>
           </div>
-        </div>
+        </ShCard>
 
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.riskControl.title') }}
@@ -7655,10 +7655,10 @@
               />
             </div>
           </div>
-        </div>
+        </ShCard>
 
         <!-- Affiliate (邀请返利) feature card -->
-        <div class="card">
+        <ShCard class="card">
           <div class="border-b border-gray-100 px-6 py-4 dark:border-dark-700">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ t('admin.settings.features.affiliate.title') }}
@@ -7775,84 +7775,84 @@
                       {{ t('admin.settings.features.affiliate.customUsers.description') }}
                     </p>
                   </div>
-                  <button
+                  <ShButton variant="default" size="sm"
                     type="button"
                     class="btn btn-primary btn-sm"
                     @click="openAffiliateModal(null)"
                   >
                     + {{ t('admin.settings.features.affiliate.customUsers.addButton') }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div class="mb-3 flex items-center gap-2">
-                  <input
+                  <ShInput
                     v-model="affiliateState.search"
                     type="text"
                     class="input flex-1"
                     :placeholder="t('admin.settings.features.affiliate.customUsers.searchPlaceholder')"
                     @input="onAffiliateSearchInput"
                   />
-                  <button
+                  <ShButton variant="outline" size="sm"
                     v-if="affiliateState.selected.length > 0"
                     type="button"
                     class="btn btn-secondary btn-sm"
                     @click="openAffiliateBatchModal"
                   >
                     {{ t('admin.settings.features.affiliate.customUsers.batchButton', { count: affiliateState.selected.length }) }}
-                  </button>
+                  </ShButton>
                 </div>
 
                 <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-dark-700">
                   <table class="min-w-full divide-y divide-gray-200 dark:divide-dark-700">
-                    <thead class="bg-gray-50 dark:bg-dark-800">
+                    <ShTableHeader class="bg-gray-50 dark:bg-dark-800">
                       <tr>
-                        <th class="px-3 py-2 text-left">
+                        <ShTableHead class="px-3 py-2 text-left">
                           <input
                             type="checkbox"
                             :checked="affiliateState.entries.length > 0 && affiliateState.selected.length === affiliateState.entries.length"
                             @change="toggleAffiliateSelectAll"
                           />
-                        </th>
-                        <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.email') }}</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.username') }}</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.code') }}</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.rate') }}</th>
-                        <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.actions') }}</th>
+                        </ShTableHead>
+                        <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.email') }}</ShTableHead>
+                        <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.username') }}</ShTableHead>
+                        <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.code') }}</ShTableHead>
+                        <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.rate') }}</ShTableHead>
+                        <ShTableHead class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500">{{ t('admin.settings.features.affiliate.customUsers.col.actions') }}</ShTableHead>
                       </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+                    </ShTableHeader>
+                    <ShTableBody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
                       <tr v-if="affiliateState.loading">
-                        <td colspan="6" class="px-3 py-6 text-center text-sm text-gray-500">
+                        <ShTableCell colspan="6" class="px-3 py-6 text-center text-sm text-gray-500">
                           {{ t('common.loading') }}
-                        </td>
+                        </ShTableCell>
                       </tr>
                       <tr v-else-if="affiliateState.entries.length === 0">
-                        <td colspan="6" class="px-3 py-6 text-center text-sm text-gray-500">
+                        <ShTableCell colspan="6" class="px-3 py-6 text-center text-sm text-gray-500">
                           {{ t('admin.settings.features.affiliate.customUsers.empty') }}
-                        </td>
+                        </ShTableCell>
                       </tr>
                       <tr v-for="entry in affiliateState.entries" :key="entry.user_id">
-                        <td class="px-3 py-2">
+                        <ShTableCell class="px-3 py-2">
                           <input
                             type="checkbox"
                             :checked="affiliateState.selected.includes(entry.user_id)"
                             @change="toggleAffiliateSelect(entry.user_id)"
                           />
-                        </td>
-                        <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ entry.email }}</td>
-                        <td class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">{{ entry.username }}</td>
-                        <td class="px-3 py-2 text-sm font-mono">
+                        </ShTableCell>
+                        <ShTableCell class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ entry.email }}</ShTableCell>
+                        <ShTableCell class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">{{ entry.username }}</ShTableCell>
+                        <ShTableCell class="px-3 py-2 text-sm font-mono">
                           {{ entry.aff_code }}
                           <span
                             v-if="entry.aff_code_custom"
                             class="ml-1 inline-block rounded bg-primary-100 px-1.5 py-0.5 text-[10px] font-medium text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
                           >{{ t('admin.settings.features.affiliate.customUsers.customBadge') }}</span>
-                        </td>
-                        <td class="px-3 py-2 text-sm">
+                        </ShTableCell>
+                        <ShTableCell class="px-3 py-2 text-sm">
                           <span v-if="entry.aff_rebate_rate_percent != null">{{ entry.aff_rebate_rate_percent }}%</span>
                           <span v-else class="text-gray-400">{{ t('admin.settings.features.affiliate.customUsers.useGlobal') }}</span>
-                        </td>
-                        <td class="px-3 py-2 text-sm">
+                        </ShTableCell>
+                        <ShTableCell class="px-3 py-2 text-sm">
                           <div class="flex items-center gap-2">
                             <button type="button" class="text-primary-600 hover:underline" @click="openAffiliateModal(entry)">
                               {{ t('common.edit') }}
@@ -7865,9 +7865,9 @@
                               {{ t('common.delete') }}
                             </button>
                           </div>
-                        </td>
+                        </ShTableCell>
                       </tr>
-                    </tbody>
+                    </ShTableBody>
                   </table>
                 </div>
 
@@ -7876,29 +7876,29 @@
                     {{ t('admin.settings.features.affiliate.customUsers.totalLabel', { total: affiliateState.total }) }}
                   </span>
                   <div class="flex items-center gap-2">
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       class="btn btn-secondary btn-sm"
                       :disabled="affiliateState.page <= 1"
                       @click="changeAffiliatePage(affiliateState.page - 1)"
                     >
                       {{ t('pagination.previous') }}
-                    </button>
+                    </ShButton>
                     <span class="text-gray-500">{{ affiliateState.page }} / {{ Math.max(1, Math.ceil(affiliateState.total / affiliateState.pageSize)) }}</span>
-                    <button
+                    <ShButton variant="outline" size="sm"
                       type="button"
                       class="btn btn-secondary btn-sm"
                       :disabled="affiliateState.page >= Math.ceil(affiliateState.total / affiliateState.pageSize)"
                       @click="changeAffiliatePage(affiliateState.page + 1)"
                     >
                       {{ t('pagination.next') }}
-                    </button>
+                    </ShButton>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </ShCard>
 
         <!-- Affiliate add/edit modal -->
         <div
@@ -7933,7 +7933,7 @@
                 </div>
                 <!-- Search input + result dropdown — hidden once a selection is made -->
                 <template v-else>
-                  <input
+                  <ShInput
                     v-model="affiliateModal.userQuery"
                     type="text"
                     class="input"
@@ -7968,7 +7968,7 @@
 
               <div>
                 <label class="input-label">{{ t('admin.settings.features.affiliate.modal.codeLabel') }}</label>
-                <input
+                <ShInput
                   v-model="affiliateModal.code"
                   type="text"
                   class="input font-mono"
@@ -8009,17 +8009,17 @@
               </p>
               <span v-else></span>
               <div class="flex gap-2">
-                <button type="button" class="btn btn-secondary" @click="closeAffiliateModal">
+                <ShButton variant="outline" type="button" class="btn btn-secondary" @click="closeAffiliateModal">
                   {{ t('common.cancel') }}
-                </button>
-                <button
+                </ShButton>
+                <ShButton variant="default"
                   type="button"
                   class="btn btn-primary"
                   :disabled="affiliateModal.saving || !affiliateModalCanSubmit"
                   @click="submitAffiliateModal"
                 >
                   {{ affiliateModal.saving ? t('common.saving') : t('common.save') }}
-                </button>
+                </ShButton>
               </div>
             </div>
           </div>
@@ -8054,17 +8054,17 @@
               {{ t('admin.settings.features.affiliate.batchModal.clearHint') }}
             </p>
             <div class="mt-6 flex justify-end gap-2">
-              <button type="button" class="btn btn-secondary" @click="affiliateBatchModal.open = false">
+              <ShButton variant="outline" type="button" class="btn btn-secondary" @click="affiliateBatchModal.open = false">
                 {{ t('common.cancel') }}
-              </button>
-              <button
+              </ShButton>
+              <ShButton variant="default"
                 type="button"
                 class="btn btn-primary"
                 :disabled="affiliateBatchModal.saving"
                 @click="submitAffiliateBatchModal"
               >
                 {{ affiliateBatchModal.saving ? t('common.saving') : t('common.save') }}
-              </button>
+              </ShButton>
             </div>
           </div>
         </div>
@@ -8075,7 +8075,7 @@
         <!-- Tab: Payment -->
         <div v-show="activeTab === 'payment'" class="space-y-6">
           <!-- Payment System Settings -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -8127,7 +8127,7 @@
                     <label class="input-label">{{
                       t("admin.settings.payment.productNamePrefix")
                     }}</label
-                    ><input
+                    ><ShInput
                       v-model="form.payment_product_name_prefix"
                       type="text"
                       class="input"
@@ -8138,7 +8138,7 @@
                     <label class="input-label">{{
                       t("admin.settings.payment.productNameSuffix")
                     }}</label
-                    ><input
+                    ><ShInput
                       v-model="form.payment_product_name_suffix"
                       type="text"
                       class="input"
@@ -8603,7 +8603,7 @@
                 </div>
               </template>
             </div>
-          </div>
+          </ShCard>
 
           <!-- 充值优惠阶梯（独立卡片，与服务商管理同级） -->
           <RechargeBonusTierEditor
@@ -8634,7 +8634,7 @@
 
         <div v-show="activeTab === 'email'" class="space-y-6">
           <!-- Email disabled hint - show when email_verify_enabled is off -->
-          <div v-if="!form.email_verify_enabled" class="card">
+          <ShCard v-if="!form.email_verify_enabled" class="card">
             <div class="p-6">
               <div class="flex items-start gap-3">
                 <Icon
@@ -8652,10 +8652,10 @@
                 </div>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- SMTP Settings - Only show when email verification is enabled -->
-          <div v-if="form.email_verify_enabled" class="card">
+          <ShCard v-if="form.email_verify_enabled" class="card">
             <div
               class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -8667,7 +8667,7 @@
                   {{ t("admin.settings.smtp.description") }}
                 </p>
               </div>
-              <button
+              <ShButton variant="outline" size="sm"
                 type="button"
                 @click="testSmtpConnection"
                 :disabled="testingSmtp || loadFailed"
@@ -8698,7 +8698,7 @@
                     ? t("admin.settings.smtp.testing")
                     : t("admin.settings.smtp.testConnection")
                 }}
-              </button>
+              </ShButton>
             </div>
             <div class="space-y-6 p-6">
               <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -8708,7 +8708,7 @@
                   >
                     {{ t("admin.settings.smtp.host") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.smtp_host"
                     type="text"
                     class="input"
@@ -8736,7 +8736,7 @@
                   >
                     {{ t("admin.settings.smtp.username") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.smtp_username"
                     type="text"
                     class="input"
@@ -8749,7 +8749,7 @@
                   >
                     {{ t("admin.settings.smtp.password") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.smtp_password"
                     type="password"
                     class="input"
@@ -8778,7 +8778,7 @@
                   >
                     {{ t("admin.settings.smtp.fromEmail") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.smtp_from_email"
                     type="email"
                     class="input"
@@ -8791,7 +8791,7 @@
                   >
                     {{ t("admin.settings.smtp.fromName") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="form.smtp_from_name"
                     type="text"
                     class="input"
@@ -8815,10 +8815,10 @@
                 <Toggle v-model="form.smtp_use_tls" />
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Send Test Email - Only show when email verification is enabled -->
-          <div v-if="form.email_verify_enabled" class="card">
+          <ShCard v-if="form.email_verify_enabled" class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -8837,7 +8837,7 @@
                   >
                     {{ t("admin.settings.testEmail.recipientEmail") }}
                   </label>
-                  <input
+                  <ShInput
                     v-model="testEmailAddress"
                     type="email"
                     class="input"
@@ -8846,7 +8846,7 @@
                     "
                   />
                 </div>
-                <button
+                <ShButton variant="outline"
                   type="button"
                   @click="sendTestEmail"
                   :disabled="
@@ -8879,13 +8879,13 @@
                       ? t("admin.settings.testEmail.sending")
                       : t("admin.settings.testEmail.sendTestEmail")
                   }}
-                </button>
+                </ShButton>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- 订阅到期提醒 -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -8911,12 +8911,12 @@
                 <Toggle v-model="form.subscription_expiry_notify_enabled" />
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <EmailTemplateEditor />
 
           <!-- Balance Low Notification -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -8962,7 +8962,7 @@
                   class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >{{ t("admin.settings.balanceNotify.rechargeUrl") }}</label
                 >
-                <input
+                <ShInput
                   v-model="form.balance_low_notify_recharge_url"
                   type="url"
                   class="input"
@@ -8973,10 +8973,10 @@
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Account Quota Notification -->
-          <div class="card">
+          <ShCard class="card">
             <div
               class="border-b border-gray-100 px-6 py-4 dark:border-dark-700"
             >
@@ -9020,7 +9020,7 @@
                         class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:after:border-gray-500 peer-checked:bg-primary-600"
                       ></div>
                     </label>
-                    <input
+                    <ShInput
                       v-model="entry.email"
                       type="email"
                       class="input flex-1"
@@ -9028,28 +9028,28 @@
                         t('admin.settings.quotaNotify.emailPlaceholder')
                       "
                     />
-                    <button
+                    <ShButton variant="outline"
                       @click="form.account_quota_notify_emails.splice(index, 1)"
                       class="btn btn-secondary px-2"
                       type="button"
                     >
                       <Icon name="x" size="xs" class="h-4 w-4" />
-                    </button>
+                    </ShButton>
                   </div>
-                  <button
+                  <ShButton variant="outline" size="sm"
                     @click="addQuotaNotifyEmail"
                     class="btn btn-secondary btn-sm"
                     type="button"
                   >
                     + {{ t("admin.settings.quotaNotify.addEmail") }}
-                  </button>
+                  </ShButton>
                 </div>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {{ t("admin.settings.quotaNotify.emailsHint") }}
                 </p>
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
         <!-- /Tab: Email -->
 
@@ -9060,7 +9060,7 @@
 
         <!-- Save Button -->
         <div v-show="activeTab !== 'backup'" class="flex justify-end">
-          <button
+          <ShButton variant="default"
             type="submit"
             :disabled="saving || loadFailed"
             class="btn btn-primary"
@@ -9090,7 +9090,7 @@
                 ? t("admin.settings.saving")
                 : t("admin.settings.saveSettings")
             }}
-          </button>
+          </ShButton>
         </div>
       </form>
 
@@ -9132,6 +9132,13 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Card as ShCard } from "@/components/ui/card"
+import { Input as ShInput } from "@/components/ui/input"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, reactive, computed, onMounted, watch } from "vue";
 import { listPlatformIds } from "@/constants/platformCatalog";
 import { useI18n } from "vue-i18n";

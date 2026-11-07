@@ -45,7 +45,7 @@
         <!-- Row 1: Main Stats Cards -->
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <!-- 30-Day Total Cost -->
-          <div
+          <ShCard
             class="card border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800"
           >
             <div class="mb-2 flex items-center justify-between">
@@ -80,10 +80,10 @@
                 }})
               </span>
             </p>
-          </div>
+          </ShCard>
 
           <!-- 30-Day Total Requests -->
-          <div
+          <ShCard
             class="card border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800"
           >
             <div class="mb-2 flex items-center justify-between">
@@ -100,10 +100,10 @@
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.stats.totalCalls') }}
             </p>
-          </div>
+          </ShCard>
 
           <!-- Daily Average Cost -->
-          <div
+          <ShCard
             class="card border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800"
           >
             <div class="mb-2 flex items-center justify-between">
@@ -132,10 +132,10 @@
                 ({{ t('usage.userBilled') }}: ${{ formatCost(stats.summary.avg_daily_user_cost) }})
               </span>
             </p>
-          </div>
+          </ShCard>
 
           <!-- Daily Average Requests -->
-          <div
+          <ShCard
             class="card border border-gray-200 bg-white p-4 dark:border-dark-700 dark:bg-dark-800"
           >
             <div class="mb-2 flex items-center justify-between">
@@ -164,13 +164,13 @@
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {{ t('admin.accounts.stats.avgDailyUsage') }}
             </p>
-          </div>
+          </ShCard>
         </div>
 
         <!-- Row 2: Today, Highest Cost, Highest Requests -->
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <!-- Today Overview -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-gray-100 p-1.5 dark:bg-dark-800">
                 <svg
@@ -221,10 +221,10 @@
                 }}</span>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Highest Cost Day -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-orange-100 p-1.5 dark:bg-orange-900/30">
                 <Icon
@@ -268,10 +268,10 @@
                 }}</span>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Highest Request Day -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-indigo-100 p-1.5 dark:bg-indigo-900/30">
                 <Icon
@@ -315,13 +315,13 @@
                 >
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
 
         <!-- Row 3: Token Stats -->
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <!-- Accumulated Tokens -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-gray-100 p-1.5 dark:bg-dark-800">
                 <Icon name="cube" size="sm" class="text-gray-600 dark:text-gray-300" :stroke-width="2" />
@@ -348,10 +348,10 @@
                 }}</span>
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Performance -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-rose-100 p-1.5 dark:bg-rose-900/30">
                 <Icon name="bolt" size="sm" class="text-rose-600 dark:text-rose-400" :stroke-width="2" />
@@ -378,10 +378,10 @@
                 >
               </div>
             </div>
-          </div>
+          </ShCard>
 
           <!-- Recent Activity -->
-          <div class="card p-4">
+          <ShCard class="card p-4">
             <div class="mb-3 flex items-center gap-2">
               <div class="rounded-lg bg-lime-100 p-1.5 dark:bg-lime-900/30">
                 <Icon
@@ -425,11 +425,11 @@
                 >
               </div>
             </div>
-          </div>
+          </ShCard>
         </div>
 
         <!-- Usage Trend Chart -->
-        <div class="card p-4">
+        <ShCard class="card p-4">
           <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
             {{ t('admin.accounts.stats.usageTrend') }}
           </h3>
@@ -442,7 +442,7 @@
               {{ t('admin.dashboard.noDataAvailable') }}
             </div>
           </div>
-        </div>
+        </ShCard>
 
         <!-- Model Distribution -->
         <ModelDistributionChart :model-stats="stats.models" :loading="false" />
@@ -484,6 +484,7 @@
 </template>
 
 <script setup lang="ts">
+import { Card as ShCard } from "@/components/ui/card"
 import { ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {

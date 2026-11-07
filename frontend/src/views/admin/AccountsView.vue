@@ -19,7 +19,7 @@
             <template #after>
               <!-- Auto Refresh Dropdown -->
               <div class="relative" ref="autoRefreshDropdownRef">
-                <button
+                <ShButton variant="outline"
                   @click="
                     showAutoRefreshDropdown = !showAutoRefreshDropdown;
                     showAccountToolsDropdown = false
@@ -35,7 +35,7 @@
                         : t('admin.accounts.autoRefresh')
                     }}
                   </span>
-                </button>
+                </ShButton>
                 <div
                   v-if="showAutoRefreshDropdown"
                   class="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-lg border border-gray-200 bg-white shadow-lg dark:border-dark-700 dark:bg-dark-800"
@@ -166,12 +166,12 @@
           class="mt-2 flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/20 dark:text-amber-200"
         >
           <span>{{ t('admin.accounts.listPendingSyncHint') }}</span>
-          <button
+          <ShButton variant="outline"
             class="btn btn-secondary px-2 py-1 text-xs"
             @click="syncPendingListChanges"
           >
             {{ t('admin.accounts.listPendingSyncAction') }}
-          </button>
+          </ShButton>
         </div>
       </template>
       <template #table>
@@ -490,6 +490,7 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, reactive, computed, onMounted, onUnmounted, toRaw, watch } from 'vue'
 import { useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'

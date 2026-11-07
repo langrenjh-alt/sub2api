@@ -1,3 +1,4 @@
+import { menuStubs } from './groupsMenuTestStubs'
 import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -161,6 +162,8 @@ function mountView() {
         DataTable: DataTableStub,
         Pagination: true,
         BaseDialog: BaseDialogStub,
+        GroupEditorDialog: BaseDialogStub,
+        ...menuStubs,
         ConfirmDialog: true,
         EmptyState: true,
         Select: true,

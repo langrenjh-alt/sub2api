@@ -3,7 +3,7 @@
     <TablePageLayout>
       <!-- Filters -->
       <template #filters>
-        <div class="card p-4 sm:p-6">
+        <ShCard class="card p-4 sm:p-6">
           <div class="flex flex-wrap items-end justify-between gap-4">
             <!-- Left: filter fields -->
             <div class="flex flex-1 flex-wrap items-end gap-4">
@@ -67,19 +67,19 @@
 
             <!-- Right: actions -->
             <div class="flex w-full flex-wrap items-center justify-end gap-3 sm:w-auto">
-              <button type="button" class="btn btn-primary" :disabled="loading" @click="search">
+              <ShButton variant="default" type="button" class="btn btn-primary" :disabled="loading" @click="search">
                 {{ t('common.search') }}
-              </button>
-              <button type="button" class="btn btn-secondary" :disabled="loading" @click="resetFilters">
+              </ShButton>
+              <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="loading" @click="resetFilters">
                 {{ t('common.reset') }}
-              </button>
-              <button type="button" class="btn btn-danger" @click="openClearDialog">
+              </ShButton>
+              <ShButton variant="destructive" type="button" class="btn btn-danger" @click="openClearDialog">
                 <Icon name="trash" size="sm" class="mr-1.5" />
                 {{ t('admin.audit.clearAll') }}
-              </button>
+              </ShButton>
             </div>
           </div>
-        </div>
+        </ShCard>
       </template>
 
       <!-- Table -->
@@ -287,17 +287,17 @@
         </div>
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="handleCustomTimeRangeCancel">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" @click="handleCustomTimeRangeCancel">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="default"
           type="button"
           class="btn btn-primary"
           :disabled="!customStartTimeInput || !customEndTimeInput"
           @click="handleCustomTimeRangeConfirm"
         >
           {{ t('common.confirm') }}
-        </button>
+        </ShButton>
       </template>
     </BaseDialog>
 
@@ -335,23 +335,25 @@
         />
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" :disabled="clearing" @click="cancelClearTotp">
+        <ShButton variant="outline" type="button" class="btn btn-secondary" :disabled="clearing" @click="cancelClearTotp">
           {{ t('common.cancel') }}
-        </button>
-        <button
+        </ShButton>
+        <ShButton variant="destructive"
           type="button"
           class="btn btn-danger"
           :disabled="clearing || clearTotpCode.length !== 6"
           @click="submitClear"
         >
           {{ clearing ? t('common.loading') : t('admin.audit.clearAll') }}
-        </button>
+        </ShButton>
       </template>
     </BaseDialog>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
+import { Card as ShCard } from "@/components/ui/card"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI, type AuditLog } from '@/api/admin'

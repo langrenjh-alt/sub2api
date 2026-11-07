@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
@@ -67,7 +68,7 @@ const examples = computed<HeaderExample[]>(() => {
         </template>
       </HelpTooltip>
     </div>
-    <input
+    <ShInput
       v-model="model"
       data-testid="upstream-request-id-header"
       type="text"

@@ -32,10 +32,10 @@
     <!-- active provider list -->
     <div v-if="!editing" class="space-y-2">
       <div class="flex justify-end">
-        <button class="btn btn-primary btn-sm" @click="openCreateForm">
+        <ShButton variant="default" size="sm" class="btn btn-primary btn-sm" @click="openCreateForm">
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.channelMonitor.template.createButton') }}
-        </button>
+        </ShButton>
       </div>
 
       <div v-if="loading" class="py-8 text-center text-sm text-gray-400">
@@ -89,7 +89,7 @@
             </p>
           </div>
           <div class="flex flex-shrink-0 gap-2">
-            <button
+            <ShButton variant="outline" size="sm"
               class="btn btn-secondary btn-sm"
               :disabled="tpl.associated_monitors === 0"
               :title="t('admin.channelMonitor.template.applyTooltip')"
@@ -97,13 +97,13 @@
             >
               <Icon name="refresh" size="sm" class="mr-1" />
               {{ t('admin.channelMonitor.template.applyButton') }}
-            </button>
-            <button class="btn btn-secondary btn-sm" @click="openEditForm(tpl)">
+            </ShButton>
+            <ShButton variant="outline" size="sm" class="btn btn-secondary btn-sm" @click="openEditForm(tpl)">
               {{ t('common.edit') }}
-            </button>
-            <button class="btn btn-secondary btn-sm text-red-600" @click="handleDelete(tpl)">
+            </ShButton>
+            <ShButton variant="outline" size="sm" class="btn btn-secondary btn-sm text-red-600" @click="handleDelete(tpl)">
               {{ t('common.delete') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@
           {{ t('admin.channelMonitor.template.form.name') }}
           <span class="text-red-500">*</span>
         </label>
-        <input
+        <ShInput
           v-model="form.name"
           type="text"
           required
@@ -165,7 +165,7 @@
         <label class="input-label">
           {{ t('admin.channelMonitor.template.form.description') }}
         </label>
-        <input
+        <ShInput
           v-model="form.description"
           type="text"
           class="input"
@@ -189,18 +189,18 @@
       <div class="flex w-full items-center justify-between">
         <!-- Left: back to list / nothing -->
         <div>
-          <button v-if="editing" class="btn btn-secondary" @click="backToList">
+          <ShButton variant="outline" v-if="editing" class="btn btn-secondary" @click="backToList">
             {{ t('common.back') }}
-          </button>
+          </ShButton>
         </div>
         <!-- Right: save or close -->
         <div class="flex gap-2">
-          <button class="btn btn-secondary" @click="$emit('close')">
+          <ShButton variant="outline" class="btn btn-secondary" @click="$emit('close')">
             {{ t('common.close') }}
-          </button>
-          <button v-if="editing" class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
+          </ShButton>
+          <ShButton variant="default" v-if="editing" class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
             {{ submitting ? t('common.submitting') : editing === 'new' ? t('common.create') : t('common.update') }}
-          </button>
+          </ShButton>
         </div>
       </div>
     </template>
@@ -227,6 +227,8 @@
 </template>
 
 <script setup lang="ts">
+import { Button as ShButton } from "@/components/ui/button"
+import { Input as ShInput } from "@/components/ui/input"
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

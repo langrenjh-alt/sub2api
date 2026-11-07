@@ -13,7 +13,7 @@
                 size="md"
                 class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               />
-              <input
+              <ShInput
                 v-model="searchQuery"
                 type="text"
                 :placeholder="t('admin.users.searchUsers')"
@@ -128,24 +128,24 @@
             <!-- Mobile: Secondary buttons (icon only) -->
             <div class="flex items-center gap-2 md:contents">
               <!-- Refresh Button -->
-              <button
+              <ShButton variant="outline"
                 @click="loadUsers"
                 :disabled="loading"
                 class="btn btn-secondary px-2 md:px-3"
                 :title="t('common.refresh')"
               >
                 <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-              </button>
+              </ShButton>
               <!-- Filter Settings Dropdown -->
               <div class="relative" ref="filterDropdownRef">
-                <button
+                <ShButton variant="outline"
                   @click="showFilterDropdown = !showFilterDropdown"
                   class="btn btn-secondary px-2 md:px-3"
                   :title="t('admin.users.filterSettings')"
                 >
                   <Icon name="filter" size="sm" class="md:mr-1.5" />
                   <span class="hidden md:inline">{{ t('admin.users.filterSettings') }}</span>
-                </button>
+                </ShButton>
                 <!-- Dropdown menu -->
                 <div
                   v-if="showFilterDropdown"
@@ -192,7 +192,7 @@
               </div>
               <!-- Column Settings Dropdown -->
               <div class="relative" ref="columnDropdownRef">
-                <button
+                <ShButton variant="outline"
                   @click="showColumnDropdown = !showColumnDropdown"
                   class="btn btn-secondary px-2 md:px-3"
                   :title="t('admin.users.columnSettings')"
@@ -201,7 +201,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z" />
                   </svg>
                   <span class="hidden md:inline">{{ t('admin.users.columnSettings') }}</span>
-                </button>
+                </ShButton>
                 <!-- Dropdown menu -->
                 <div
                   v-if="showColumnDropdown"
@@ -232,17 +232,17 @@
                 </div>
               </div>
               <!-- Attributes Config Button -->
-              <button
+              <ShButton variant="outline"
                 @click="showAttributesModal = true"
                 class="btn btn-secondary px-2 md:px-3"
                 :title="t('admin.users.attributes.configButton')"
               >
                 <Icon name="cog" size="sm" class="md:mr-1.5" />
                 <span class="hidden md:inline">{{ t('admin.users.attributes.configButton') }}</span>
-              </button>
+              </ShButton>
             </div>
 
-            <button
+            <ShButton variant="outline"
               v-if="selectedCount > 0"
               class="btn btn-secondary flex-1 md:flex-initial"
               data-test="bulk-edit-limits"
@@ -250,9 +250,9 @@
             >
               <Icon name="users" size="md" class="mr-2" />
               {{ t('admin.users.bulkLimits.action', { count: selectedCount }) }}
-            </button>
+            </ShButton>
 
-            <button
+            <ShButton variant="destructive"
               v-if="selectedCount > 0"
               class="btn btn-danger flex-1 md:flex-initial"
               data-test="bulk-delete-users"
@@ -261,13 +261,13 @@
             >
               <Icon name="trash" size="md" class="mr-2" />
               {{ t('admin.users.bulkDelete.action', { count: selectedCount }) }}
-            </button>
+            </ShButton>
 
             <!-- Create User Button (full width on mobile, auto width on desktop) -->
-            <button @click="showCreateModal = true" class="btn btn-primary flex-1 md:flex-initial">
+            <ShButton variant="default" @click="showCreateModal = true" class="btn btn-primary flex-1 md:flex-initial">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.users.createUser') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </template>
@@ -792,6 +792,8 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

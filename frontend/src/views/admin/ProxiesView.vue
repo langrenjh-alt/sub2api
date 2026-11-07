@@ -10,7 +10,7 @@
               size="md"
               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"
             />
-            <input
+            <ShInput
               v-model="searchQuery"
               type="text"
               :placeholder="t('admin.proxies.searchProxies')"
@@ -38,15 +38,15 @@
 
           <!-- Right: All action buttons -->
           <div class="flex flex-1 flex-wrap items-center justify-end gap-2">
-            <button
+            <ShButton variant="outline"
               @click="loadProxies"
               :disabled="loading"
               class="btn btn-secondary"
               :title="t('common.refresh')"
             >
               <Icon name="refresh" size="md" :class="loading ? 'animate-spin' : ''" />
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="outline"
               @click="handleBatchTest"
               :disabled="batchTesting || loading"
               class="btn btn-secondary"
@@ -54,8 +54,8 @@
             >
               <Icon name="play" size="md" class="mr-2" />
               {{ t('admin.proxies.testConnection') }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="outline"
               @click="handleBatchQualityCheck"
               :disabled="batchQualityChecking || loading"
               class="btn btn-secondary"
@@ -63,8 +63,8 @@
             >
               <Icon name="shield" size="md" class="mr-2" :class="batchQualityChecking ? 'animate-pulse' : ''" />
               {{ t('admin.proxies.batchQualityCheck') }}
-            </button>
-            <button
+            </ShButton>
+            <ShButton variant="destructive"
               @click="openBatchDelete"
               :disabled="selectedCount === 0"
               class="btn btn-danger"
@@ -72,17 +72,17 @@
             >
               <Icon name="trash" size="md" class="mr-2" />
               {{ t('admin.proxies.batchDeleteAction') }}
-            </button>
-            <button @click="showImportData = true" class="btn btn-secondary">
+            </ShButton>
+            <ShButton variant="outline" @click="showImportData = true" class="btn btn-secondary">
               {{ t('admin.proxies.dataImport') }}
-            </button>
-            <button @click="showExportDataDialog = true" class="btn btn-secondary">
+            </ShButton>
+            <ShButton variant="outline" @click="showExportDataDialog = true" class="btn btn-secondary">
               {{ selectedCount > 0 ? t('admin.proxies.dataExportSelected') : t('admin.proxies.dataExport') }}
-            </button>
-            <button @click="showCreateModal = true" class="btn btn-primary">
+            </ShButton>
+            <ShButton variant="default" @click="showCreateModal = true" class="btn btn-primary">
               <Icon name="plus" size="md" class="mr-2" />
               {{ t('admin.proxies.createProxy') }}
-            </button>
+            </ShButton>
           </div>
         </div>
       </template>
@@ -429,7 +429,7 @@
       >
         <div>
           <label class="input-label">{{ t('admin.proxies.name') }}</label>
-          <input
+          <ShInput
             v-model="createForm.name"
             type="text"
             required
@@ -444,7 +444,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="input-label">{{ t('admin.proxies.host') }}</label>
-            <input
+            <ShInput
               v-model="createForm.host"
               type="text"
               required
@@ -467,7 +467,7 @@
         </div>
         <div>
           <label class="input-label">{{ t('admin.proxies.username') }}</label>
-          <input
+          <ShInput
             v-model="createForm.username"
             type="text"
             class="input"
@@ -495,7 +495,7 @@
         <div>
           <label class="input-label">{{ t('admin.proxies.expiresAt') }}</label>
           <div class="mb-2 flex flex-wrap gap-2">
-            <button
+            <ShButton variant="outline" size="sm"
               v-for="d in EXPIRY_PRESETS"
               :key="d"
               type="button"
@@ -504,7 +504,7 @@
               @click="createExpiresDays = d"
             >
               {{ t('admin.proxies.nDays', { days: d }) }}
-            </button>
+            </ShButton>
           </div>
           <input
             v-model.number="createExpiresDays"
@@ -591,10 +591,10 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeCreateModal" type="button" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeCreateModal" type="button" class="btn btn-secondary">
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             v-if="createMode === 'standard'"
             type="submit"
             form="create-proxy-form"
@@ -622,8 +622,8 @@
               ></path>
             </svg>
             {{ submitting ? t('admin.proxies.creating') : t('common.create') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             v-else
             @click="handleBatchCreate"
             type="button"
@@ -655,7 +655,7 @@
                 ? t('admin.proxies.importing')
                 : t('admin.proxies.importProxies', { count: batchParseResult.valid })
             }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -675,7 +675,7 @@
       >
         <div>
           <label class="input-label">{{ t('admin.proxies.name') }}</label>
-          <input v-model="editForm.name" type="text" required class="input" />
+          <ShInput v-model="editForm.name" type="text" required class="input" />
         </div>
         <div>
           <label class="input-label">{{ t('admin.proxies.protocol') }}</label>
@@ -684,7 +684,7 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="input-label">{{ t('admin.proxies.host') }}</label>
-            <input v-model="editForm.host" type="text" required class="input" />
+            <ShInput v-model="editForm.host" type="text" required class="input" />
           </div>
           <div>
             <label class="input-label">{{ t('admin.proxies.port') }}</label>
@@ -700,7 +700,7 @@
         </div>
         <div>
           <label class="input-label">{{ t('admin.proxies.username') }}</label>
-          <input v-model="editForm.username" type="text" class="input" />
+          <ShInput v-model="editForm.username" type="text" class="input" />
         </div>
         <div>
           <label class="input-label">{{ t('admin.proxies.password') }}</label>
@@ -728,7 +728,7 @@
         <div>
           <label class="input-label">{{ t('admin.proxies.expiresAt') }}</label>
           <div class="mb-2 flex flex-wrap gap-2">
-            <button
+            <ShButton variant="outline" size="sm"
               v-for="d in EXPIRY_PRESETS"
               :key="d"
               type="button"
@@ -737,7 +737,7 @@
               @click="editExpiresDays = d"
             >
               {{ t('admin.proxies.nDays', { days: d }) }}
-            </button>
+            </ShButton>
           </div>
           <input
             v-model.number="editExpiresDays"
@@ -765,10 +765,10 @@
 
       <template #footer>
         <div class="flex justify-end gap-3">
-          <button @click="closeEditModal" type="button" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeEditModal" type="button" class="btn btn-secondary">
             {{ t('common.cancel') }}
-          </button>
-          <button
+          </ShButton>
+          <ShButton variant="default"
             v-if="editingProxy"
             type="submit"
             form="edit-proxy-form"
@@ -796,7 +796,7 @@
               ></path>
             </svg>
             {{ submitting ? t('admin.proxies.updating') : t('common.update') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -879,39 +879,39 @@
 
         <div class="max-h-80 overflow-auto rounded-lg border border-gray-200 dark:border-dark-600">
           <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-700">
-            <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-dark-800 dark:text-dark-400">
+            <ShTableHeader class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-dark-800 dark:text-dark-400">
               <tr>
-                <th class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableTarget') }}</th>
-                <th class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableStatus') }}</th>
-                <th class="whitespace-nowrap px-3 py-2 text-left">HTTP</th>
-                <th class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableLatency') }}</th>
-                <th class="px-3 py-2 text-left">{{ t('admin.proxies.qualityTableMessage') }}</th>
+                <ShTableHead class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableTarget') }}</ShTableHead>
+                <ShTableHead class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableStatus') }}</ShTableHead>
+                <ShTableHead class="whitespace-nowrap px-3 py-2 text-left">HTTP</ShTableHead>
+                <ShTableHead class="whitespace-nowrap px-3 py-2 text-left">{{ t('admin.proxies.qualityTableLatency') }}</ShTableHead>
+                <ShTableHead class="px-3 py-2 text-left">{{ t('admin.proxies.qualityTableMessage') }}</ShTableHead>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+            </ShTableHeader>
+            <ShTableBody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
               <tr v-for="item in qualityReport.items" :key="item.target">
-                <td class="whitespace-nowrap px-3 py-2 text-gray-900 dark:text-white">{{ qualityTargetLabel(item.target) }}</td>
-                <td class="whitespace-nowrap px-3 py-2">
+                <ShTableCell class="whitespace-nowrap px-3 py-2 text-gray-900 dark:text-white">{{ qualityTargetLabel(item.target) }}</ShTableCell>
+                <ShTableCell class="whitespace-nowrap px-3 py-2">
                   <span class="badge whitespace-nowrap" :class="qualityStatusClass(item.status)">{{ qualityStatusLabel(item.status) }}</span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-300">{{ item.http_status ?? '-' }}</td>
-                <td class="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-300">
+                </ShTableCell>
+                <ShTableCell class="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-300">{{ item.http_status ?? '-' }}</ShTableCell>
+                <ShTableCell class="whitespace-nowrap px-3 py-2 text-gray-600 dark:text-gray-300">
                   {{ typeof item.latency_ms === 'number' ? `${item.latency_ms}ms` : '-' }}
-                </td>
-                <td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+                </ShTableCell>
+                <ShTableCell class="px-3 py-2 text-gray-600 dark:text-gray-300">
                   <span>{{ item.message || '-' }}</span>
                   <span v-if="item.cf_ray" class="ml-1 text-xs text-gray-400">(cf-ray: {{ item.cf_ray }})</span>
-                </td>
+                </ShTableCell>
               </tr>
-            </tbody>
+            </ShTableBody>
           </table>
         </div>
       </div>
       <template #footer>
         <div class="flex justify-end">
-          <button @click="closeQualityReportDialog" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeQualityReportDialog" class="btn btn-secondary">
             {{ t('common.close') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -932,31 +932,31 @@
       </div>
       <div v-else class="max-h-80 overflow-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm dark:divide-dark-700">
-          <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-dark-800 dark:text-dark-400">
+          <ShTableHeader class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-dark-800 dark:text-dark-400">
             <tr>
-              <th class="px-4 py-2 text-left">{{ t('admin.proxies.accountName') }}</th>
-              <th class="px-4 py-2 text-left">{{ t('admin.accounts.columns.platformType') }}</th>
-              <th class="px-4 py-2 text-left">{{ t('admin.proxies.accountNotes') }}</th>
+              <ShTableHead class="px-4 py-2 text-left">{{ t('admin.proxies.accountName') }}</ShTableHead>
+              <ShTableHead class="px-4 py-2 text-left">{{ t('admin.accounts.columns.platformType') }}</ShTableHead>
+              <ShTableHead class="px-4 py-2 text-left">{{ t('admin.proxies.accountNotes') }}</ShTableHead>
             </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
+          </ShTableHeader>
+          <ShTableBody class="divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
             <tr v-for="account in proxyAccounts" :key="account.id">
-              <td class="px-4 py-2 font-medium text-gray-900 dark:text-white">{{ account.name }}</td>
-              <td class="px-4 py-2">
+              <ShTableCell class="px-4 py-2 font-medium text-gray-900 dark:text-white">{{ account.name }}</ShTableCell>
+              <ShTableCell class="px-4 py-2">
                 <PlatformTypeBadge :platform="account.platform" :type="account.type" />
-              </td>
-              <td class="px-4 py-2 text-gray-600 dark:text-gray-300">
+              </ShTableCell>
+              <ShTableCell class="px-4 py-2 text-gray-600 dark:text-gray-300">
                 {{ account.notes || '-' }}
-              </td>
+              </ShTableCell>
             </tr>
-          </tbody>
+          </ShTableBody>
         </table>
       </div>
       <template #footer>
         <div class="flex justify-end">
-          <button @click="closeAccountsModal" class="btn btn-secondary">
+          <ShButton variant="outline" @click="closeAccountsModal" class="btn btn-secondary">
             {{ t('common.close') }}
-          </button>
+          </ShButton>
         </div>
       </template>
     </BaseDialog>
@@ -964,6 +964,12 @@
 </template>
 
 <script setup lang="ts">
+import { Input as ShInput } from "@/components/ui/input"
+import { Button as ShButton } from "@/components/ui/button"
+import { TableHeader as ShTableHeader } from "@/components/ui/table"
+import { TableHead as ShTableHead } from "@/components/ui/table"
+import { TableBody as ShTableBody } from "@/components/ui/table"
+import { TableCell as ShTableCell } from "@/components/ui/table"
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'

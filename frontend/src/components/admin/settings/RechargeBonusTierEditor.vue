@@ -1,5 +1,5 @@
 <template>
-  <div class="card" data-testid="recharge-bonus-tier-editor">
+  <ShCard class="card" data-testid="recharge-bonus-tier-editor">
     <!-- Header：与服务商管理卡片同款 -->
     <div class="border-b border-gray-100 px-4 py-3 dark:border-dark-700">
       <div class="flex items-center justify-between gap-3">
@@ -11,7 +11,7 @@
             {{ t('admin.settings.payment.rechargeBonus.hint') }}
           </p>
         </div>
-        <button
+        <ShButton variant="default" size="sm"
           type="button"
           class="btn btn-primary btn-sm shrink-0"
           :disabled="tiers.length >= MAX_RECHARGE_BONUS_TIERS"
@@ -20,7 +20,7 @@
         >
           <Icon name="plus" size="sm" class="mr-1" />
           {{ t('admin.settings.payment.rechargeBonus.addTier') }}
-        </button>
+        </ShButton>
       </div>
     </div>
 
@@ -172,10 +172,12 @@
         </p>
       </div>
     </div>
-  </div>
+  </ShCard>
 </template>
 
 <script setup lang="ts">
+import { Card as ShCard } from "@/components/ui/card"
+import { Button as ShButton } from "@/components/ui/button"
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
