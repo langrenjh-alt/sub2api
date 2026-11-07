@@ -28,10 +28,10 @@ export default {
     },
     journey: {
       roundTrip: 'Query round trip', refresh: 'Query again',
-      manifestoA: 'One key.', manifestoB: 'Many models.',
+      manifestoA: 'Switch models.', manifestoB: 'Keep your key.',
       manifestoText: 'Connect your client to one API endpoint. Use the same key to reach the models configured for your account.',
-      galleryTitle: 'Model plaza', galleryNote: 'Three model families, three ways to work.',
-      browse: 'Enter model plaza', accessTitle: 'Make a connection.',
+      galleryTitle: 'Model plaza', galleryNote: 'Explore models and protocols for different tasks.',
+      browse: 'Enter model plaza', accessTitle: 'Connect your client.',
       accessText: 'Set your client’s Base URL, then select an API key from your workspace.',
       endpoint: 'Endpoint', copyEndpoint: 'Copy endpoint', keys: 'Manage keys', usage: 'Check key usage',
       finalTitle: 'Service observatory', statusIntro: 'Public rates and channel measurements.',
@@ -41,7 +41,9 @@ export default {
       monitor: 'Channel', group: 'Group rate', page: 'Readings {page} of {total}'
     },
     signal: {
-      scroll: 'Scroll down',
+      headline: 'Many models. One gateway.',
+      deck: 'Reach different models with a single API key.',
+      scroll: 'Explore models',
       navigation: 'Main navigation',
       index: 'Gateway index',
       explore: 'Explore the gateway',

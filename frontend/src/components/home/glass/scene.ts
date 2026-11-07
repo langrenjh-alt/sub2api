@@ -23,7 +23,7 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     (async () => {
       const existing = host.querySelector<HTMLImageElement>('.signal-plate')
       const img = existing ?? new Image()
-      if (!existing) img.src = '/assets/home/z30-signal-field.webp'
+      if (!existing) img.src = '/assets/home/atelier-landscape.webp'
       await img.decode()
       return img
     })(),
@@ -81,7 +81,7 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     }
     u.captureMix.value=captured ? T.MathUtils.smoothstep(scroll,.105,.18) : 0
     smoothX = x; smoothY = y // The shell supplies a single time-filtered pointer to every layer.
-    mesh.rotation.set(-.105+smoothY*.052+Math.sin(seconds*.28)*.022,-.16-travel*1.28+smoothX*.085+Math.sin(seconds*.24)*.047,.008)
+    mesh.rotation.set(-.13+smoothY*.058+Math.sin(seconds*.28)*.026,-.255-travel*1.18+smoothX*.11+Math.sin(seconds*.24)*.047,-.017)
     u.orbit.value=Math.min(1, travel+.1*Math.abs(smoothX)); u.elapsed.value=seconds; u.aim.value.set(smoothX,smoothY)
     mesh.material=backMaterial; renderer.setRenderTarget(target); renderer.render(scene,camera)
     mesh.material=frontMaterial; renderer.setRenderTarget(null); renderer.render(scene,camera)
@@ -95,12 +95,12 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     renderer.getDrawingBufferSize(uniforms.bufferSize.value)
     target.setSize(uniforms.bufferSize.value.x,uniforms.bufferSize.value.y)
     camera.aspect=width/height; camera.updateProjectionMatrix()
-    // Map canvas pixels back into the hero's object-fit:cover plate (object-position 50% 68%).
+    // Map canvas pixels back into the hero's object-fit:cover plate (centered optical plate).
     uniforms.stageScale.value.set(rect.width/outer.width,rect.height/outer.height)
     uniforms.stageOffset.value.set((rect.left-outer.left)/outer.width,(outer.bottom-rect.bottom)/outer.height)
     const imgAspect=image.naturalWidth/image.naturalHeight, hostAspect=outer.width/outer.height
-    const s=uniforms.plateScale.value.set(Math.min(1,hostAspect/imgAspect),Math.min(1,imgAspect/hostAspect)).multiplyScalar(1/1.018)
-    uniforms.plateOrigin.value.set((1-s.x)*.5,(1-s.y)*.32)
+    const s=uniforms.plateScale.value.set(Math.min(1,hostAspect/imgAspect),Math.min(1,imgAspect/hostAspect)).multiplyScalar(1/1.022)
+    uniforms.plateOrigin.value.set((1-s.x)*.5,(1-s.y)*.5)
     draw()
   }
   function tick(now:number) {
@@ -115,10 +115,12 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     if(on) { previous=0; frame=requestAnimationFrame(tick) }
     else { cancelAnimationFrame(frame); previous=0 }
   }
+  const reloadPlate=()=>{ if(!stopped){ tex.needsUpdate=true; resize() } }
+  image.addEventListener('load',reloadPlate)
   const observer=new ResizeObserver(resize)
   function dispose() {
     if(stopped) return
-    active(false); stopped=true; observer.disconnect()
+    active(false); stopped=true; observer.disconnect(); image.removeEventListener('load',reloadPlate)
     target.dispose(); captured?.dispose(); tex.dispose(); geometry.dispose(); frontMaterial.dispose(); backMaterial.dispose()
     renderer.dispose(); renderer.forceContextLoss()
   }
@@ -133,7 +135,7 @@ export async function createGlassScene(canvas: HTMLCanvasElement, host: HTMLElem
     // scroll frame. The enlarged glass stays sharp without paying for it at rest.
     if((!enlarged && p>.169 && p<.36) || (enlarged && (p<.122 || p>.38))){
       enlarged=!enlarged;renderer.setPixelRatio(enlarged?Math.min(2.15,baseDpr*1.62):baseDpr);resize()
-    }
+    } else if(!on && p<.358 && !document.hidden) draw()
   }
   return { field, position, capture:()=>{ draw(); return canvas }, input:(a,b)=>{x=a;y=b}, orbit:value=>{travel=T.MathUtils.clamp(value,0,1)}, active, dispose }
 }

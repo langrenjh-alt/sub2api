@@ -1,5 +1,5 @@
 import * as T from 'three'
-import { clock, dustMaterial, nucleusMaterial, skyMaterial, opticalStudio, lightStudio, linkStudio, QUARTZ_LAYER, WATER_LAYER } from './worldMaterials'
+import { clock, dustMaterial, skyMaterial, opticalStudio, lightStudio, linkStudio, QUARTZ_LAYER, WATER_LAYER } from './worldMaterials'
 import { PixelBudget } from './worldBudget'
 import { createGalleryOptics } from './galleryOptics'
 import { worldForms } from './worldForms'
@@ -31,7 +31,7 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onVeil?:(bitmap:H
   const time=clock(),phase=clock(),pixel=clock(),height=clock(),studio=opticalStudio()
   const sky=new T.Mesh(new T.PlaneGeometry(2,2),skyMaterial(phase))
   sky.frustumCulled=false;sky.renderOrder=-100;scene.add(sky)
-  const step=worldForms(scene,dustMaterial(time,pixel,height),nucleusMaterial(time,pixel,height))
+  const step=worldForms(scene,dustMaterial(time,pixel,height))
   linkStudio(scene,studio)
   // One reusable opaque-scene texture for every dielectric AND the works panels.
   // The inexpensive virtual-camera reflection runs only near the observatory.
@@ -130,7 +130,7 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onVeil?:(bitmap:H
     camera.updateMatrixWorld()
     gallery.update(camera,p,time.value,input.reduced,raw)
     if(p>.695 && (lastMirror<0||time.value-lastMirror>.040||Math.abs(mirrorP-p)>.0001||need))mirrorPass(p)
-    if(p>.21){
+    if(p>.012){
       camera.layers.set(0);camera.layers.enable(WATER_LAYER)
       renderer.setRenderTarget(transmission);renderer.render(scene,camera)
     }
@@ -166,6 +166,11 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onVeil?:(bitmap:H
   ro?.observe(canvas);io?.observe(canvas)
   if(!ro)window.addEventListener('resize',resize)
   document.addEventListener('visibilitychange',visibility)
+  const plate=new T.TextureLoader().load('/assets/home/atelier-interference.webp',()=>{
+    if(ended)return
+    studio.uPlateReady.value=1;need=true;schedule()
+  })
+  studio.uAtelierPlate.value=plate
   resize()
 
   // Prime both material variants while the user is at the opening plate.
@@ -197,7 +202,7 @@ export function createJourneyRenderer(canvas:HTMLCanvasElement,onVeil?:(bitmap:H
         if(obj instanceof T.InstancedMesh)obj.dispose()
       })
       geometry.forEach(x=>x.dispose());materials.forEach(x=>x.dispose())
-      transmission.dispose();reflection.dispose();renderer.dispose()
+      plate.dispose();transmission.dispose();reflection.dispose();renderer.dispose()
     },
   }
 }

@@ -7,6 +7,7 @@ import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { Button } from '@/components/ui/button'
 import GlassWordmark from './GlassWordmark.vue'
+import AtelierPlate from './AtelierPlate.vue'
 import OriginAtmosphere from './OriginAtmosphere.vue'
 import JourneyWorld from './JourneyWorld.vue'
 import JourneyChapters from './JourneyChapters.vue'
@@ -32,15 +33,18 @@ const veilReady = ref(false)
 let snapAspect = 0
 const pointerX = ref(0), pointerY = ref(0)
 const paused = ref(false), reduced = ref(false), visible = ref(true), inView = ref(true)
-const still = computed(() => paused.value || reduced.value)
-const active = computed(() => !still.value && visible.value && inView.value)
+const active = computed(() => !paused.value && !reduced.value && visible.value && inView.value)
 const index = computed(() => currentFlightStop(progress.value))
-const orbit = computed(() => still.value ? 0 :
+const openerStyle=computed(()=>{
+  const out=phase(.013,.095,progress.value)
+  return { opacity:1-out, transform:reduced.value?undefined:`translate3d(0,${-out*22}px,0)` }
+})
+const orbit = computed(() => reduced.value ? 0 :
   phase(.005, .095, progress.value) * (1 - phase(.163, .286, progress.value)) +
   .22 * phase(.26, .34, progress.value))
 const logoStyle = computed(() => {
   const p = progress.value
-  if (still.value) return { opacity: p < .15 ? 1 : 0 }
+  if (reduced.value) return { opacity: p < .15 ? 1 : 0 }
   const opening = phase(.135,.268,p), lift = phase(.279,.36,p)
   const tilt = phase(.04,.13,p)
   return {
@@ -48,7 +52,7 @@ const logoStyle = computed(() => {
     transform: `translate(calc(-50% + ${opening*4}% + ${opening*2}vw), calc(-50% - ${lift*36}svh + ${tilt*(1-opening)*2}svh)) scale(${1-.16*tilt+.86*opening})`,
   }
 })
-const seamVisible = computed(() => !still.value && progress.value >= .125 && progress.value < .255)
+const seamVisible = computed(() => !reduced.value && progress.value >= .125 && progress.value < .255)
 const veilStyle = computed(() => {
   const p=progress.value,cut=phase(.155,.25,p)
   const left=114-124*cut,right=105-131*cut
@@ -109,7 +113,7 @@ function tick(now: number) {
     target=flightProgress(rect.top,rect.height,view.offsetHeight)
     if(snapAspect && Math.abs(view.clientWidth/Math.max(1,view.offsetHeight)-snapAspect)>.18) veilReady.value=false
   }
-  if(still.value || snapNext || document.hidden) {
+  if(reduced.value || snapNext || document.hidden) {
     progress.value=target;velocity=0;pointerX.value=0;pointerY.value=0
   } else {
     const [p,v]=followFocus(progress.value,velocity,target,Math.max(0,Math.min(.15,dt)))
@@ -119,7 +123,7 @@ function tick(now: number) {
     pointerX.value=easeAim(pointerX.value,aimX);pointerY.value=easeAim(pointerY.value,aimY)
   }
   snapNext=false;last=now
-  if(!still.value && !document.hidden &&
+  if(!reduced.value && !document.hidden &&
       (target!==progress.value || velocity!==0 || pointerX.value!==aimX || pointerY.value!==aimY)) schedule()
   else last=0
 }
@@ -128,7 +132,14 @@ function schedule() {
 }
 function queue() { dirtyLayout=true;schedule() }
 function resync() { snapNext=true;queue() }
-function resetPointer() { aimX=0;aimY=0;schedule() }
+function resetPointer() { if(!paused.value){aimX=0;aimY=0;schedule()} }
+function toggleMotion() {
+  paused.value=!paused.value
+  // Pause the light, not the exhibition: never jump to a different camera
+  // position or swap the current folio for the reduced-motion layout.
+  if(paused.value){aimX=pointerX.value;aimY=pointerY.value}
+  else resetPointer()
+}
 function sync() {
   reduced.value = mq?.matches ?? false; visible.value = !document.hidden
   if(reduced.value || !visible.value) resetPointer()
@@ -178,16 +189,16 @@ onBeforeUnmount(() => {
     <div ref="stage" class="signal" :data-motion="active ? 'on' : 'off'"
       :data-stop="flightStops[index].id" :data-progress="progress.toFixed(4)"
       @pointermove="point" @pointerleave="resetPointer">
-      <img class="signal-plate" src="/assets/home/z30-signal-field.webp" alt="" fetchpriority="high" />
-      <JourneyWorld :progress="progress" :active="active" :reduced="still" :pointer-x="pointerX" :pointer-y="pointerY" @veil="onVeil" />
+      <AtelierPlate :progress="progress" :x="pointerX" :y="pointerY" :active="active" :reduced="reduced" />
+      <JourneyWorld :progress="progress" :active="active" :reduced="reduced" :pointer-x="pointerX" :pointer-y="pointerY" @veil="onVeil" />
 
       <div class="signal-glass-layer" :aria-hidden="progress >= .358 ? true : undefined">
         <div class="signal-core" :style="logoStyle">
           <GlassWordmark ref="glass" :progress="progress" :travel="orbit" :active="active && progress < .358" :pointer-x="pointerX" :pointer-y="pointerY" />
         </div>
       </div>
-      <OriginAtmosphere ref="air" :progress="progress" :active="active" :reduced="still" />
-      <JourneyChapters :progress="progress" :reduced="still" :model-plaza="modelPlaza"
+      <OriginAtmosphere ref="air" :progress="progress" :active="active" :reduced="reduced" />
+      <JourneyChapters :progress="progress" :reduced="reduced" :model-plaza="modelPlaza"
         :workspace-path="workspacePath" :base-url="baseUrl" :doc-url="docUrl"
         :status="status" :status-state="statusState" :authenticated="authenticated"
         :recharge-url="rechargeUrl" :custom-endpoints="customEndpoints" :sample-ms="sampleMs" @refresh="emit('refresh')" />
@@ -207,7 +218,7 @@ onBeforeUnmount(() => {
 
       <header class="signal-header">
         <a class="signal-brand" href="#origin" :aria-label="t('home.flight.restart')">
-          <img :src="siteLogo || '/logo.svg'" alt="" width="40" height="25" />
+          <img :src="siteLogo || '/z30-mono.svg'" alt="" width="54" height="28" :class="{ 'edition-mark': !siteLogo }" />
           <span>{{ brandName }}</span>
         </a>
         <div class="signal-tools">
@@ -222,33 +233,33 @@ onBeforeUnmount(() => {
         </div>
       </header>
 
-      <a href="#plaza" class="signal-scroll-cue signal-explore" :class="{ 'is-away': progress > .055 }"
-        :inert="progress > .055 ? true : undefined" :aria-hidden="progress > .055">
-        {{ t('home.signal.scroll') }} <i aria-hidden="true"></i>
-      </a>
+      <div v-show="progress < .095" class="origin-caption" :style="openerStyle"
+        :aria-hidden="progress>.08" :inert="progress>.08 ? true : undefined">
+        <p class="edition-label"><span aria-hidden="true"></span> Z30 <i>/</i> MODEL SYSTEMS</p>
+        <h2>{{ t('home.signal.headline') }}</h2>
+        <p class="edition-deck">{{ !tagline || tagline === t('home.heroSubtitle') || tagline === 'Subscription to API Conversion Platform' ? t('home.signal.deck') : tagline }}</p>
+      </div>
 
       <footer class="flight-hud">
         <div class="flight-location">
-          <span aria-hidden="true">0{{ index + 1 }} <i>/</i> 04</span>
-          <span>{{ t(flightStops[index].label) }}</span>
+          <a href="#plaza" class="signal-explore" v-show="index===0"><span aria-hidden="true">↓</span>{{ t('home.signal.scroll') }}</a>
+          <a href="#origin" class="edition-return" v-show="index!==0"><span aria-hidden="true">↑</span>{{ t('home.flight.restart') }}</a>
         </div>
         <nav class="flight-stops" :aria-label="t('home.flight.nav')">
           <a v-for="(stop, n) in flightStops" :key="stop.id" :href="'#' + stop.id"
             :aria-label="t(stop.label)" :aria-current="n === index ? 'step' : undefined" :title="t(stop.label)">
-            <span class="stop-tick" aria-hidden="true"></span><span class="stop-text">{{ t(stop.label) }}</span>
+            <span class="stop-tick" aria-hidden="true"></span><span class="stop-no" aria-hidden="true">0{{n+1}}</span><span class="stop-text">{{ t(stop.label) }}</span>
           </a>
         </nav>
         <div class="signal-motion">
           <button v-if="!reduced" type="button" :aria-label="t('home.signal.motion')" :aria-pressed="!paused"
-            :title="t(paused ? 'home.flight.resume' : 'home.flight.pause')" @click="paused = !paused; resetPointer()">
-            <span class="signal-meter" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-            <span>{{ t(paused ? 'home.signal.resume' : 'home.signal.pause') }}</span>
+            :title="t(paused ? 'home.flight.resume' : 'home.flight.pause')" @click="toggleMotion">
+            <span class="signal-meter" aria-hidden="true"><i></i><i></i></span>
           </button>
           <span v-else>{{ t('home.signal.still') }}</span>
         </div>
       </footer>
       <div class="flight-progress" aria-hidden="true"><i :style="{ transform: `scaleX(${progress})` }"></i></div>
-      <span class="sr-only">{{ tagline }}</span>
     </div>
   </main>
 </template>
@@ -261,15 +272,14 @@ onBeforeUnmount(() => {
 .flight-anchor { position: absolute; height: 1px; width: 1px; pointer-events: none; }
 .signal {
   position: sticky; top: 0; height: 100svh; width: 100%; isolation: isolate; overflow: hidden;
-  --silver: #e8f3f0; --subtle: #acbcbf; --mint: #b7edd5;
+  --silver: #f1f0ea; --subtle: #c8c6c0; --mint: #f0cda4;
   --mono: 'Geist Mono Variable', ui-monospace, monospace;
-  --gutter: clamp(20px,4.3vw,76px);
+  --gutter: clamp(24px,4.2vw,76px);
   background: #050a0f; color: var(--silver);
 }
-.signal-plate { position:absolute; inset:0; z-index:-2; width:100%; height:100%; object-fit:cover; object-position:50% 68%; pointer-events:none; }
 .signal-glass-layer { position:absolute; z-index:3; inset:0; pointer-events:none; }
 .signal-core {
-  position:absolute; top:50%; left:50%; width:clamp(188px,min(30vw,65svh),535px);
+  position:absolute; top:47.5%; left:50%; width:clamp(212px,min(36vw,75svh),650px);
   pointer-events:none; transform:translate(-50%,-50%); transform-origin:50% 50%;
 }
 .signal-veil {
@@ -293,63 +303,65 @@ onBeforeUnmount(() => {
 .signal-header { top:max(18px,env(safe-area-inset-top)); height:48px; gap:12px; }
 .signal-header a,.signal-header button,.signal-tools,.flight-hud a,.flight-hud button { pointer-events:auto; }
 .signal-brand,.signal-tools,.signal-nav,.signal-login,.signal-motion button { display:flex; align-items:center; }
-.signal-brand { gap:10px; max-width:35%; min-width:0; font-size:14px; font-weight:600; letter-spacing:-.04em; text-shadow:0 1px 12px #030910; }
-.signal-brand img { width:40px; height:26px; object-fit:contain; flex:none; }
-.signal-brand span { white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
-.signal-tools { gap:10px; }
-.signal-tools :deep(.relative > button) { min-height:44px; color:var(--subtle); }
-.signal-nav { min-height:42px; gap:13px; padding:0 16px; border:1px solid #80b2a84d; background:#061014bf; border-radius:999px; backdrop-filter:blur(12px); }
-.signal-nav a { min-height:42px; font-size:12px; display:inline-flex; align-items:center; }
-.signal-nav i { width:22px; height:1px; background:#9bb8b1; opacity:.55; }
-.signal-nav .signal-login { color:var(--silver); padding:0; gap:8px; background:transparent; }
-.signal-nav .signal-login:hover,.signal-nav a:hover { color:var(--mint); }
-.signal-scroll-cue {
-  position:absolute; z-index:3; left:50%; top:30%; transform:translateX(-50%);
-  display:flex; flex-direction:column; align-items:center; gap:10px; padding:10px; min-height:44px;
-  font:10px/1.4 var(--mono); letter-spacing:.16em; color:#c6d7d4; text-transform:uppercase;
-}
-.signal-scroll-cue i { width:1px; height:22px; background:linear-gradient(transparent,#9ccbc1); }
-.signal-scroll-cue.is-away { visibility:hidden; }
-.flight-hud { bottom:max(14px,env(safe-area-inset-bottom)); gap:14px; min-height:44px; }
-.flight-location { min-width:90px; display:flex; align-items:center; gap:12px; }
-.flight-location>span:first-child,.signal-motion { font:10px/1.35 var(--mono); letter-spacing:.06em; }
-.flight-location i { opacity:.42; font-style:normal; }
-.flight-location>span+span { font-size:12px; color:var(--subtle); }
-.flight-stops { display:flex; position:absolute; left:50%; transform:translateX(-50%); gap:clamp(6px,1.4vw,24px); align-items:center; }
-.flight-stops a { display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; padding:0 3px; color:var(--subtle); }
-.stop-tick { height:1px; width:11px; background:currentColor; opacity:.7; }
-.stop-text { font:10px/1.35 var(--mono); letter-spacing:.035em; }
-.flight-stops a[aria-current] { color:white; }
-.flight-stops a[aria-current] .stop-tick { height:2px; background:var(--mint); opacity:1; }
-.signal-motion { color:var(--subtle); margin-left:auto; }
-.signal-motion button { min-height:44px; gap:8px; }
-.signal-meter { display:inline-flex; gap:2px; height:12px; align-items:center; }
-.signal-meter i { height:5px; width:2px; background:var(--mint); }
-.signal-meter i:nth-child(2) { height:12px; }
-.signal-meter i:nth-child(3) { height:8px; }
-.signal-motion button[aria-pressed=false] i { height:2px; }
-.flight-progress { position:absolute; z-index:10; bottom:0; left:0; width:100%; height:1px; background:#c8ebe31a; pointer-events:none; }
-.flight-progress i { display:block; height:100%; transform-origin:left center; background:#9acdc3; }
-.signal :is(a,button):focus-visible { outline:2px solid var(--mint); outline-offset:3px; }
+.signal-brand {gap:14px;min-width:0;max-width:42%;text-shadow:0 1px 8px #000a;}
+.signal-brand img {width:54px;height:28px;object-fit:contain;flex:none;}
+.signal-brand img.edition-mark {filter:brightness(0) invert(.94);}
+.signal-brand span {font-size:13px;font-weight:500;border-left:1px solid #ddd3bd66;padding-left:13px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+.signal-tools {gap:20px;}
+.signal-tools :deep(.relative > button) {min-height:44px;color:var(--silver);background:transparent;border-radius:0;font:500 11px/1 var(--mono);letter-spacing:.04em;text-shadow:0 1px 8px #000;}
+.signal-tools :deep(.relative > button > span:first-child){display:none;}
+.signal-tools :deep(.relative > button > span:nth-child(2)){display:inline;}
+.signal-nav {min-height:44px;gap:13px;padding:0 17px;border:1px solid #e9e3d864;background:#101011a6;border-radius:99px;backdrop-filter:blur(12px);}
+.signal-nav a {min-height:44px;font-size:13px;display:inline-flex;align-items:center;}
+.signal-nav i {width:22px;height:1px;background:#e8dccb;opacity:.55;}
+.signal-nav .signal-login {color:var(--silver);padding:0;gap:10px;background:transparent;}
+.signal-nav .signal-login:hover,.signal-nav a:hover {color:var(--mint);}
+.origin-caption {position:absolute;z-index:5;left:var(--gutter);bottom:clamp(85px,14svh,154px);max-width:min(66vw,680px);pointer-events:none;color:#f4f2eb;text-shadow:0 2px 20px #08090ad4;}
+.edition-label,.origin-caption h2,.edition-deck {margin:0;}
+.edition-label {display:flex;align-items:center;gap:10px;font:500 10px/1.4 var(--mono);letter-spacing:.13em;color:#e6e0d8;}
+.edition-label span {width:29px;height:1px;background:#ddb180;}
+.edition-label i {font-style:normal;color:#ddbf9e;}
+.origin-caption h2 {margin:15px 0 9px;font-size:clamp(37px,3.7vw,68px);line-height:1.05;font-weight:480;letter-spacing:-.045em;text-wrap:balance;}
+.edition-deck {font-size:clamp(13px,1.02vw,17px);line-height:1.55;max-width:38ch;letter-spacing:.015em;color:#d9d9d2;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.flight-hud {bottom:max(14px,env(safe-area-inset-bottom));min-height:48px;gap:20px;border-top:1px solid #e7e1d02f;}
+.flight-location,.signal-motion {display:flex;align-items:center;color:var(--subtle);}
+.flight-location a {display:inline-flex;align-items:center;gap:11px;min-height:44px;font-size:12px;}
+.flight-location a>span {font-size:16px;color:var(--silver);}
+.flight-stops {display:flex;margin-left:auto;align-items:center;gap:clamp(10px,1.7vw,32px);}
+.flight-stops a {display:flex;align-items:center;gap:7px;min-height:44px;color:#d1cec6;}
+.stop-no {font:500 10px/1 var(--mono);letter-spacing:.02em;opacity:.7;}
+.stop-text {font-size:11px;}
+.stop-tick {height:1px;width:0;background:#f0cca0;transition:width .24s;}
+.flight-stops a[aria-current]{color:white;}
+.flight-stops a[aria-current] .stop-tick{width:17px;}
+.signal-motion {border-left:1px solid #e7e1d042;padding-left:10px;font-size:11px;}
+.signal-motion button{color:var(--silver);min-height:44px;min-width:38px;justify-content:center;}
+.signal-meter {width:15px;height:15px;display:inline-flex;gap:3px;align-items:center;justify-content:center;}
+.signal-meter i{height:9px;width:2px;background:currentColor;}
+.signal-motion button[aria-pressed=false] .signal-meter::after {content:'';border-left:8px solid currentColor;border-block:5px solid transparent;}
+.signal-motion button[aria-pressed=false] .signal-meter i{display:none;}
+.flight-progress {position:absolute;z-index:10;bottom:0;left:0;width:100%;height:1px;pointer-events:none;}
+.flight-progress i {display:block;height:100%;transform-origin:left center;background:#dfc9a2a3;}
+.signal :is(a,button):focus-visible {outline:2px solid var(--mint);outline-offset:3px;}
 @media(max-width:780px) {
-  .signal { --gutter:clamp(14px,4.5vw,24px); }
-  .signal-header { top:max(10px,env(safe-area-inset-top)); height:44px; }
-  .signal-brand { gap:6px; }
-  .signal-brand img { width:33px; }
-  .signal-tools { gap:4px; }
-  .signal-nav { padding:0 12px; gap:6px; }
-  .signal-nav .home-model-plaza-nav,.signal-nav i { display:none; }
-  .signal-core { width:clamp(165px,53vw,330px); }
-  .flight-stops { gap:0; }
-  .flight-stops a { min-width:29px; }
-  .stop-text,.flight-location>span+span,.signal-motion button>span+span { display:none; }
-  .flight-location { min-width:0; }
-  .signal-motion button { min-width:44px; justify-content:center; }
+  .signal {--gutter:clamp(20px,5.3vw,33px);}
+  .signal-header {top:max(15px,env(safe-area-inset-top));height:44px;}
+  .signal-brand {gap:8px;}.signal-brand img{width:41px;}.signal-brand span{padding-left:9px;font-size:12px;}
+  .signal-tools {gap:4px;}.signal-nav{padding:0 13px;gap:6px;}
+  .signal-nav .home-model-plaza-nav,.signal-nav i {display:none;}
+  .signal-core{width:clamp(205px,62vw,360px);top:45%;}
+  .origin-caption {max-width:85vw;bottom:max(100px,15svh);}
+  .origin-caption h2 {font-size:clamp(34px,8vw,50px);margin:12px 0 8px;}
+  .flight-hud {gap:7px;bottom:max(9px,env(safe-area-inset-bottom));}
+  .flight-stops{gap:0;}.flight-stops a{min-width:34px;justify-content:center;gap:4px;}
+  .flight-stops a[aria-current] .stop-tick{width:8px;}.stop-text{display:none;}
+  .signal-motion{padding-left:4px;}.signal-motion button{min-width:34px;}
 }
+@media(max-width:355px){.flight-location a{gap:5px;font-size:11px;}.flight-stops a{min-width:29px;}.signal-brand span{max-width:62px;}}
 @media(max-height:500px) {
-  .signal-header { top:3px; }
-  .flight-hud { bottom:0; }
-  .signal-scroll-cue { top:17%; }
+  .signal-header{top:3px;}.flight-hud{bottom:0;}.origin-caption{bottom:59px;max-width:37vw;}
+  .origin-caption h2{font-size:26px;margin:6px 0;}.edition-deck{font-size:12px;}
+  .signal-core{top:44%;width:30vw;}
 }
 @media(prefers-reduced-motion:reduce) {
   .z30-home { height:490svh; }

@@ -51,6 +51,22 @@ describe('JourneyChapters', () => {
     expect(wrapper.get('.j-scene:not([inert])').attributes('data-journey')).toBe('manifesto')
   })
 
+  it('uses four distinct atelier editions in the fallback, and gives gated visitors a real next step', async() => {
+    const wrapper = render({modelPlaza:false,progress:.417,reduced:true})
+    const gallery=wrapper.get('[data-journey="gallery"]')
+    expect(gallery.get('.edition-model').text()).toBe('GPT')
+    expect(gallery.get('a[href="#connect"]').exists()).toBe(true)
+    expect(wrapper.findAll('.art-plane img').map(img => img.attributes('src'))).toEqual([
+      '/assets/home/atelier-corona.webp', '/assets/home/atelier-strata.webp',
+      '/assets/home/atelier-interference.webp', '/assets/home/atelier-suspension.webp',
+    ])
+    await wrapper.setProps({progress:.54})
+    expect(gallery.get('.edition-model').text()).toBe('Antigravity')
+    expect(wrapper.get('.art-plane[data-format="canopy"]').attributes('style')).toContain('opacity: 1')
+    await wrapper.setProps({progress:.23})
+    expect(wrapper.get('.manifest-action').attributes('href')).toBe('/login')
+  })
+
   it('copies the selected configured URL and routes visitors through login for API keys', async() => {
     const wrapper = render({
       progress:.66, customEndpoints:[{name:'Internal',endpoint:'https://internal.test/v2'}],

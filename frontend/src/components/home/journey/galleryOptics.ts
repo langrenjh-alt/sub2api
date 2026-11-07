@@ -1,5 +1,5 @@
 import * as T from 'three'
-import { galleryWorks, galleryAngle, panelWindow, blend } from './galleryPath'
+import { galleryWorks, galleryAngle, panelWindow, blend, editionFocus, editionIndex } from './galleryPath'
 
 const VS = `
 varying vec2 vUv;
@@ -24,18 +24,16 @@ varying vec4 projected;
 uniform sampler2D lens, image, ink;
 uniform float time, medium, visibility, index, textureReady, peel;
 uniform vec3 tint;
+uniform float sheetAspect, imageAspect;
+uniform vec2 cropAnchor;
 float hash(vec2 p){return fract(sin(dot(p,vec2(27.17,91.37)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+1.),u.x),u.y);}
 float fbm(vec2 p){return .53*noise(p)+.28*noise(p*2.04+7.)+.14*noise(p*4.11-3.)+.06*noise(p*8.2);}
-float rounded(vec2 q){
-  vec2 d=abs((q-.5)*vec2(1.53,1.))-vec2(.765-.033,.5-.033);
-  return length(max(d,0.))+min(max(d.x,d.y),0.)-.033;
+float edgeDistance(vec2 p){
+  vec2 uv=min(p,1.-p)*vec2(sheetAspect,1.);
+  return min(uv.x,uv.y);
 }
 void main() {
-  float dist=rounded(vUv);
-  float aa=max(.0005,fwidth(dist));
-  float shape=1.-smoothstep(-aa,aa,dist);
-  if(shape<=.001)discard;
   vec3 n=normalize(N)*(gl_FrontFacing?1.:-1.);
   vec3 v=normalize(eye);
   float incidence=clamp(abs(dot(v,n)),0.,1.);
@@ -43,77 +41,79 @@ void main() {
   bool face=gl_FrontFacing;
   vec2 uv=face?vUv:vec2(1.-vUv.x,vUv.y);
   vec2 src=clamp(projected.xy/projected.w*.5+.5,0.,1.);
-  vec2 q=uv*vec2(1.53,1.);
-  float t=time*(.093+index*.013)+index*1.37;
-  // Liquid filaments continue to advect while the orbit is stationary.
-  vec2 warped=q*2.7+vec2(.36*sin(q.y*4.+t),.25*cos(q.x*4.4-t));
-  float body=fbm(warped+vec2(t*.22,-t*.29));
-  float lobe=fbm(warped*1.62+body*2.7+vec2(.21*t,.14*t));
-  float thread=pow(max(0.,1.-abs(lobe-.55)*6.7),3.);
-  vec2 bend=n.xy*.026+(uv-.5)*.018
-      + .010*vec2(sin(4.*q.y+3.7*body+t),cos(3.*q.x-lobe*4.-t));
-  vec3 transmitted = vec3(texture2D(lens,clamp(src+bend*1.09,.001,.999)).r,
-                          texture2D(lens,clamp(src+bend,.001,.999)).g,
-                          texture2D(lens,clamp(src+bend*.89,.001,.999)).b);
-  vec2 im=clamp((q/vec2(1.53,1.)-.5)*.98+.5+vec2((lobe-.5)*.083,(body-.5)*.074)+n.xy*.029,.002,.998);
-  vec3 specimen=texture2D(image,im).rgb;
-  // Four independent optical films. Their coordinates stay on each surface;
-  // neighbouring plates share the same world but do not share a painted wave.
-  vec2 lensP=(uv-.5)*vec2(1.53,1.);
-  float r=length(lensP), theta=atan(lensP.y,lensP.x);
-  float etching;
-  if(index<.5){
-    float arc=r-(.31+.09*sin(theta*3.+t*.86));
-    etching=exp(-abs(arc)*17.)*pow(.5+.5*cos(theta*39.+t*2.+r*33.),2.5);
-  } else if(index<1.5) {
-    float strata=6.*lensP.y+.72*sin(4.3*lensP.x-t*.95)+.38*cos(5.*lensP.x+4.*lensP.y+t);
-    etching=pow(.5+.5*cos(strata*6.8+t),7.)*exp(-1.8*r*r);
-  } else if(index<2.5) {
-    float rx=dot(lensP,vec2(.86,.51)),ry=dot(lensP,vec2(-.51,.86));
-    etching=exp(-26.*abs(length(vec2(rx*1.7,ry))-.33)) +
-            .65*exp(-27.*abs(length(vec2((lensP.x+.08*sin(t))*.97,lensP.y*1.72))-.32));
-  } else {
-    float wave=sin(theta*3.+t+body*5.)+.38*cos(theta*7.-2.*t);
-    etching=exp(-26.*abs(r-(.30+.09*wave)))*(.54+.46*cos(theta*11.+t));
-  }
-  // Uneven pigment and clear windows, not an opaque poster with a coloured overlay.
-  float artLight=max(specimen.r,max(specimen.g,specimen.b));
-  float clearWindow=smoothstep(.04,.42,abs(uv.x-.56-.17*sin(q.y*4.+t*.38)));
-  float pigment=clamp(.12+.49*clearWindow+.48*smoothstep(.08,.6,artLight)+.09*rim,.1,.88);
-  pigment*=mix(.35,1.,1.-peel);
-  vec3 chroma=mix(tint,vec3(.27,.73,.93),.24+.25*sin(index+5.*lobe));
-  vec3 backing=mix(vec3(.036,.047,.069),specimen*1.26,textureReady*.90);
-  vec3 colour=mix(transmitted,backing,pigment);
-  colour+=chroma*(.02+.17*thread+.29*etching+.08*rim)*(1.-peel*.72);
-  float line=1.-smoothstep(aa,aa+.0035,abs(dist+.006));
-  float inner=1.-smoothstep(aa,aa+.002,abs(dist+.014));
-  float reflection=pow(.5+.5*cos(11.*q.x-7.*q.y+n.x*5.+t*.35),6.);
-  colour+=mix(vec3(.45,.65,.70),tint,.48)*line*(.37+.48*reflection+.16*rim)+inner*.09;
-  vec2 fringe=n.xy*.0028;
-  vec3 label=vec3(texture2D(ink,uv+fringe).a,texture2D(ink,uv).a,texture2D(ink,uv-fringe).a);
-  // Reverse faces carry pigment but never mirrored writing.
-  float lettering=face?smoothstep(.14,.69,incidence)*(1.-peel):0.;
-  colour=mix(colour,vec3(.95,.97,.94),label*lettering*.96);
-  // Actual plate alpha reveals the live contents not present in the optical
-  // capture (including translucent quartz); refraction supplies a shifted view.
-  float alpha=(.53+.20*(1.-incidence)+.15*thread)*mix(1.,.41,peel);
-  alpha=max(alpha,max(line*.74,max(max(label.r,label.g),label.b)*lettering*.96));
-  gl_FragColor=vec4(colour,shape*alpha*visibility*medium);
+  vec2 q=uv*vec2(sheetAspect,1.);
+  float t=time*.075+index*1.73;
+  vec2 field=q*2.1+vec2(.17*sin(q.y*3.4+t),.12*cos(q.x*3.7-t));
+  float body=fbm(field+vec2(t*.19,-t*.22));
+  float grain=fbm(field*2.23+body*1.28+vec2(-.18*t,.14*t));
+  vec2 bend=n.xy*.025+(uv-.5)*.019+.007*vec2(sin(4.*q.y+2.6*body+t),cos(3.*q.x-grain*3.1-t));
+  vec3 through=vec3(texture2D(lens,clamp(src+bend*1.065,.001,.999)).r,
+                    texture2D(lens,clamp(src+bend,.001,.999)).g,
+                    texture2D(lens,clamp(src+bend*.94,.001,.999)).b);
+  // Cover, never stretch, the actual macro photograph. Fixed print registration
+  // is independent of this slow drift of the material under the glass.
+  vec2 cover=vec2(min(1.,sheetAspect/imageAspect),min(1.,imageAspect/sheetAspect));
+  float magnify=.95+.017*sin(t*.63+index);
+  vec2 crop=cover*magnify;
+  vec2 im=(uv-.5)*crop+mix(vec2(.5),cropAnchor,1.-crop)
+          +.013*vec2(grain-.5,body-.5)+n.xy*.015;
+  vec3 photo=texture2D(image,clamp(im,.001,.999)).rgb;
+  // A small unprinted edge admits the shared crystal and the neighbouring
+  // panes; its placement varies with the aspect and registration of each work.
+  float unprinted=index<.5?smoothstep(.82,.98,uv.x+.05*(uv.y-.5)):
+    index<1.5?1.-smoothstep(.012,.13,uv.x+.018*uv.y):
+    index<2.5?1.-smoothstep(.015,.11,uv.y-.025*uv.x):smoothstep(.87,.985,uv.x-.04*uv.y);
+  float printArea=(.92-unprinted*.86)*(1.-peel);
+  vec3 graphite=vec3(.11,.112,.115)+tint*.04;
+  vec3 paper=mix(graphite,photo,textureReady);
+  float silver=pow(max(0.,1.-abs(3.8*body-1.9+.63*n.x)),5.);
+  vec3 colour=mix(through,paper,printArea);
+  // Only a grazing reflection and a hairline cut edge, never a glowing frame.
+  float soft=exp(-abs(.82*q.y-.29*q.x-.47+.14*sin(t*.58)-n.y*.27)*21.);
+  colour+=mix(vec3(.66,.68,.71),tint,.28)*(.016*silver+.063*soft+.055*rim)*(1.-peel*.68);
+  float d=edgeDistance(uv);
+  colour+=mix(vec3(.24,.25,.25),tint,.24)*(1.-smoothstep(0.,fwidth(d)*1.3,d))*(.24+.45*rim);
+  // Lower registration carries the title. A localized vignette keeps etched
+  // white ink legible without turning the entire photograph into a dark UI box.
+  float register=1.-smoothstep(.02,.45,uv.y);
+  colour*=1.-.26*register*printArea;
+  vec4 inkPixel=texture2D(ink,uv);
+  float inkStrength=face?smoothstep(.08,.65,incidence)*(1.-peel)*inkPixel.a:0.;
+  vec3 letter=inkPixel.r*vec3(.96,.955,.935)+inkPixel.g*mix(vec3(.83,.83,.80),tint,.31);
+  colour=mix(colour,letter,inkStrength);
+  float alpha=mix(.47+.23*rim,.96,printArea)*mix(1.,.45,peel);
+  alpha=max(alpha,inkStrength*.98);
+  gl_FragColor=vec4(colour,alpha*visibility*medium);
 }`
 
+/** A separate ink mask keeps typography registered on the surface while the
+ * underlying macro film moves. Red encodes white type, green secondary ink. */
 function typePlate(i:number) {
-  const c=document.createElement('canvas');c.width=896;c.height=584
+  const item=galleryWorks[i], c=document.createElement('canvas')
+  c.width=1152;c.height=Math.round(c.width/item.aspect)
   const ctx=c.getContext('2d')
   if(!ctx)throw new Error('Type plate unavailable')
-  const item=galleryWorks[i]
-  ctx.textAlign='center';ctx.fillStyle='#fff'
-  ctx.font='500 21px system-ui,sans-serif'
-  ctx.fillText(item.code,c.width/2,c.height*.41)
-  ctx.font='400 95px "Geist Variable",system-ui,sans-serif'
-  ctx.fillText(item.name,c.width/2,c.height*.59)
-  ctx.font='500 15px ui-monospace,monospace'
-  ctx.textAlign='left';ctx.fillText(`Z30   /   A—${item.number}`,26,39)
-  ctx.textAlign='right';ctx.fillText('OPTICAL ARCHIVE',c.width-26,c.height-24)
+  const w=c.width,h=c.height,g=Math.round(w*.052)
+  const small=(text:string,x:number,y:number,size=23)=>{
+    ctx.font=`500 ${size}px "Geist Mono Variable",ui-monospace,monospace`
+    ctx.fillStyle='#00ff00';ctx.fillText(text,x,y)
+  }
+  ctx.textAlign='left'
+  small(`Z30  /  ${item.number}`,g,Math.max(g,h*.10))
+  ctx.fillStyle='#00ff00';ctx.fillRect(g,h*.15,Math.round(w*.065),1.25)
+  const alignRight=item.format==='panorama'
+  ctx.textAlign=alignRight?'right':'left'
+  const x=alignRight?w-g:g
+  const base=item.format==='folio'?.84:.86
+  small(item.code,x,h*(base-.19),item.format==='folio'?26:21)
+  const size=item.format==='folio'?187:item.format==='canopy'?131:item.format==='panorama'?166:170
+  ctx.font=item.format==='panorama'?`italic ${size}px Georgia,serif`:`550 ${size}px "Geist Variable","Arial",sans-serif`
+  ctx.fillStyle='#ff0000';ctx.fillText(item.name,x,h*base,w-2*g)
+  // The tall folio carries a second, rotated margin signature like a print spine.
+  if(item.format==='folio') {
+    ctx.save();ctx.translate(w-g,h*.46);ctx.rotate(-Math.PI/2);ctx.textAlign='center'
+    small('Z30   /   MODEL LIBRARY',0,0,18);ctx.restore()
+  }
   const tex=new T.CanvasTexture(c);tex.minFilter=T.LinearFilter;tex.generateMipmaps=false
   return tex
 }
@@ -132,8 +132,9 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
     const uniforms={
       lens:{value:blank as T.Texture},image:{value:blank as T.Texture},ink:{value:type}, time:{value:0}, medium:{value:0},
       visibility:{value:0},index:{value:i},textureReady:{value:0},peel:{value:0},tint:{value:new T.Vector3(...work.tint)},
+      sheetAspect:{value:Number(work.aspect)},imageAspect:{value:1.53},cropAnchor:{value:new T.Vector2(...work.crop)},
     }
-    const material=new T.ShaderMaterial({vertexShader:VS,fragmentShader:FS,uniforms,
+    const material=new T.ShaderMaterial({name:'Z30AtelierFilm',vertexShader:VS,fragmentShader:FS,uniforms,
       side:T.DoubleSide,transparent:true,depthTest:true,depthWrite:false,forceSinglePass:true})
     const mesh=new T.Mesh(geom,material);mesh.name=`Archive ${work.name}`;mesh.layers.set(1);group.add(mesh)
     return {mesh,uniforms,requested:false}
@@ -173,9 +174,11 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
   }
   function requestArt(i:number){
     const p=panels[i];if(p.requested)return;p.requested=true
-    const tex=new T.TextureLoader().load(`/assets/home/z30-archive-${galleryWorks[i].image}.webp`,img=>{
+    const tex=new T.TextureLoader().load(`/assets/home/atelier-${galleryWorks[i].image}.webp`,img=>{
       if(done)return
       p.uniforms.image.value=img;p.uniforms.textureReady.value=1
+      const source=img.image as HTMLImageElement
+      p.uniforms.imageAspect.value=source.naturalWidth/Math.max(1,source.naturalHeight)
     })
     textures.push(tex)
   }
@@ -193,7 +196,7 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
     for(let i=0;i<panels.length;i++){
       const {mesh,uniforms:u}=panels[i]
       const stateP=reduced && p>=.32 && p<.55
-        ? [.347,.417,.485][Math.min(2,Math.max(0,Math.floor((raw-.32)/.077)))] : p
+        ? editionFocus[editionIndex(raw)] : p
       const transfer=i===3?blend(.525,.585,p):0
       const leaving=i===3?blend(.63,.69,p):0
       const echo=i===3?blend(.72,.78,p)*(1-blend(.811,.858,p)):0
@@ -216,7 +219,8 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
       euler.set(-.045+.026*Math.sin(i)*Math.cos(angle),theta,.022*Math.sin(i+1),'YXZ')
       rotation.setFromEuler(euler)
       const sight=T.MathUtils.clamp(camera.position.distanceTo(anchor),3.3,17)
-      const width=(5.68+.27*Math.cos(i))*(1-.31*narrow)
+      const edition=galleryWorks[i]
+      const width=edition.width*(1-.29*narrow)
       if(i===0 && p<.37 && !reduced) {
         // Catch the retiring wordmark in the same window that later joins the
         // cylinder. At .30 the lower part of the glass lettering is visibly
@@ -247,15 +251,19 @@ export function createGalleryOptics(scene:T.Scene, canvas?:HTMLCanvasElement) {
       }
       const sheared=i===3?blend(.60,.68,p):0
       mesh.position.copy(anchor);mesh.quaternion.copy(rotation)
-      const mobileMax=Math.max(2.8,sight*Math.tan(T.MathUtils.degToRad(camera.fov*.5))*camera.aspect*1.53)
+      const mobileMax=Math.max(2.8,sight*Math.tan(T.MathUtils.degToRad(camera.fov*.5))*camera.aspect*1.78)
       const w=narrow>.5?Math.min(width,mobileMax):width
-      mesh.scale.set(w*(1+sheared*.92),w*.652*(1-sheared*.78),w)
+      mesh.scale.set(w*(1+sheared*.92),w/edition.aspect*(1-sheared*.78),w)
+      u.sheetAspect.value=mesh.scale.x/mesh.scale.y
       u.time.value=time;u.peel.value=sheared;u.medium.value=finalWindow;u.visibility.value=visible
       u.lens.value=refraction
     }
     const firstMask=p>=.275 && p<.356 && !reduced ? opticalCut(camera,0) : ''
-    setCut(0,firstMask);setCut(1,firstMask)
-    setCut(2,p>=.533 && p<.648 && !reduced ? opticalCut(camera,3) : '')
+    setCut(0,firstMask)
+    // The plate still physically occludes the retiring glass. Editorial text
+    // clears before the sheet crosses it, avoiding a visible half-headline.
+    setCut(1,'')
+    setCut(2,p>=.533 && p<.587 && !reduced ? opticalCut(camera,3) : '')
   }
   return {
     update,

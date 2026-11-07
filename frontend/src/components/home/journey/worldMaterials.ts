@@ -5,7 +5,8 @@ export type TimeUniform=ReturnType<typeof clock>
 export const QUARTZ_LAYER=1, WATER_LAYER=2
 export function opticalStudio(){
   return {
-    uTime:clock(),uWarmth:clock(),uProgress:clock(),
+    uTime:clock(),uWarmth:clock(),uProgress:clock(),uPlateReady:clock(),
+    uAtelierPlate:{value:null as T.Texture|null},
     uKey:{value:new T.Vector3(-.51,.7,.47)},
     uFrame:{value:new T.Vector2(1,1)},uTransmission:{value:null as T.Texture|null},
     uReflection:{value:null as T.Texture|null},uReflectionVP:{value:new T.Matrix4()},
@@ -16,8 +17,8 @@ export function lightStudio(s:OpticalStudio,t:number,p:number){
   s.uTime.value=t;s.uProgress.value=p
   // Light follows its own clock; hue is deliberately NOT mapped to the pointer.
   s.uWarmth.value=T.MathUtils.smoothstep(.5-.5*Math.cos(t*.398),.14,.90)
-  s.uKey.value.set(-.42+.44*Math.sin(t*.16+p*3),.66+.14*Math.cos(t*.21),
-    .48+.36*Math.cos(t*.15+p*1.8)).normalize()
+  s.uKey.value.set(-.73+.21*Math.sin(t*.14+p*2.4),.34+.13*Math.cos(t*.17),
+    .40+.21*Math.cos(t*.14+p*1.7)).normalize()
 }
 export function linkStudio(scene:T.Object3D,s:OpticalStudio){
   scene.traverse(o=>{
@@ -33,7 +34,16 @@ const ink=(c:number)=>new T.Color(c).convertLinearToSRGB()
 // An angular, moving HDR studio instead of a tint painted on the object.
 // The broad strip, narrow strip and distant gel are shared by glass, water and steel.
 const studio=/* glsl */`
-  uniform float uTime,uWarmth,uProgress; uniform vec3 uKey;
+  uniform float uTime,uWarmth,uProgress,uPlateReady;uniform vec3 uKey;
+  uniform sampler2D uAtelierPlate;
+  // Spatial lookup of the atelier's own light study. The print is NOT mapped
+  // to face UVs: a moving view sees different regions through R and D.
+  vec3 lightPrint(vec3 ray,float blur){
+    float angle=atan(ray.z,ray.x)+.085*sin(uTime*.10);
+    vec2 uv=vec2(.5-.47*cos(angle),.50+.43*ray.y);
+    vec3 c=texture2D(uAtelierPlate,uv,blur*3.).rgb;
+    return (c*c*.74+max(c-.45,vec3(0.))*1.12)*uPlateReady;
+  }
   vec3 gel(){return mix(vec3(.52,.83,1.),vec3(1.,.46,.16),uWarmth);}
   vec3 env(vec3 d,float rough){
     float soft=pow(max(0.,dot(d,uKey)),mix(19.,3.,rough));
@@ -46,9 +56,26 @@ const studio=/* glsl */`
     float ceiling=smoothstep(-.52,.95,d.y);
     float broad=pow(max(0.,dot(d,normalize(vec3(-.64,.42,.53)))),2.);
     return vec3(.014,.020,.035)+vec3(.105,.132,.16)*ceiling+gel()*broad*.16
+      +lightPrint(d,rough)*mix(.85,.17,rough)
       +gel()*(soft*1.04+1.68*strip)
       +mix(vec3(.94,.89,.82),vec3(.69,.79,1.),uWarmth)*line*1.72
       +mix(vec3(.12,.09,.23),vec3(.17,.065,.11),uWarmth)*lower;
+  }
+  // Finite studio flags: grazing reflection varies over a large polished
+  // face, rather than painting the same constant sky on every facet.
+  vec3 flags(vec3 w,vec3 ray,float blur){
+    float room=w.z> -32.?w.z-2.:(w.z> -52.?-43.:(w.z> -79.?-62.8:-92.6));
+    float t=(room+8.4-w.z)/max(ray.z,.0001);
+    if(t<0.||ray.z<.001)return vec3(0.);
+    vec2 h=w.xy+ray.xy*t;
+    float x=h.x+.34*h.y;
+    float top=1.-smoothstep(4.5,7.5,abs(h.y-1.4));
+    float silk=(1.-smoothstep(.36+blur,.97+blur,abs(x-.58)))*top;
+    float foil=(1.-smoothstep(.058+blur*.25,.22+blur,abs(x-2.09)))*top;
+    float sliver=exp(-abs(h.y+.18*h.x-2.65)*mix(36.,7.,blur))*(1.-smoothstep(1.6,4.2,abs(h.x+.55)));
+    float bounce=(1.-smoothstep(1.0,4.2,abs(x-5.3)))*(1.-smoothstep(2.7,7.4,abs(h.y+.5)));
+    return vec3(.97,.94,.88)*(silk*.85+foil*1.44)+vec3(.91,.96,1.)*sliver*1.59
+      +mix(vec3(.33,.45,.51),vec3(.54,.37,.26),uWarmth)*bounce*.44;
   }
   vec3 fog(vec3 col,float d){
     return mix(col,mix(vec3(.032,.048,.061),vec3(.062,.042,.040),uWarmth),.90*(1.-exp(-.00056*d*d)));
@@ -82,7 +109,9 @@ export function alloy(base:number,edge:number,polish=1){
       float rim=pow(1.-abs(dot(V,N)),3.);
       float lambert=max(.0,dot(N,uKey));
       vec3 stone=tint*(.21+.83*lambert)+accent*.075*rim;
-      vec3 metal=tint*.085+env(R,rough)*mix(vec3(.73,.76,.81),accent,.43)*(1.01+rim*.68);
+      vec3 studioLight=env(R,rough)+flags(vW,R,rough*.8);
+      studioLight=mix(vec3(dot(studioLight,vec3(.24,.66,.10))),studioLight,.38+.30*polish);
+      vec3 metal=tint*.085+studioLight*mix(vec3(.73,.76,.81),accent,.43)*(1.01+rim*.68);
       float station=smoothstep(.71,.86,uProgress);
       metal=metal*(1.+.82*station)+gel()*(rim*.18+.025)*station;
       vec3 colour=mix(stone,metal,smoothstep(.37,.98,polish));
@@ -109,12 +138,15 @@ export function quartz(absorption:number,thickness:number,film=.72,flow=0){
         texture2D(uTransmission,clamp(st+refr*.949,.001,.999)).b);
       float travel=thickness*(.22+.78*(1.-cosine));
       vec3 transmitted=behind*exp(-(vec3(1.12)-tint*.66)*travel*1.08);
-      vec3 silver=env(R,.055);
+      vec3 silver=env(R,.055)+flags(vW,R,0.065);
       float coating=smoothstep(.29,.98,1.-cosine);
       vec3 spectrum=.55+.45*cos(vec3(0.,2.1,4.25)+(dot(R,uKey)*4.8+.15*uTime)*3.);
       // A relatively clear face, a dark sidewall and occasional colored flares.
-      vec3 volume=tint*(.024+.053*pow(max(0.,dot(-D,uKey)),3.));
-      vec3 col=mix(transmitted+volume,silver,clamp(.075+fresnel*.925,0.,1.));
+      float internalCut=pow(.5+.5*cos(dot(vLocal,vec3(1.82,.68,-.42))+dot(D,vec3(2.1,1.16,.58))),5.);
+      vec3 volume=tint*(.027+.052*pow(max(0.,dot(-D,uKey)),3.)+.038*internalCut);
+      vec3 bounce=lightPrint(normalize(D+.17*vec3(vLocal.x,vLocal.y,-.25*vLocal.z)),.04);
+      vec3 inner=bounce*(.12+.32*internalCut)*tint*min(1.,thickness);
+      vec3 col=mix(transmitted+volume+inner,silver,clamp(.075+fresnel*.925,0.,1.));
       col+=silver*(.14+.38*coating)+spectrum*(film*coating*min(1.,dot(silver,vec3(.33)))*1.7);
       float packet=pow(.5+.5*cos(coords.x*11.-uTime*.95),5.);
       col+=flow*gel()*(.035+packet*.27)*(.39+.61*coating);
@@ -233,53 +265,69 @@ export function liquidFloor(){
       vec3 R=reflect(-V,N),colour=vec3(.015,.023,.028)+reflected*(.42+.88*F)+env(R,.29)*(.095+.34*F);
       // Local caustics under the suspended source: distorted light sheets fold
       // into short bright ridges, strongest on the basin's near waterline.
-      vec2 basin=q-vec2(2.15,-93.0);
+      vec2 basin=q-vec2(2.50,-92.6);
       float rad=length(basin*vec2(1.,.76));
-      float pool=exp(-.052*dot(basin-vec2(.35,3.9),basin-vec2(.35,3.9))) + .49*exp(-.54*pow(rad-3.9,2.));
+      float pool=exp(-.12*dot(basin-vec2(.45,3.6),basin-vec2(.45,3.6))) + .28*exp(-.72*pow(rad-3.65,2.));
       float a=2.49*basin.x+.76*basin.y+sin(basin.y*.86-t*.57);
       float b=3.78*basin.y-.51*basin.x+.83*sin(basin.x*.94+t*.47);
       float fold=cos(a+.72*sin(b))*.62+sin(b+.37*cos(a))*.46;
       float seam=exp(-9.*abs(fold+.12));
-      vec3 frost=mix(vec3(.16,.66,.49),vec3(.51,.36,.78),.5+.5*cos(basin.y*1.2+basin.x*.32-t*.42));
+      vec3 frost=mix(vec3(.24,.53,.44),vec3(.49,.39,.59),.5+.5*cos(basin.y*1.2+basin.x*.32-t*.42));
       vec3 glow=mix(frost,mix(vec3(.59,.24,.34),vec3(.77,.56,.39),seam),uWarmth*.85);
-      colour+=pool*glow*(.066+.51*seam)*(.46+.61*F);
+      colour+=pool*glow*(.043+.39*seam)*(.46+.61*F);
+      // A broad penumbra under the plinth and two tight wet contact shadows
+      // under its actual feet keep the comparator seated in this pool.
+      vec2 sole=vec2(max(0.,abs(basin.x)-1.42),basin.y-.18);
+      float contact=.55*exp(-dot(sole*vec2(1.6,1.5),sole*vec2(1.6,1.5)));
+      contact+=.38*exp(-8.*dot(basin-vec2(-1.81,.50),basin-vec2(-1.81,.50)));
+      contact+=.38*exp(-8.*dot(basin-vec2(1.79,.50),basin-vec2(1.79,.50)));
+      colour*=1.-clamp(contact,0.,.80);
       float edge=1.-smoothstep(.70,.995,max(abs(coords.x*2.-1.),abs(coords.y*2.-1.)));
       gl_FragColor=vec4(fog(colour,d),edge*(.58+.38*F));
     }`,{},{transparent:true,depthWrite:false})
   return m
 }
-/** Suspended optical organism: forward scatter along a continuous mineral skin,
- * in addition to thousands of sharply focused grains on its surface. */
-export function jewelSkin(){
+/** Satin bench extending under the optical stops. Two broad pools from the
+ * real side key separate graphite surfaces without a grid or star field. */
+export function benchMaterial(){
   return shader(surface,varyingSurface+studio+`
     void main(){
-      vec3 V=normalize(cameraPosition-vW),N=normalize(nW)*(gl_FrontFacing?1.:-1.);
-      float rim=pow(1.-abs(dot(N,V)),2.5);
-      float a=atan(vLocal.y,vLocal.x),arc=.52+.48*cos(a*1.8-uTime*.48);
-      float incision=pow(.5+.5*cos(dot(vLocal,vec3(7.,13.,17.))+.8*sin(a*5.)),9.);
-      vec3 cold=mix(vec3(.22,.82,.71),vec3(.84,.69,1.),arc);
-      vec3 warm=mix(vec3(.98,.39,.30),vec3(1.,.83,.61),arc);
-      vec3 glow=mix(cold,warm,uWarmth)*(.19+.47*arc+.68*rim+.26*incision);
-      glow+=env(reflect(-V,N),.14)*(.19+.5*rim);
-      gl_FragColor=vec4(glow,.26+.32*arc+.30*rim);
-    }`,{},{transparent:true,depthWrite:false,side:T.FrontSide})
+      vec2 q=vW.xz;
+      float ledge=exp(-.48*abs(q.x-(4.6+.46*sin(q.y*.19))));
+      float key=exp(-.028*dot(vec2((q.x-2.8)*1.5,(q.y+42.)*.56),vec2((q.x-2.8)*1.5,(q.y+42.)*.56)));
+      float second=exp(-.033*dot(vec2((q.x-3.4)*1.9,(q.y+63.)*.62),vec2((q.x-3.4)*1.9,(q.y+63.)*.62)));
+      float scratch=.5+.5*cos(q.y*8.+q.x*1.7);
+      float occlusion=exp(-.82*dot((q-vec2(3.16,-62.8))*vec2(.80,1.24),(q-vec2(3.16,-62.8))*vec2(.80,1.24)));
+      float ribbon=exp(-3.5*abs(q.x-4.85+.21*(q.y+63.)))*exp(-.021*(q.y+63.)*(q.y+63.));
+      vec3 col=vec3(.036,.039,.041)+gel()*(.032*ledge+.050*(key+second)*(.85+.15*scratch)+.065*ribbon);
+      col*=1.-occlusion*.57;
+      float edge=1.-smoothstep(.74,.99,max(abs(coords.x*2.-1.),abs(coords.y*2.-1.)));
+      if(edge<.002)discard;gl_FragColor=vec4(fog(col,d),1.);
+    }`,{})
 }
-export function nucleusMaterial(time:TimeUniform,pixelRatio:TimeUniform,viewport:TimeUniform){
-  return shader(`
-    attribute vec3 hue;attribute float size,phase;
-    varying vec3 light;varying float power;
-    uniform float time,uWarmth,height,pixelRatio;
-    void main(){vec3 p=position+.016*sin(phase+position.yzx*4.+time*.65);
-      vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
-      float a=atan(p.y,p.x);
-      float sector=.5+.5*cos(a*1.7-time*.49+p.z*.8);
-      float cut=.5+.5*cos(phase*3.7+time*1.3);
-      vec3 cold=mix(vec3(.25,1.,.65),vec3(.76,.63,1.),sector);
-      vec3 hot=mix(vec3(1.,.31,.30),vec3(1.,.86,.63),sector);
-      light=mix(cold,hot,uWarmth)*mix(.9,1.72,cut)*(.62+.6*sector)+hue*.21;
-      power=.58+.42*cut;gl_PointSize=clamp((size+.018)*height*pixelRatio/max(1.,-mv.z),1.5,17.*pixelRatio);
-    }`,`varying vec3 light;varying float power;
-      void main(){vec2 xy=gl_PointCoord*2.-1.;float r=dot(xy,xy);if(r>=1.)discard;
-      float f=exp(-4.*r);gl_FragColor=vec4(light*(.65+f*.58)+f*f*.21,power*f);}`,
-    {time,pixelRatio,height:viewport},{transparent:true,depthWrite:false,blending:T.AdditiveBlending})
+export function ruledFace(){
+  return shader(surface,varyingSurface+studio+`
+    void main(){vec3 V=normalize(cameraPosition-vW),N=normalize(nW);
+      float angle=atan(vLocal.y,vLocal.x);
+      float ruling=.5+.5*cos(angle*96.);
+      vec3 ray=env(reflect(-V,N),.15);
+      vec3 colour=vec3(.035,.037,.043)+ray*(.37+.43*ruling)+gel()*ruling*.10;
+      gl_FragColor=vec4(fog(tone(colour),d),1.);}
+  `,{},{side:T.DoubleSide})
+}
+/** A backlit split slit in a real ceramic target, visible through the bore.
+ * The complementary spectra separate genuinely as the observer crosses the lens. */
+export function comparatorTarget(){
+  return shader(surface,varyingSurface+studio+`
+    void main(){
+      vec2 uv=vLocal.xy;
+      float pupil=length(uv),limit=1.-smoothstep(.47,.62,pupil);
+      float v=uv.x+.35*uv.y;
+      float left=exp(-180.*abs(v+.19)),right=exp(-95.*abs(v-.15));
+      float cut=exp(-6.0*abs(v-.15))*(1.-smoothstep(.22,.57,abs(uv.y+.08)));
+      vec3 field=mix(vec3(.33,.67,.65),vec3(.90,.54,.39),uWarmth);
+      vec3 col=vec3(.028,.036,.039)+field*.14*limit+cut*limit*field*.37;
+      col+=limit*(vec3(.93,.93,.79)*left+field*right)*1.35;
+      gl_FragColor=vec4(fog(col,d),1.);
+    }`)
 }

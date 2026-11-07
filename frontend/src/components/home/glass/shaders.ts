@@ -38,7 +38,11 @@ float sq(float a) { return a*a; }
 vec3 studio(vec3 r) {
   r = normalize(r);
   float az = atan(r.x, r.z), el = asin(clamp(r.y, -.9999, .9999));
-  vec3 sky = mix(vec3(.007,.012,.024), vec3(.13,.22,.32), smoothstep(-.7,1.,r.y));
+  vec3 sky = mix(vec3(.007,.009,.012), vec3(.18,.20,.225), smoothstep(-.7,1.,r.y));
+  // Reflections belong to this set: the opposing crystal blades contribute
+  // their actual bright facets to the sidewalls instead of a generic sky tint.
+  vec2 softboxUV=clamp(vec2(.51+sin(az)*.47,.51+.45*sin(el)),.006,.994);
+  vec3 setReflection=texture2D(worldPlate,softboxUV).rgb;
   float t=elapsed*.59;
   // Narrow moving light sources rather than a flat palette on the front face.
   float lampAz=-.48+.47*sin(t*.81), lampEl=.30+.12*cos(t*1.13);
@@ -49,10 +53,10 @@ vec3 studio(vec3 r) {
   float strip=exp(-sq((az-1.14-.11*sin(t))/.066)-sq((el+.04)/.70));
   float amber=exp(-sq((az+1.61)/.19)-sq((el+.28)/.31));
   float mixLight=.5+.5*sin(t*.84-.72);
-  vec3 ice=mix(vec3(.26,3.4,5.8),vec3(2.0,5.2,2.75),smoothstep(-.4,.35,az-lampAz));
-  vec3 hot=mix(vec3(5.7,1.55,.27),vec3(3.35,.95,2.9),smoothstep(-.50,.5,az));
+  vec3 ice=mix(vec3(1.9,3.3,4.6),vec3(3.7,4.1,3.9),smoothstep(-.4,.35,az-lampAz));
+  vec3 hot=mix(vec3(5.4,2.15,.61),vec3(4.3,2.9,2.38),smoothstep(-.50,.5,az));
   vec3 lamp=mix(ice,hot,smoothstep(.32,.89,mixLight+orbit*.23));
-  return sky+pearl*vec3(5.0,5.25,5.4)+overhead*vec3(.6,1.25,1.40)
+  return sky+setReflection*1.8+pearl*vec3(6.7,6.8,6.9)+overhead*vec3(.82,1.18,1.38)
     +key*lamp+strip*mix(vec3(2.3,3.8,4.7),vec3(3.8,2.7,3.4),mixLight)
     +amber*vec3(1.9,1.0,.46);
 
@@ -92,7 +96,7 @@ vec3 opticalRay(float ior, vec3 incident, vec3 n, vec4 backHere) {
   transmission += .20*studio(outgoing) * smoothstep(.08,.85,length(bend));
   vec3 internal = studio(reflectedInside);
   // Beer-Lambert: longer rays acquire more teal at the edges.
-  return mix(transmission, internal, exitF) * exp(-vec3(.010,.0035,.002)*chord);
+  return mix(transmission, internal, exitF) * exp(-vec3(.0065,.0038,.003)*chord);
 }
 void main() {
   vec3 n = normalize(normalEye);
@@ -114,7 +118,7 @@ void main() {
   // or the broad walls). Its hue varies with the actual orientation of each facet.
   float grazing=exp(-sq((dot(n,-incident)-.78)/.105));
   float falloff=.24+.76*smoothstep(-.7,.8,dot(n,normalize(vec3(-.52,.73,.16))));
-  vec3 edgeLight=mix(vec3(.05,.28,.52),vec3(.39,.85,.78),smoothstep(-.75,.8,n.y));
+  vec3 edgeLight=mix(vec3(.24,.39,.56),vec3(.77,.85,.87),smoothstep(-.75,.8,n.y));
   edgeLight=mix(edgeLight,mix(vec3(.62,.14,.075),vec3(.80,.54,.24),smoothstep(-.5,.7,n.y)),orbit*.81);
   float lampPhase = .5+.5*sin(elapsed*.48-.63);
   edgeLight=mix(edgeLight,vec3(.82,.32,.13),smoothstep(.66,.99,lampPhase)*.69);
@@ -125,7 +129,7 @@ void main() {
   float caustic=exp(-sq((path-59.*sin(elapsed*.44+orbit*2.1))/12.0));
   float ribbon=exp(-sq((path-59.*sin(elapsed*.44+orbit*2.1)-3.)/3.3));
   float depthSignal=smoothstep(.18,.91,abs(dot(n,-incident)));
-  vec3 refractedLamp=mix(vec3(.10,.83,.91),vec3(1.13,.46,.16),lampPhase);
+  vec3 refractedLamp=mix(vec3(.35,.73,.96),vec3(1.20,.66,.33),lampPhase);
   colour+=(caustic*.32+ribbon*.24)*refractedLamp*depthSignal;
 
   // Preserve direct visibility of live particles beneath the broad front faces;

@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import Icon from '@/components/icons/Icon.vue'
 import { Button } from '@/components/ui/button'
-import { blend, galleryAngle, galleryWorks, panelWindow } from './journey/galleryPath'
+import { blend, galleryAngle, galleryWorks, panelWindow, editionIndex } from './journey/galleryPath'
 import { useClipboard } from '@/composables/useClipboard'
 import { formatMultiplier } from '@/utils/formatters'
 import type { HomepageStatusResponse } from '@/api/homepageStatus'
@@ -32,7 +32,7 @@ const ease = (n: number) => { const c = clamp(n); return c * c * (3 - 2 * c) }
 const chapters = [[.15,.32], [.32,.55], [.55,.78], [.78,1]] as const
 const chapter = computed(() => props.progress < .15 ? -1 : props.progress < .32 ? 0 : props.progress < .55 ? 1 : props.progress < .78 ? 2 : 3)
 const phase = (i: number) => (props.progress - chapters[i][0]) / (chapters[i][1] - chapters[i][0])
-const editorialWindows = [[.147,.182,.286,.348], [.315,.352,.50,.544], [.551,.600,.748,.789], [.774,.828,1.03,1.08]] as const
+const editorialWindows = [[.147,.182,.235,.281], [.315,.352,.50,.544], [.590,.616,.729,.773], [.779,.826,1.03,1.08]] as const
 function layer(i: number) {
   if (props.reduced) return { visibility: chapter.value === i ? 'visible' as const : 'hidden' as const, opacity: chapter.value === i ? 1 : 0 }
   const [start,,end,stop]=editorialWindows[i]
@@ -50,7 +50,9 @@ function lift(i: number) {
   const cut=enter*103
   return {
     transform: `translate3d(${x}vw,${y}vh,0)`,
-    clipPath: `polygon(0 0, 100% 0, 100% ${102-cut}%, 0 ${102-cut*.83}%)`,
+    // The CTA and endpoint belong to one readable block. Introduce it
+    // after the outgoing sheet clears instead of cropping glyphs mid-line.
+    clipPath: i === 2 ? 'none' : `polygon(0 0, 100% 0, 100% ${102-cut}%, 0 ${102-cut*.83}%)`,
   }
 }
 function lineStyle(index: number) {
@@ -67,7 +69,7 @@ const fallbackPresence = computed(() => {
 function specimenStyle(index: number) {
   const p=props.progress
   if (props.reduced) {
-    const current=Math.min(3,Math.max(0,Math.floor((p-.32)/.063)))
+    const current=editionIndex(p)
     return { opacity:index===current?1:0, zIndex:20-index, '--plane-x':'0vw', '--image-coverage':'.48' }
   }
   const a=galleryAngle(p,index)-.18, near=Math.cos(a), side=Math.sin(a)
@@ -86,6 +88,7 @@ function specimenStyle(index: number) {
     '--image-coverage': String(.29+.23*(1-near)/2),
   }
 }
+const edition = computed(() => galleryWorks[editionIndex(props.progress)])
 const endpointIndex = ref(0)
 const endpoints = computed(() => [
   { name: 'Base URL', endpoint: props.baseUrl },
@@ -138,11 +141,11 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 <template>
   <div class="journey-chapters" :class="{ 'is-reduced': reduced }">
       <div class="archive-depth" aria-hidden="true" :style="{ visibility: fallbackPresence ? 'visible' : 'hidden', opacity: fallbackPresence }">
-        <figure v-for="(specimen,index) in galleryWorks" :key="specimen.name" class="art-plane"
-          :style="specimenStyle(index)">
-          <img :src="`/assets/home/z30-archive-${specimen.image}.webp`" width="688" height="484" alt="" />
+        <figure v-for="(specimen,index) in galleryWorks" :key="specimen.name" class="art-plane" :data-format="specimen.format"
+          :style="[specimenStyle(index), { '--sheet-aspect':String(specimen.aspect), '--crop-x':`${specimen.crop[0]*100}%`, '--crop-y':`${(1-specimen.crop[1])*100}%` }]">
+          <img :src="fallbackPresence > 0 ? `/assets/home/atelier-${specimen.image}.webp` : undefined" decoding="async" width="688" height="484" alt="" />
           <figcaption>
-            <span class="art-index">A—{{ specimen.number }}</span>
+            <span class="art-index">Z30 &nbsp;/&nbsp; {{ specimen.number }}</span>
             <strong>{{ specimen.name }}</strong>
             <small>{{ specimen.code }}</small>
           </figcaption>
@@ -151,25 +154,38 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
     <section class="j-scene manifest" data-journey="manifesto" :style="layer(0)"
       :inert="chapter !== 0 ? true : undefined" :aria-hidden="chapter !== 0" aria-labelledby="j-manifest">
       <div class="manifest-copy" :style="lift(0)">
-        <p class="folio"><i></i>01 / TRANSMISSION</p>
+        <p class="folio"><span>01</span> GATEWAY</p>
         <h2 id="j-manifest">
           <span><b :style="lineStyle(0)">{{ t('home.journey.manifestoA') }}</b></span>
           <span><b :style="lineStyle(1)">{{ t('home.journey.manifestoB') }}</b></span>
         </h2>
         <p class="j-caption">{{ t('home.journey.manifestoText') }}</p>
+        <RouterLink class="manifest-action" :to="workspacePath">
+          {{ authenticated ? t('home.journey.enter') : t('home.journey.signIn') }}
+          <Icon name="arrowRight" size="sm" aria-hidden="true" />
+        </RouterLink>
       </div>
     </section>
 
     <section class="j-scene archive" data-journey="gallery" :style="layer(1)"
       :inert="chapter !== 1 ? true : undefined" :aria-hidden="chapter !== 1" aria-labelledby="j-archive">
       <div class="archive-copy" :style="lift(1)">
-        <p class="folio"><i></i>02 / MODEL ATLAS</p>
+        <p class="folio"><span>02</span> MODEL LIBRARY</p>
         <h2 id="j-archive">{{ t('home.journey.galleryTitle') }}</h2>
-        <p class="j-caption">{{ t('home.journey.galleryNote') }}</p>
+        <div class="edition-caption">
+          <span class="edition-folio">Nº {{ edition.number }} <i>/</i> {{ String(galleryWorks.length).padStart(2,'0') }}</span>
+          <span class="edition-model">{{ edition.name }}</span>
+          <small>{{ edition.code }}</small>
+        </div>
         <Button v-if="modelPlaza" as-child variant="outline" class="j-link j-outline">
           <RouterLink to="/model-plaza" class="home-model-plaza-cta">
             {{ t('home.journey.browse') }} <Icon name="arrowRight" size="sm" aria-hidden="true" />
           </RouterLink>
+        </Button>
+        <Button v-else as-child variant="outline" class="j-link j-outline">
+          <a href="#connect">{{ t('home.landing.sections.accessSteps') }}
+            <Icon name="arrowRight" size="sm" aria-hidden="true" />
+          </a>
         </Button>
       </div>
     </section>
@@ -177,7 +193,7 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
     <section class="j-scene connection" data-journey="access" :style="layer(2)"
       :inert="chapter !== 2 ? true : undefined" :aria-hidden="chapter !== 2" aria-labelledby="j-connect">
       <div class="console-body" :style="lift(2)">
-        <p class="folio"><i></i>03 / CONNECTION</p>
+        <p class="folio"><span>03</span> API ACCESS</p>
         <h2 id="j-connect">{{ t('home.journey.accessTitle') }}</h2>
         <p class="j-caption">{{ t('home.journey.accessText') }}</p>
         <div class="command">
@@ -190,6 +206,7 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
             </label>
             <span v-else>BASE URL</span>
             <span class="command-line" aria-hidden="true"></span>
+            <span class="command-path"><b>POST</b> /chat/completions</span>
           </div>
           <div class="endpoint-line">
             <code>{{ endpoint.endpoint }}</code>
@@ -197,10 +214,11 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
               {{ copied ? t('common.copied') : t('common.copy') }}
             </button>
           </div>
-          <p class="command-path"><b>POST</b> /chat/completions</p>
         </div>
         <div class="console-links">
-          <RouterLink :to="keysPath">{{ t('home.journey.keys') }} <span>↗</span></RouterLink>
+          <RouterLink :to="keysPath" class="key-main">
+            {{ t('home.journey.keys') }} <Icon name="arrowRight" size="sm" aria-hidden="true" />
+          </RouterLink>
           <RouterLink to="/key-usage">{{ t('home.journey.usage') }} <span>↗</span></RouterLink>
           <a v-if="docUrl" :href="docUrl" target="_blank" rel="noopener noreferrer">{{ t('home.docs') }} <span>↗</span></a>
           <a v-if="rechargeUrl" :href="rechargeUrl" target="_blank" rel="noopener noreferrer">{{ t('home.landing.nav.recharge') }} <span>↗</span></a>
@@ -211,10 +229,10 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
     <section class="j-scene observatory" data-journey="observatory" :style="layer(3)"
       :inert="chapter !== 3 ? true : undefined" :aria-hidden="chapter !== 3" aria-labelledby="j-observe">
       <div class="observatory-body" :style="lift(3)">
-        <p class="folio"><i></i>04 / TELEMETRY</p>
+        <p class="folio"><span>04</span> SERVICE STATUS</p>
         <h2 id="j-observe">{{ t('home.journey.finalTitle') }}</h2>
         <p class="j-caption">{{ t('home.journey.statusIntro') }}</p>
-        <div class="readout" :data-testid="records.length ? 'homepage-status-section' : undefined">
+        <div class="readout" :data-feed="statusState" :data-testid="records.length ? 'homepage-status-section' : undefined">
           <div class="feed-sample">
             <div v-if="measuredMs !== null" class="sample-value">
               <span>{{ t('home.journey.roundTrip') }}</span><strong>{{ measuredMs }} <small>ms</small></strong>
@@ -250,7 +268,7 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 
 <style scoped>
 .journey-chapters {
-  --j-ink:#f4f6f1; --j-faint:#c5d0d2; --j-line:rgba(186,219,226,.38); --j-signal:#b9f2d0;
+  --j-ink:#f4f1e9; --j-faint:#cacac6; --j-line:rgba(211,211,203,.34); --j-signal:#d6ac90;
   --j-mono:'Geist Mono Variable',ui-monospace,monospace;
   position:absolute; z-index:auto; inset:0; pointer-events:none;
   color:var(--j-ink); font-family:'Geist Variable','PingFang SC','Microsoft YaHei',sans-serif;
@@ -261,94 +279,114 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
 .j-scene :is(a,button,select):focus-visible { outline:2px solid var(--j-signal); outline-offset:3px; }
 .j-scene p, .j-scene h2, .j-scene figure { margin:0; }
 .folio, .art-index, .art-plane small, .endpoint-label, .command-path, .reading small, .read-pages {
-  font:500 10px/1.35 var(--j-mono); letter-spacing:.12em; text-transform:uppercase;
+  font:500 10px/1.35 var(--j-mono); letter-spacing:.095em; text-transform:uppercase;
 }
-.folio { color:var(--j-faint); display:flex; align-items:center; gap:10px; }
-.folio i { height:1px; width:32px; background:linear-gradient(90deg,var(--j-signal),transparent); }
-.j-scene h2 { font-weight:480; letter-spacing:-.055em; line-height:1.05; text-wrap:balance; }
+ .folio { color:var(--j-faint); display:flex; align-items:center; gap:12px; font-weight:450; letter-spacing:.15em; }
+.folio span { color:var(--j-signal); font:italic 18px/1 Georgia,serif; letter-spacing:0; padding-right:13px; border-right:1px solid #c4b19c7a; }
+.j-scene h2 { font-weight:580; letter-spacing:-.065em; line-height:1.04; text-wrap:balance; }
 .j-caption { color:var(--j-faint); font-size:clamp(13px,1.12vw,17px); line-height:1.55; max-width:44ch; }
 .manifest-copy, .archive-copy, .console-body, .observatory-body {
   position:absolute; left:clamp(25px,8vw,154px); text-shadow:0 2px 23px rgba(0,0,0,.68);
 }
-.manifest-copy { top:34%; width:min(67vw,920px); }
-.manifest-copy h2 { margin:17px 0 20px; font-size:clamp(52px,min(7.1vw,12vh),124px); line-height:.99; }
+.manifest-copy { top:30%; width:min(70vw,940px); }
+.manifest-copy h2 { margin:24px 0 20px; font-size:clamp(53px,min(7.35vw,12.1vh),132px); line-height:1.02; }
 .manifest-copy h2 span { display:block; overflow:hidden; padding-bottom:.055em; }
 .manifest-copy h2 b { display:block; font-weight:inherit; transform-origin:0 90%; }
-.manifest-copy h2 span:last-child { color:#d5e8df; }
+.manifest-copy h2 span:last-child { color:#d9d6d0; padding-left:.26em; }
+.manifest-action { display:inline-flex; align-items:center; gap:23px; min-height:44px; margin-top:12px;
+  border-bottom:1px solid #dedbd5; color:var(--j-ink); font-weight:550; font-size:14px; }
+.manifest-action:hover svg { transform:translateX(3px); }
+.j-scene[inert] .manifest-action { visibility:hidden; }
 .manifest-copy .j-caption { max-width:41ch; }
 .archive-depth {
   position:absolute; inset:0; z-index:4; perspective:850px; perspective-origin:64% 46%; transform-style:preserve-3d;
   pointer-events:none; overflow:clip;
 }
 .art-plane {
-  position:absolute; left:60%; top:42%; width:clamp(230px,38vw,560px); aspect-ratio:1.53;
+  position:absolute; left:60%; top:42%; width:clamp(235px,45vw,690px); aspect-ratio:var(--sheet-aspect,1.6);
   transform:translate(-50%,-50%) translate3d(var(--plane-x),var(--plane-y),var(--plane-z)) rotateY(var(--plane-yaw)) rotateZ(var(--plane-roll));
-  border:1px solid rgba(187,222,232,.46); border-radius:14px; overflow:hidden;
-  box-shadow:1px 0 #b5d0d185,3px 2px #222c3d70,8px 12px 55px #03090b55;
-  background:linear-gradient(148deg,rgba(159,207,222,.13),rgba(4,15,23,.08) 47%,rgba(86,107,149,.22));
-  backdrop-filter:blur(1.6px) saturate(1.45) contrast(1.18);
+  overflow:hidden; background:rgba(25,25,25,.23); backdrop-filter:blur(1.1px) saturate(.9);
 }
-.art-plane img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:var(--image-coverage,.42);
-  animation:archive-flow 13s ease-in-out alternate infinite; }
-.art-plane:nth-child(even) img { animation-direction:alternate-reverse; animation-duration:17s; }
-@keyframes archive-flow { from { transform:scale(1.025) translate(-1%,.5%); } to { transform:scale(1.12) translate(1.5%,-1.6%); } }
+.art-plane[data-format=folio] {width:clamp(190px,32vw,460px)}
+.art-plane[data-format=panorama] {width:clamp(250px,48vw,760px)}
+.art-plane img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:var(--crop-x) var(--crop-y);
+  opacity:.94; mask-image:linear-gradient(to right,#000 0%,#000 84%,#0004);
+  animation:archive-flow 18s ease-in-out alternate infinite; }
+.art-plane[data-format=folio] img {mask-image:linear-gradient(to left,#000 0%,#000 90%,#0004)}
+.art-plane[data-format=panorama] img {mask-image:linear-gradient(to top,#000 0%,#000 91%,#0005)}
+.art-plane:nth-child(even) img { animation-direction:alternate-reverse; animation-duration:23s; }
+@keyframes archive-flow { from { transform:scale(1.035) translate(-.8%,.5%); } to { transform:scale(1.105) translate(.9%,-1.2%); } }
 .art-plane::after { content:''; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(127deg,transparent 21%,#b4dfe614 37%,transparent 45%,#72aaa510 82%,transparent); }
-.art-plane figcaption { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:5%; text-shadow:0 2px 13px #030708; }
-.art-index { position:absolute; top:8%; left:5%; color:#e4e9e4; }
-.art-plane strong { order:2; font-size:clamp(28px,3.8vw,58px); line-height:1; letter-spacing:-.056em; font-weight:480; }
-.art-plane small { order:1; margin-bottom:6px; font-size:10px; }
+  box-shadow:inset 0 0 0 1px #c9c9be3a; background:linear-gradient(120deg,transparent 17%,#dedbd30a 48%,transparent 63%); }
+.art-plane figcaption { position:absolute; inset:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end;
+  padding:5.4%; text-shadow:0 1px 6px #14141799; background:linear-gradient(transparent 55%,#10101466); }
+.art-index { position:absolute; top:8%; left:5.2%; color:#f2ece3; }
+.art-plane strong { order:2; font-size:clamp(37px,5.2vw,80px); line-height:1; letter-spacing:-.07em; font-weight:570; }
+.art-plane small { order:1; margin-bottom:8px; font-size:10px; }
+.art-plane[data-format=panorama] figcaption { align-items:flex-end; }
+.art-plane[data-format=panorama] strong { font:italic clamp(40px,5.4vw,88px)/1 Georgia,serif; letter-spacing:-.055em; }
 .manifest { z-index:2; }
 .archive { z-index:5; }
 .connection,.observatory {z-index:3}
 .j-scene[inert] .j-link,.j-scene[inert] .console-links,.j-scene[inert] .feed-sample button { visibility:hidden; }
 .is-reduced .art-plane img { animation:none; }
-.archive-copy { left:clamp(25px,6vw,120px); bottom:18%; max-width:min(29vw,400px); }
+.archive-copy { left:clamp(26px,6vw,118px); bottom:17.7%; max-width:min(30vw,450px); }
 .archive-copy h2, .console-body h2, .observatory-body h2 { margin:13px 0 12px; font-size:clamp(34px,min(4.4vw,8.2vh),84px); }
-.archive-copy::before, .console-body::before, .observatory-body::before {
-  content:''; z-index:-1; position:absolute; inset:-30% -19%; pointer-events:none;
-  background:radial-gradient(ellipse at 32% 55%,rgba(3,9,13,.86) 0%,rgba(3,9,13,.56) 36%,transparent 75%);
+.archive::before, .connection::before, .observatory::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 47% 43% at 23% 53%,#080a0c80,transparent 100%);
 }
-.j-outline { margin-top:15px; min-height:44px; padding:0 16px; border:1px solid #bcdee975; border-radius:50px;
-  color:var(--j-ink); background:rgba(4,15,21,.77); font-weight:500; box-shadow:none; }
-.j-outline:hover { color:#07120e; background:#c9edda; }
+.archive::before { background:radial-gradient(ellipse 34% 34% at 17% 76%,#09090b91,transparent 100%); }
+.edition-caption { display:grid; grid-template-columns:auto 1fr; width:max-content; max-width:100%;
+  align-items:baseline; column-gap:13px; row-gap:2px; margin:17px 0 0; }
+.edition-folio { grid-row:1/3; font:italic 18px/1.25 Georgia,serif; letter-spacing:-.02em; color:#e6ded2; }
+.edition-folio i { margin:0 1px; color:var(--j-signal); font-style:normal; }
+.edition-model { font-size:17px; font-weight:550; letter-spacing:-.035em; }
+.edition-caption small { color:var(--j-faint); font:500 9px/1.4 var(--j-mono); letter-spacing:.065em; }
+.j-outline { margin-top:16px; min-height:44px; padding:0 0 1px; gap:22px; border:none; border-radius:0;
+  border-bottom:1px solid #e5d9cf; color:var(--j-ink); background:transparent; font-weight:550; box-shadow:none; }
+.j-outline:hover { color:#fff; background:#f4eee708; }
+.j-enter { margin-top:19px; padding:0 16px; border-bottom:0; color:#1c1c1c; background:var(--j-ink); }
+.j-enter:hover { color:#121212; background:#fff; }
 .console-body, .observatory-body { top:50%; translate:0 -50%; width:min(49vw,680px); }
 .console-body { left:clamp(25px,7vw,130px); }
-.command { margin-top:23px; }
-.endpoint-label { display:flex; align-items:center; gap:12px; color:#c6dce0; }
+.command { margin-top:25px; max-width:570px; }
+.endpoint-label { display:flex; align-items:center; gap:12px; color:var(--j-faint); }
 .endpoint-label select {
-  min-height:32px; max-width:100%; cursor:pointer; color:#f3f5f0; background:#132029; border:1px solid var(--j-line);
+  min-height:32px; max-width:100%; cursor:pointer; color:#f5f2ec; background:#222322; border:1px solid var(--j-line);
   border-radius:3px; padding:0 6px; font:500 12px/1.4 var(--j-mono); letter-spacing:0;
 }
 .endpoint-label label { max-width:70%; }
-.command-line { flex:1; height:1px; background:linear-gradient(90deg,#91b4c180,transparent); }
-.endpoint-line { display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--j-line); }
-.endpoint-line code { overflow:auto; white-space:nowrap; flex:1; min-width:0; padding:10px 0; font:500 clamp(14px,1.55vw,24px)/1.4 var(--j-mono); }
-.endpoint-line button, .console-links a { color:#e1f3f0; font-size:13px; }
+.command-line { flex:1; height:1px; background:var(--j-line); }
+.endpoint-line { display:flex; gap:10px; align-items:center; border-bottom:1px solid var(--j-line); padding-bottom:3px; }
+.endpoint-line code { overflow:auto; white-space:nowrap; flex:1; min-width:0; padding:10px 0; font:450 clamp(15px,1.65vw,26px)/1.4 var(--j-mono); letter-spacing:-.055em; }
+.endpoint-line button, .console-links a { color:var(--j-ink); font-size:13px; }
 .endpoint-line button { padding:4px 8px; min-height:44px; background:transparent; cursor:pointer; }
-.command-path { margin-top:10px!important; color:#c4cfd4; text-transform:none; letter-spacing:.03em; }
+.command-path { color:var(--j-faint); text-transform:none; letter-spacing:.03em; }
 .command-path b { color:var(--j-signal); font-weight:540; }
-.console-links { display:flex; flex-wrap:wrap; gap:2px 15px; margin-top:16px; }
+.console-links { display:flex; flex-wrap:wrap; gap:3px 15px; align-items:center; margin-top:20px; }
 .console-links a { display:inline-flex; min-height:44px; align-items:center; gap:5px; }
 .console-links a:hover { text-decoration:underline; }
-.console-links a span { color:#b6d5ce; }
+.console-links a span { color:var(--j-signal); }
+.console-links .key-main { padding:0 14px; gap:16px; border:1px solid #eee6d8; background:var(--j-ink);
+  color:#171918; text-shadow:none; font-weight:600; text-decoration:none; }
+.console-links .key-main:hover { text-decoration:none; background:#fff; }
+
 .observatory-body { width:min(47vw,640px); }
 .readout { margin-top:20px; }
-.feed-sample { display:flex; justify-content:space-between; align-items:center; min-height:40px; gap:12px; margin-bottom:6px; }
-.sample-value { display:flex; align-items:baseline; gap:10px; }
+.feed-sample { display:flex; justify-content:space-between; align-items:end; min-height:42px; gap:12px; margin-bottom:9px; }
+.sample-value { display:flex; flex-direction:column; align-items:start; gap:3px; }
 .sample-value span, .feed-sample button { color:var(--j-faint); font:500 11px/1.4 var(--j-mono); }
-.sample-value strong { color:var(--j-ink); font:500 21px/1 var(--j-mono); font-variant-numeric:tabular-nums; }
+.sample-value strong { color:var(--j-ink); font:480 clamp(29px,3vw,44px)/1.05 'Geist Variable',sans-serif; letter-spacing:-.065em; font-variant-numeric:tabular-nums; }
 .sample-value small { color:var(--j-faint); font-size:10px; }
 .feed-sample button { margin-left:auto; display:flex; align-items:center; gap:6px; min-height:38px; cursor:pointer; }
 .feed-sample button:disabled { opacity:.5; }
-.readout-scale { height:7px; border-bottom:1px solid var(--j-line);
-  background:repeating-linear-gradient(90deg,var(--j-line) 0 1px,transparent 1px 12px) no-repeat 0 0 / 100% 3px; }
-.reading { min-height:40px; padding:5px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #abd4df35; }
+.readout-scale { height:1px; background:var(--j-line); }
+.reading { min-height:40px; padding:5px 0; display:flex; align-items:center; justify-content:space-between; gap:12px; border-bottom:1px solid #dacfb532; }
 .reading > div { min-width:0; display:grid; gap:1px; }
 .read-name { font-size:14px; font-weight:500; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .reading small { color:var(--j-faint); font-size:9px; letter-spacing:.06em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.reading strong { color:var(--j-signal); font:500 12px/1.4 var(--j-mono); }
+.reading strong { color:var(--j-ink); font:500 12px/1.4 var(--j-mono); }
 .reading:is([data-state=error],[data-state=failed],[data-state=degraded]) strong { color:#ffccae; }
 .no-readings { padding:14px 0; color:var(--j-faint); font-size:14px; }
 .read-pages { display:flex; align-items:center; justify-content:flex-end; gap:8px; color:var(--j-faint); }
@@ -360,15 +398,18 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
     left:clamp(20px,6vw,40px); width:calc(100% - clamp(40px,12vw,80px)); max-width:none;
   }
   .manifest-copy { top:auto; bottom:19%; }
-  .manifest-copy h2 { font-size:clamp(43px,min(12vw,10vh),80px); }
+  .manifest-copy h2 { font-size:clamp(44px,min(12.4vw,10.4vh),82px); }
   .archive-copy { top:auto; bottom:15%; }
   .archive-copy h2, .console-body h2, .observatory-body h2 { margin:8px 0; font-size:clamp(31px,8vw,49px); }
   .archive-depth { perspective:660px; perspective-origin:50% 44%; }
-  .art-plane { width:clamp(175px,66vw,350px); left:53%; top:38%; }
+  .art-plane { width:clamp(190px,76vw,405px); left:53%; top:38%; }
+  .art-plane[data-format=folio] {width:clamp(155px,57vw,335px)}
+  .art-plane[data-format=panorama] {width:clamp(218px,82vw,440px)}
   .console-body, .observatory-body { top:auto; translate:none; bottom:15%; }
   .command,.readout { margin-top:12px; }
   .console-links { gap:0 12px; margin-top:6px; }
-  .j-outline { margin-top:9px; }
+  .j-outline { margin-top:10px; }
+  .edition-caption { margin-top:8px; }
   .readout { max-width:470px; }
 }
 @media (max-height:580px) {
@@ -378,12 +419,13 @@ const feedMessage = computed(() => t(`home.journey.${props.statusState === 'load
   .manifest-copy h2 { font-size:clamp(36px,10vh,60px); }
   .archive-copy h2, .console-body h2, .observatory-body h2 { font-size:clamp(24px,7vh,38px); margin:6px 0; }
   .command, .readout, .console-links { margin-top:6px; }
-  .feed-sample { min-height:26px; margin-bottom:2px; } .feed-sample button { min-height:28px; }
+  .feed-sample { min-height:26px; margin-bottom:2px; } .sample-value { flex-direction:row; align-items:baseline; gap:9px; } .sample-value strong { font-size:20px; } .feed-sample button { min-height:28px; }
   .no-readings { padding:6px 0; }
   .reading { min-height:26px; padding:2px 0; }
   .read-pages button { min-height:26px; }
   .console-links a, .j-outline { min-height:36px; }
-  .art-plane { width:min(28vw,53vh); }
+  .art-plane { width:min(34vw,65vh); }
+  .art-plane[data-format=folio] {width:min(24vw,48vh)}
 }
 </style>
 

@@ -28,10 +28,10 @@ export default {
     },
     journey: {
       roundTrip: '本次查询往返', refresh: '重新查询',
-      manifestoA: '一把密钥。', manifestoB: '多种模型。',
+      manifestoA: '切换模型。', manifestoB: '沿用密钥。',
       manifestoText: '让客户端接入同一个 API 地址，用同一把密钥调用账户已配置的模型。',
-      galleryTitle: '模型广场', galleryNote: '三种模型家族，三种创作方式。',
-      browse: '进入模型广场', accessTitle: '建立连接。',
+      galleryTitle: '模型广场', galleryNote: '为不同任务选择合适的模型与接入协议。',
+      browse: '进入模型广场', accessTitle: '连接你的客户端。',
       accessText: '在客户端设置 Base URL，再从工作台选取要使用的 API 密钥。',
       endpoint: '接入地址', copyEndpoint: '复制地址', keys: '管理密钥', usage: '查询密钥用量',
       finalTitle: '服务观测站', statusIntro: '公开倍率与渠道监测读数。',
@@ -41,7 +41,9 @@ export default {
       monitor: '渠道', group: '分组倍率', page: '读数 {page}/{total}'
     },
     signal: {
-      scroll: '向下滚动',
+      headline: '多模型，一个入口。',
+      deck: '用同一把 API 密钥，接入不同的模型。',
+      scroll: '探索模型',
       navigation: '主导航',
       index: '网关索引',
       explore: '探索网关',
