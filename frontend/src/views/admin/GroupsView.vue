@@ -2,15 +2,15 @@
   <AppLayout>
     <section class="min-w-0 space-y-4" data-testid="groups-management">
       <header class="flex flex-wrap items-center justify-between gap-4">
-        <div><h2 class="text-2xl font-semibold tracking-tight">{{ t('admin.groups.title') }}</h2>
-          <p class="mt-1 text-sm text-muted-foreground">{{ t('admin.groups.description') }}</p></div>
+        <div><h2 class="text-2xl font-semibold tracking-tight">{{ t('admin.groups.directory') }}</h2>
+          <p class="mt-1 text-sm text-muted-foreground">{{ t('admin.groups.directoryHint') }}</p></div>
         <Button @click="openCreateModal" data-tour="groups-create-btn"><Plus/>{{t('admin.groups.createGroup')}}</Button>
       </header>
       <div class="flex flex-wrap items-center gap-2" role="group" :aria-label="t('admin.groups.searchGroups')">
         <div class="relative w-full sm:w-56"><Search class="absolute left-3 top-2.5 size-4 text-muted-foreground"/>
           <Input v-model="searchQuery" class="h-9 pl-9" type="search" :placeholder="t('admin.groups.searchGroups')" :aria-label="t('admin.groups.searchGroups')" @update:model-value="handleSearch"/>
         </div>
-        <Select v-model="filters.platform" :options="platformFilterOptions" :placeholder="t('admin.groups.allPlatforms')" class="w-auto min-w-28" @change="applyFilters"/>
+        <div class="w-36"><Select v-model="filters.platform" :options="platformFilterOptions" :placeholder="t('admin.groups.allPlatforms')" @change="applyFilters"/></div>
         <Select v-model="filters.status" :options="statusOptions" :placeholder="t('admin.groups.allStatus')" class="w-auto min-w-24" @change="applyFilters"/>
         <Select v-if="!authStore.isSimpleMode" v-model="filters.is_exclusive" :options="exclusiveOptions" :placeholder="t('admin.groups.allGroups')" class="w-auto min-w-24" @change="applyFilters"/>
         <Button v-if="hasFilters" variant="ghost" size="sm" @click="resetFilters"><X/>{{t('common.reset')}}</Button>

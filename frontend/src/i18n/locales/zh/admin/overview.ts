@@ -849,6 +849,8 @@ export default {
       searchGroups: '搜索分组...',
       noMatches: '没有符合筛选条件的分组。',
       editorHint: '配置分组的平台、计费与路由。保存后生效。',
+      directory: '分组列表',
+      directoryHint: '按平台、状态或访问类型查找分组。',
       editorSections: { details: '分组信息', billing: '计费与模型', access: '访问与路由' },
       createGroup: '创建分组',
       editGroup: '编辑分组',

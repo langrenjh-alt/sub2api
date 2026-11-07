@@ -852,6 +852,8 @@ export default {
       searchGroups: 'Search groups...',
       noMatches: 'No groups match your filters.',
       editorHint: 'Configure platform, billing and routing. Changes take effect when saved.',
+      directory: 'Group directory',
+      directoryHint: 'Find groups by platform, status or access type.',
       editorSections: { details: 'Group details', billing: 'Billing & models', access: 'Access & routing' },
       createGroup: 'Create Group',
       editGroup: 'Edit Group',
