@@ -53,13 +53,37 @@ func IsGrokSafetyReviewRejection(statusCode int, body []byte) bool {
 	if statusCode != http.StatusForbidden && statusCode != http.StatusOK {
 		return false
 	}
-	return strings.Contains(strings.ToUpper(string(body)), grokSafetyCheckMarker)
+	// A 403 may echo user input or attach diagnostic metadata. Neither is an
+	// upstream refusal. Only accept the provider's check in its error message.
+	hasFailedCheck := func(message string) bool {
+		return strings.Contains(strings.ToUpper(message), "FAILED CHECK: "+grokSafetyCheckMarker)
+	}
+	if !gjson.ValidBytes(body) {
+		message := strings.TrimSpace(string(body))
+		return statusCode == http.StatusForbidden && !strings.HasPrefix(message, "{") &&
+			!strings.HasPrefix(message, "[") && !strings.HasPrefix(message, "<") &&
+			strings.HasSuffix(strings.ToUpper(message), "FAILED CHECK: "+grokSafetyCheckMarker)
+	}
+	for _, path := range []string{"error.code", "response.error.code", "error_code", "error.type", "error_type"} {
+		code := gjson.GetBytes(body, path).String()
+		if isGrokAccountAccessCode(code) || isGrokContentPolicyCode(code) {
+			return false
+		}
+	}
+	for _, path := range []string{"error.message", "response.error.message", "message", "error"} {
+		value := gjson.GetBytes(body, path)
+		if value.Type == gjson.String && hasFailedCheck(value.String()) {
+			return true
+		}
+	}
+	return false
 }
 
 func grokSafetyReviewCodeFromPayload(body []byte) string {
 	for _, path := range []string{
 		"error.code",
 		"response.error.code",
+		"code",
 		"error_code",
 		"error_type",
 	} {
@@ -74,7 +98,7 @@ func grokSafetyReviewCodeFromPayload(body []byte) string {
 func isGrokSafetyReviewCode(code string) bool {
 	normalized := strings.ToLower(strings.TrimSpace(code))
 	return normalized == grokSafetyReviewRejectedCode ||
-		strings.HasPrefix(normalized, grokViolationFeeCodePrefix)
+		(strings.HasPrefix(normalized, grokViolationFeeCodePrefix) && len(normalized) > len(grokViolationFeeCodePrefix))
 }
 
 // MarkGrokSafetyReview 只记录本次请求的第一条确认拒绝：SSE 里可能重复下发
@@ -139,16 +163,28 @@ func markGrokSafetyReviewFromUpstream(c *gin.Context, upstreamRequestID, model s
 	return true
 }
 
-// grokSafetyReviewStatus 返回面向客户端的 HTTP 状态：流式拒绝发生在 200 之后，
-// 保持 200；非流式 403 原样返回。
-func grokSafetyReviewStatus(stream bool, upstreamStatus int) int {
-	if stream {
-		return http.StatusOK
+// Only the public text HTTP handlers bind a responder. It settles the fee on
+// the authenticated request and writes a protocol-specific receipt on success.
+// An unbilled rejection, an SSE error frame, or a WebSocket turn is not rewritten.
+type GrokSafetyHTTPResponder func(*Account, *GrokSafetyReviewMark) bool
+
+const grokSafetyHTTPResponderKey = "grok_safety_http_responder"
+
+func BindGrokSafetyHTTPResponder(c *gin.Context, respond GrokSafetyHTTPResponder) {
+	c.Set(grokSafetyHTTPResponderKey, respond)
+}
+
+func respondToGrokSafety403(c *gin.Context, account *Account, status int, confirmed bool) bool {
+	if !confirmed || status != http.StatusForbidden || account == nil || account.Platform != PlatformGrok {
+		return false
 	}
-	if upstreamStatus == http.StatusForbidden {
-		return http.StatusForbidden
+	mark := GetGrokSafetyReviewMark(c)
+	if mark == nil || mark.HTTPStatus != status {
+		return false
 	}
-	return upstreamStatus
+	v, _ := c.Get(grokSafetyHTTPResponderKey)
+	respond, _ := v.(GrokSafetyHTTPResponder)
+	return respond != nil && respond(account, mark)
 }
 
 // grokSafetyReviewErrorCode 返回给下游错误体里的 code 字段（仅在确认拒绝时附带）。

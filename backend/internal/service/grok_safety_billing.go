@@ -142,16 +142,16 @@ func (s *OpenAIGatewayService) GrokSafetyRejectionBillingEnabled(ctx context.Con
 // RecordGrokSafetyRejectionUsage 为一次确认的 Grok 安全拒绝记录一条按官方价卡
 // 合成的 token 用量行：输入/输出 token 随机、缓存读取 >=90%，并且总金额命中
 // 配置的扣费额度。开关关闭或额度 <=0 时不做任何事（保持历史"拒绝免费"行为）。
-func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Context, in GrokSafetyRejectionBillingInput) {
+func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Context, in GrokSafetyRejectionBillingInput) *UsageLog {
 	if s == nil || s.billingService == nil {
-		return
+		return nil
 	}
-	if in.APIKey == nil || in.APIKey.User == nil || in.Account == nil {
-		return
+	if in.APIKey == nil || in.APIKey.User == nil || in.Account == nil || in.Account.Platform != PlatformGrok {
+		return nil
 	}
 	params := s.GrokSafetyRejectionBillingParameters(ctx)
 	if !params.Enabled || params.AmountUSD <= 0 {
-		return
+		return nil
 	}
 	pricingAt := in.PricingAt
 	if pricingAt.IsZero() {
@@ -168,7 +168,7 @@ func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Contex
 			zap.Int64("account_id", in.Account.ID),
 			zap.Error(err),
 		).Warn("grok_safety_rejection.billing_plan_failed")
-		return
+		return nil
 	}
 
 	result := &OpenAIForwardResult{
@@ -181,7 +181,7 @@ func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Contex
 			OutputTokens:         plan.OutputTokens,
 		},
 	}
-	if err := s.RecordUsage(ctx, &OpenAIRecordUsageInput{
+	row, err := s.recordAppliedUsage(ctx, &OpenAIRecordUsageInput{
 		Result:             result,
 		APIKey:             in.APIKey,
 		User:               in.APIKey.User,
@@ -197,7 +197,8 @@ func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Contex
 		ChannelUsageFields: in.ChannelUsageFields,
 		NativeCompactionV2: in.NativeCompactionV2,
 		PricingAt:          pricingAt,
-	}); err != nil {
+	})
+	if err != nil {
 		logger.L().With(
 			zap.String("component", "service.openai_gateway.grok_safety"),
 			zap.String("request_id", in.RequestID),
@@ -206,11 +207,14 @@ func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Contex
 			zap.Int64("account_id", in.Account.ID),
 			zap.Error(err),
 		).Error("grok_safety_rejection.record_usage_failed")
-		return
+		return nil
+	}
+	if row == nil {
+		return nil
 	}
 	logger.L().With(
 		zap.String("component", "service.openai_gateway.grok_safety"),
-		zap.String("request_id", in.RequestID),
+		zap.String("request_id", row.RequestID),
 		zap.String("model", plan.Model),
 		zap.Int64("api_key_id", in.APIKey.ID),
 		zap.Int64("user_id", in.APIKey.User.ID),
@@ -220,9 +224,10 @@ func (s *OpenAIGatewayService) RecordGrokSafetyRejectionUsage(ctx context.Contex
 		zap.Int("output_tokens", plan.OutputTokens),
 		zap.Float64("cache_read_ratio", plan.CacheReadRatio),
 		zap.Float64("target_usd", plan.TargetUSD),
-		zap.Float64("billed_usd", plan.BilledUSD),
+		zap.Float64("billed_usd", row.ActualCost),
 		zap.Float64("multiplier", plan.Multiplier),
 	).Info("grok_safety_rejection.billed")
+	return row
 }
 
 // BuildGrokSafetyBillingPlan 把"目标扣费额度"反解成一组官方价卡口径的 token 用量。

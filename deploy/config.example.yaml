@@ -503,6 +503,10 @@ gateway:
     # 普通 403、new_sensitive 内容策略、账号额度/订阅拒绝都不会扣费。
     # 开启后按模型官方价卡反解一条普通 token 用量行（输入/输出随机、缓存读取 >=90%），
     # 实际扣费金额落在 amount_usd 附近，并正常写入 usage_logs / 扣减余额或订阅额度。
+    # 已结算的上游 403：原请求直接返回 HTTP 200、明确的 refusal 和与本次入账相同的标准 usage。
+    # Responses / Chat Completions / Messages 按客户端请求返回 JSON 或 SSE；不会另发扣费请求。
+    # 对账使用响应头 X-Sub2API-Billing-Request-Id（对应 usage_logs.request_id）。
+    # 开关关闭、零额度、结算失败及普通 403 均沿用原错误处理。上游 200 错误帧和 WS 不做此转换。
     safety_rejection_billing:
       enabled: false
       # 每条确认拒绝的目标扣费额度（USD，含分组/用户倍率后的实际扣费）

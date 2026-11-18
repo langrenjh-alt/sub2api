@@ -18,6 +18,46 @@ import (
 // 而扣费只允许发生一次。
 const grokSafetyBillingRecordedKey = "ops_grok_safety_billing_recorded"
 
+// Direct upstream HTTP 403s can still be answered on the original request.
+// Settle synchronously only on this rare path: an unpriced or unpaid refusal
+// must not advertise chargeable usage. The guard also prevents the post-forward
+// SSE/WS recorder from submitting the same fee a second time.
+func (h *OpenAIGatewayHandler) bindGrokSafetyHTTPBilling(c *gin.Context, apiKey *service.APIKey,
+	subscription *service.UserSubscription, model, endpoint string, stream bool,
+	fields service.ChannelUsageFields, payloadHash string, pricingAt time.Time,
+) {
+	service.BindGrokSafetyHTTPResponder(c, func(account *service.Account, mark *service.GrokSafetyReviewMark) bool {
+		if c.GetBool(grokSafetyBillingRecordedKey) {
+			return false
+		}
+		c.Set(grokSafetyBillingRecordedKey, true)
+		in := h.grokSafetyBillingInput(c, apiKey, account, subscription, model, mark.AttemptID, stream,
+			fields, payloadHash, pricingAt)
+		// A client disconnect must not cancel settlement of a confirmed upstream fee.
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(c.Request.Context()), 10*time.Second)
+		defer cancel()
+		receipt := h.gatewayService.RecordGrokSafetyRejectionUsage(ctx, in)
+		if receipt == nil {
+			return false
+		}
+		writeGrokSafetyReceipt(c, endpoint, stream, mark, receipt)
+		return true
+	})
+}
+
+func (h *OpenAIGatewayHandler) grokSafetyBillingInput(c *gin.Context, apiKey *service.APIKey,
+	account *service.Account, subscription *service.UserSubscription, model, requestID string,
+	stream bool, fields service.ChannelUsageFields, payloadHash string, pricingAt time.Time,
+) service.GrokSafetyRejectionBillingInput {
+	return service.GrokSafetyRejectionBillingInput{
+		APIKey: apiKey, Account: account, Subscription: subscription, Model: model, Stream: stream,
+		RequestID: requestID, InboundEndpoint: GetInboundEndpoint(c), UpstreamEndpoint: resolveOpenAIUpstreamEndpoint(c, account, nil),
+		UserAgent: c.GetHeader("User-Agent"), IPAddress: strings.TrimSpace(ip.GetClientIP(c)),
+		SessionID: service.ExtractClientSessionID(c), RequestPayloadHash: payloadHash, APIKeyService: h.apiKeyService,
+		ChannelUsageFields: fields, PricingAt: pricingAt,
+	}
+}
+
 // recordGrokSafetyBillingIfMarked 在 gateway Forward 返回后检查 Grok 安全审查标记。
 //
 // 只有结构化安全拒绝（safety_review_rejected / violation_fee.grok.* /
@@ -64,33 +104,12 @@ func (h *OpenAIGatewayHandler) recordGrokSafetyBillingIfMarked(
 		model = billingModel
 	}
 	stream := mark.HTTPStatus == http.StatusOK
-	inboundEndpoint := GetInboundEndpoint(c)
-	upstreamEndpoint := resolveOpenAIUpstreamEndpoint(c, account, nil)
-	userAgent := c.GetHeader("User-Agent")
-	clientIP := strings.TrimSpace(ip.GetClientIP(c))
-	sessionID := service.ExtractClientSessionID(c)
-	pricingAt := time.Now()
-	apiKeySvc := h.apiKeyService
+	in := h.grokSafetyBillingInput(c, apiKey, account, subscription, model, requestID, stream,
+		channelFields, requestPayloadHash, time.Now())
 	gwSvc := h.gatewayService
 
 	h.submitMandatoryUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
-		gwSvc.RecordGrokSafetyRejectionUsage(ctx, service.GrokSafetyRejectionBillingInput{
-			APIKey:             apiKey,
-			Account:            account,
-			Subscription:       subscription,
-			Model:              model,
-			Stream:             stream,
-			RequestID:          requestID,
-			InboundEndpoint:    inboundEndpoint,
-			UpstreamEndpoint:   upstreamEndpoint,
-			UserAgent:          userAgent,
-			IPAddress:          clientIP,
-			SessionID:          sessionID,
-			RequestPayloadHash: requestPayloadHash,
-			APIKeyService:      apiKeySvc,
-			ChannelUsageFields: channelFields,
-			PricingAt:          pricingAt,
-		})
+		gwSvc.RecordGrokSafetyRejectionUsage(ctx, in)
 	})
 
 	logger.L().With(

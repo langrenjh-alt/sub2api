@@ -172,6 +172,8 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 	// 分组利润控制：chat completions 文本入口请求级装门并固定 pricingAt。
 	ccPricingCtx, pricingAt := h.gatewayService.WithOpenAIRequestPricingContext(c.Request.Context(), apiKey.GroupID)
 	c.Request = c.Request.WithContext(ccPricingCtx)
+	payloadHash := service.HashUsageRequestPayload(body)
+	h.bindGrokSafetyHTTPBilling(c, apiKey, subscription, reqModel, EndpointChatCompletions, reqStream, clientRequestedUsageFields(c, channelMapping, reqModel, ""), payloadHash, pricingAt)
 
 	for {
 		if failoverClientGone(c) {
@@ -265,8 +267,8 @@ func (h *OpenAIGatewayHandler) ChatCompletions(c *gin.Context) {
 		if service.GetOpsCyberPolicy(c) != nil {
 			cyberBlockBodyChat = body
 		}
-		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyChat, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
-		h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, reqModel, clientRequestedUsageFields(c, channelMapping, reqModel, ""), service.HashUsageRequestPayload(body))
+		h.recordCyberPolicyIfMarked(c, apiKey, account, subscription, reqModel, err != nil, cyberBlockBodyChat, clientRequestedUsageFields(c, channelMapping, reqModel, ""), payloadHash)
+		h.recordGrokSafetyBillingIfMarked(c, apiKey, account, subscription, reqModel, clientRequestedUsageFields(c, channelMapping, reqModel, ""), payloadHash)
 
 		forwardDurationMs := time.Since(forwardStart).Milliseconds()
 		upstreamLatencyMs, _ := getContextInt64(c, service.OpsUpstreamLatencyMsKey)

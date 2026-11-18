@@ -153,12 +153,19 @@ func groupBillsOpenAIFastAtStandard(apiKey *APIKey, account *Account, serviceTie
 
 // RecordUsage records usage and deducts balance
 func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRecordUsageInput) error {
+	_, err := s.recordAppliedUsage(ctx, input)
+	return err
+}
+
+// recordAppliedUsage returns the actual accounting row only for a newly
+// applied charge. In particular a dedup hit is not a second billable receipt.
+func (s *OpenAIGatewayService) recordAppliedUsage(ctx context.Context, input *OpenAIRecordUsageInput) (*UsageLog, error) {
 	if input == nil {
-		return errors.New("openai usage input is nil")
+		return nil, errors.New("openai usage input is nil")
 	}
 	result := input.Result
 	if result == nil {
-		return errors.New("openai usage result is nil")
+		return nil, errors.New("openai usage result is nil")
 	}
 	if s.rateLimitService != nil && input.Account != nil && input.Account.Platform == PlatformOpenAI {
 		s.rateLimitService.ResetOpenAI403Counter(ctx, input.Account.ID)
@@ -170,7 +177,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	subscription := input.Subscription
 	billingAccount, err := resolveCredentialAccount(ctx, s.accountRepo, account)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !isGrokVideoUsageResult(result, nil) {
 		ApplyOpenAIImageBillingResolution(result)
@@ -255,7 +262,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	)
 	if err != nil {
 		if !isUsagePricingUnavailableError(err) {
-			return err
+			return nil, err
 		}
 		logger.L().With(
 			zap.String("component", "service.openai_gateway"),
@@ -319,7 +326,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 			pricingAt,
 		)
 		if standardErr != nil && !isUsagePricingUnavailableError(standardErr) {
-			return standardErr
+			return nil, standardErr
 		}
 		// Missing pricing already fell back to a zero-cost log above; keep that
 		// usage row instead of dropping it on the Standard re-evaluation.
@@ -497,7 +504,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
 		logger.LegacyPrintf("service.openai_gateway", "[SIMPLE MODE] Usage recorded (not billed): user=%d, tokens=%d", usageLog.UserID, usageLog.TotalTokens())
 		s.deferredService.ScheduleLastUsedUpdate(account.ID)
-		return nil
+		return nil, nil
 	}
 
 	// Async usage billing runs outside the original request context, so it
@@ -507,7 +514,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		quotaPlatform = PlatformFromAPIKey(apiKey)
 	}
 
-	_, billingErr := applyUsageBilling(ctx, requestID, usageLog, &postUsageBillingParams{
+	applied, billingErr := applyUsageBilling(ctx, requestID, usageLog, &postUsageBillingParams{
 		Cost:                       cost,
 		User:                       user,
 		APIKey:                     apiKey,
@@ -524,11 +531,13 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if billingErr != nil {
 		usageLog.ActualCost = 0
 		writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
-		return billingErr
+		return nil, billingErr
 	}
 	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
-
-	return nil
+	if !applied || usageLog.ActualCost <= 0 {
+		return nil, nil
+	}
+	return usageLog, nil
 }
 
 // hasIdentifiedOpenAIResponsePricing 判断上游自报的响应模型是否可以作为计费基准，

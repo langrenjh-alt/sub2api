@@ -24,6 +24,11 @@ func TestIsGrokSafetyReviewRejection(t *testing.T) {
 		body   string
 		want   bool
 	}{
+		{name: "input echo is not a failed check", status: 403, body: `{"error":{"message":"forbidden"},"input":"Failed check: SAFETY_CHECK_TYPE"}`},
+		{name: "entitlement with diagnostic marker", status: 403, body: `{"error":{"code":"subscription_required","message":"Failed check: SAFETY_CHECK_TYPE"}}`},
+		{name: "bare marker mention", status: 403, body: `{"error":{"message":"missing SAFETY_CHECK_TYPE field"}}`},
+		{name: "incomplete fee code", status: 403, body: `{"error_code":"violation_fee.grok."}`},
+		{name: "plain provider check", status: 403, body: "Failed check: SAFETY_CHECK_TYPE", want: true},
 		{
 			name:   "documented error code",
 			status: http.StatusForbidden,
@@ -90,6 +95,44 @@ func TestIsGrokSafetyReviewRejection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.want, IsGrokSafetyReviewRejection(tt.status, []byte(tt.body)))
 		})
+	}
+}
+
+func TestGrokSafety403PassthroughGate(t *testing.T) {
+	svc := &OpenAIGatewayService{accountRepo: &grokQuotaAccountRepo{}}
+	account := &Account{ID: 78, Platform: PlatformGrok, Type: AccountTypeAPIKey}
+	body := []byte(`{"error":{"code":"safety_review_rejected","message":"private provider diagnostic"}}`)
+	require.False(t, shouldFailoverOpenAIPassthroughResponse(account, 403, body))
+	for _, billed := range []bool{false, true} {
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest("POST", "/v1/responses", nil)
+		calls := 0
+		BindGrokSafetyHTTPResponder(c, func(a *Account, m *GrokSafetyReviewMark) bool {
+			calls++
+			require.Same(t, account, a)
+			require.Equal(t, 403, m.HTTPStatus)
+			if billed {
+				c.JSON(200, gin.H{"receipt": true})
+			}
+			return billed
+		})
+		res := &http.Response{StatusCode: 403, Header: http.Header{}}
+		err := svc.handleErrorResponsePassthrough(c.Request.Context(), res, c, account, []byte(`{"model":"grok-4.6"}`), body)
+		require.Error(t, err)
+		require.Equal(t, 1, calls)
+		require.Equal(t, 403, c.GetInt(OpsUpstreamStatusCodeKey))
+		if billed {
+			require.Equal(t, 200, rec.Code)
+		} else {
+			require.Equal(t, 502, rec.Code)
+		}
+		require.NotContains(t, rec.Body.String(), "private provider diagnostic")
+		require.False(t, respondToGrokSafety403(c, account, 400, true))
+		require.False(t, respondToGrokSafety403(c, account, 200, true))
+		require.False(t, respondToGrokSafety403(c, &Account{Platform: PlatformOpenAI}, 403, true))
+		require.False(t, respondToGrokSafety403(c, account, 403, false))
+		require.Equal(t, 1, calls)
 	}
 }
 

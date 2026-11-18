@@ -150,6 +150,16 @@ func TestRecordGrokSafetyRejectionUsage_DisabledWritesNothing(t *testing.T) {
 	require.Zero(t, usageRepo.calls)
 }
 
+func TestGrokSafetyDuplicateDebitHasNoReceipt(t *testing.T) {
+	svc, _, _ := newGrokSafetyBillingTestService(t)
+	svc.cfg.Gateway.Grok.SafetyRejectionBilling = config.GatewayGrokSafetyRejectionBillingConfig{Enabled: true, AmountUSD: 0.05}
+	svc.usageBillingRepo = &openAIRecordUsageBillingRepoStub{result: &UsageBillingApplyResult{Applied: false}}
+	row := svc.RecordGrokSafetyRejectionUsage(context.Background(), GrokSafetyRejectionBillingInput{
+		APIKey: grokSafetyTestAPIKey(), Account: &Account{ID: 61, Platform: PlatformGrok}, Model: "grok-4.6", RequestID: "already-charged",
+	})
+	require.Nil(t, row)
+}
+
 // 打开开关后：写一条普通形态的 token 用量行（缓存读取占绝大多数）并按额度扣费。
 func TestRecordGrokSafetyRejectionUsage_BillsCacheHeavyUsageRow(t *testing.T) {
 	svc, usageRepo, userRepo := newGrokSafetyBillingTestService(t)

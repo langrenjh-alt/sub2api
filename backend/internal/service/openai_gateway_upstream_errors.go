@@ -621,6 +621,9 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 		// SAFETY_CHECK_TYPE）才会留下可计费标记；普通 403 与 new_sensitive 不算。
 		safetyRejected := markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), reqModel, resp.StatusCode, body)
 		setOpsUpstreamError(c, resp.StatusCode, clientMsg, truncateString(string(body), 2048))
+		if respondToGrokSafety403(c, account, resp.StatusCode, safetyRejected) {
+			return nil, fmt.Errorf("grok content policy rejection: %s", clientMsg)
+		}
 		writeOpenAIPassthroughResponseHeaders(c.Writer.Header(), resp.Header, s.responseHeaderFilter)
 		MarkResponseCommitted(c)
 		errPayload := gin.H{
@@ -630,7 +633,7 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 		if code := grokSafetyReviewErrorCode(safetyRejected); code != "" {
 			errPayload["code"] = code
 		}
-		c.JSON(grokSafetyReviewStatus(false, resp.StatusCode), gin.H{"error": errPayload})
+		c.JSON(resp.StatusCode, gin.H{"error": errPayload})
 		return nil, fmt.Errorf("grok content policy rejection: %s", clientMsg)
 	}
 
@@ -878,8 +881,11 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 		if len(requestedModel) > 0 {
 			reqModel = strings.TrimSpace(requestedModel[0])
 		}
-		markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), reqModel, resp.StatusCode, body)
+		safetyRejected := markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), reqModel, resp.StatusCode, body)
 		setOpsUpstreamError(c, resp.StatusCode, clientMsg, truncateString(string(body), 2048))
+		if respondToGrokSafety403(c, account, resp.StatusCode, safetyRejected) {
+			return nil, fmt.Errorf("grok content policy rejection: %s", clientMsg)
+		}
 		MarkResponseCommitted(c)
 		writeError(c, http.StatusForbidden, "invalid_request_error", clientMsg)
 		return nil, fmt.Errorf("grok content policy rejection: %s", clientMsg)

@@ -737,6 +737,9 @@ func stripOpenAILegacyResponsesBeta(headers http.Header) {
 }
 
 func shouldFailoverOpenAIPassthroughResponse(account *Account, statusCode int, responseBody []byte) bool {
+	if account != nil && account.Platform == PlatformGrok && statusCode == http.StatusForbidden && IsGrokSafetyReviewRejection(statusCode, responseBody) {
+		return false // a billable request-level refusal must not be replayed on a pool account
+	}
 	if hit, _, _ := detectOpenAICyberPolicy(responseBody); hit {
 		return false
 	}
@@ -920,7 +923,7 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 	// Grok 安全审查拒绝是请求级失败：打标记（供 handler 计费），并且不冷却账号。
 	// 只有结构化安全拒绝会命中，普通 403 仍走原有账号状态更新。
 	passthroughReqModel, _, _ := extractOpenAIRequestMetaFromBody(requestBody)
-	safetyRejected := account != nil && account.Platform == PlatformGrok &&
+	safetyRejected := !cyberHit && account != nil && account.Platform == PlatformGrok &&
 		markGrokSafetyReviewFromUpstream(c, resp.Header.Get("x-request-id"), passthroughReqModel, resp.StatusCode, body)
 
 	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(body))
@@ -959,6 +962,9 @@ func (s *OpenAIGatewayService) handleErrorResponsePassthrough(
 	// context-window 超限是确定性请求失败（shouldFailoverOpenAIPassthroughResponse
 	// 已保证不切号），其文案对客户端可操作（如触发自动压缩）；在净化信封内保留
 	// 脱敏后的上游消息，而不是抹成通用文案。
+	if respondToGrokSafety403(c, account, resp.StatusCode, safetyRejected) {
+		return fmt.Errorf("grok safety review rejection: %d", resp.StatusCode)
+	}
 	if isOpenAIContextWindowError(upstreamMsg, body) && upstreamMsg != "" {
 		writeOpenAIPassthroughErrorEnvelope(c, resp.StatusCode, resp.Header, upstreamMsg)
 	} else {

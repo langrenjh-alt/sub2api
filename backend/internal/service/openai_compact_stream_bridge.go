@@ -35,7 +35,9 @@ func OpenAICompactClientStreamKeyForTest() string {
 	return openAICompactClientStreamKey
 }
 
-func openAICompactClientWantsStream(c *gin.Context) bool {
+// OpenAICompactClientWantsStream preserves the original client stream intent
+// when a compact request was normalized to unary before forwarding.
+func OpenAICompactClientWantsStream(c *gin.Context) bool {
 	if c == nil {
 		return false
 	}
@@ -56,7 +58,7 @@ func openAICompactClientWantsStream(c *gin.Context) bool {
 // 必须接管一切写回：非 2xx 或不可合成的响应降级为 response.failed 终止事件，
 // 不能再返回 false（否则调用方的 JSON 写回会与已提交的 SSE 流交错）。
 func writeOpenAICompactSSEBridge(c *gin.Context, statusCode int, finalResponse []byte) bool {
-	if c == nil || !openAICompactClientWantsStream(c) {
+	if c == nil || !OpenAICompactClientWantsStream(c) {
 		return false
 	}
 	// 先停心跳再写回，避免注释行与最终事件交错；停止后经互斥锁与心跳

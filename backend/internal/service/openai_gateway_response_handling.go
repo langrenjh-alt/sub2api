@@ -1999,7 +1999,7 @@ func (s *OpenAIGatewayService) writeOpenAINonStreamingProtocolError(resp *http.R
 	setOpsUpstreamError(c, http.StatusBadGateway, message, "")
 	// body-signal compact 心跳可能已把响应头提交为 200，此时只能以
 	// response.failed 终止事件回传错误，不能再写 JSON+状态码。
-	if openAICompactClientWantsStream(c) && StopOpenAICompactSSEKeepaliveCommitted(c) {
+	if OpenAICompactClientWantsStream(c) && StopOpenAICompactSSEKeepaliveCommitted(c) {
 		writeOpenAICompactSSEFailureMessage(c, http.StatusBadGateway, "upstream_error", message)
 		return fmt.Errorf("non-streaming openai protocol error: %s", message)
 	}
