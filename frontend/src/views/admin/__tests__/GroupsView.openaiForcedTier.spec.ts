@@ -177,6 +177,7 @@ const mountView = () =>
         DataTable: DataTableStub,
         Pagination: true,
         BaseDialog: BaseDialogStub,
+        GroupEditorDialog: BaseDialogStub,
         ConfirmDialog: true,
         EmptyState: true,
         Select: true,
